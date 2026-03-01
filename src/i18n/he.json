@@ -1,0 +1,609 @@
+{
+  "app": {
+    "name": "Clienta",
+    "tagline": "Client Management Made Simple",
+    "clientHub": "Client Hub",
+    "operations": "Operations"
+  },
+  "common": {
+    "edit": "עריכה",
+    "delete": "מחיקה",
+    "home": "בית",
+    "back": "חזור",
+    "search": "חיפוש",
+    "actions": "פעולות",
+    "status": "סטטוס",
+    "cancel": "ביטול",
+    "close": "סגור",
+    "save": "שמור",
+    "saving": "שומר...",
+    "sending": "שולח...",
+    "loading": "טוען...",
+    "noResults": "לא נמצאו תוצאות",
+    "email": "אימייל",
+    "phone": "טלפון",
+    "address": "כתובת",
+    "signOut": "התנתק",
+    "notifications": "התראות",
+    "expand": "הרחב",
+    "collapse": "צמצם",
+    "dashboard": "לוח בקרה",
+    "clients": "לקוחות"
+  },
+  "notifications": {
+    "title": "התראות",
+    "empty": "אין התראות",
+    "markAllRead": "סמן הכל כנקרא",
+    "viewAll": "צפה בכל ההתראות",
+    "delete": "מחק התראה",
+    "justNow": "זה עתה",
+    "minutesAgo": "לפני {{count}} דקות",
+    "hoursAgo": "לפני {{count}} שעות",
+    "daysAgo": "לפני {{count}} ימים"
+  },
+  "staff": {
+    "banner": {
+      "title": "תצוגת גישת צוות",
+      "description": "אתה מחובר כחבר צוות. חלק מהתכונות זמינות למנהלים בלבד."
+    },
+    "clients": {
+      "title": "לקוחות עסקיים",
+      "subtitle": "צפה וניהול כל הלקוחות העסקיים",
+      "placeholder": "גש לכל הלקוחות בעסק שלך",
+      "viewTitle": "ניהול לקוחות",
+      "viewDescription": "נהל את כל הלקוחות בעסק שלך. לשאלות מנהליות, פנה למנהל שלך.",
+      "emptyState": {
+        "title": "אין לקוחות עדיין",
+        "description": "התחל ביצירת הלקוח הראשון שלך. שאל את המנהל שלך אם אתה זקוק לעזרה."  
+      }
+    },
+    "appointments": {
+      "viewTitle": "ניהול פגישות",
+      "viewDescription": "נהל את כל הפגישות עבור הלקוחות העסקיים שלך.",
+      "emptyState": {
+        "title": "אין פגישות מתוזמנות עדיין",
+        "description": "התחל ביצירת פגישות עבור הלקוחות שלך."
+      }
+    },
+    "dashboard": {
+      "title": "ברוך הבא, {{name}}",
+      "subtitle": "לוח הזמנים והמשימות היומיות שלך",
+      "stats": {
+        "todayAppointments": "פגישות היום",
+        "pendingTasks": "משימות ממתינות",
+        "completedToday": "הושלם היום",
+        "assignedClients": "סה\"כ לקוחות"
+      },
+      "cardTitle": "לוח בקרה צוות",
+      "cardText": "יש לך גישה מלאה לכל הלקוחות העסקיים והפגישות."
+    }
+  },
+  "nav": {
+    "mainMenu": "תפריט ראשי",
+    "allClients": "כל הלקוחות",
+    "allAppointments": "כל הפגישות",
+    "allInvoices": "כל החשבוניות",
+    "reports": "דוחות",
+    "staff": "ניהול צוות",
+    "settings": "הגדרות עסקיות",
+    "appointments": "פגישות",
+    "invoices": "חשבוניות",
+    "files": "קבצים",
+    "profile": "פרופיל"
+  },
+  "layout": {
+    "signedInAs": "מחובר כ",
+    "welcomeBack": "ברוך הבא חזרה",
+    "manageOperations": "נהל פעולות ופעילות לקוחות",
+    "manageClientHub": "נהל את הפגישות והפרופיל שלך",
+    "userMenu": "תפריט משתמש"
+  },
+  "language": {
+    "label": "שפה",
+    "en": "אנגלית",
+    "he": "עברית",
+    "ar": "ערבית"
+  },
+  "appointments": {
+    "title": "פגישות",
+    "subtitle": "נהל את כל הפגישות של הלקוחות",
+    "create": "צור פגישה",
+    "createTitle": "צור פגישה",
+    "editTitle": "ערוך פגישה",
+    "update": "עדכן פגישה",
+    "searchPlaceholder": "חפש פגישות...",
+    "filters": {
+      "all": "כל הסטטוסים"
+    },
+    "loading": "טוען פגישות...",
+    "empty": "לא נמצאו פגישות",
+    "noSearchResults": "אין פגישות התואמות את המסננים שלך",
+    "tryDifferentFilters": "נסה להתאים את הקריטריונים של החיפוש או המסנן שלך",
+    "table": {
+      "client": "לקוח",
+      "appointment": "פגישה",
+      "datetime": "תאריך ושעה",
+      "staff": "צוות"
+    },
+    "actions": {
+      "edit": "ערוך",
+      "cancel": "בטל",
+      "delete": "מחק"
+    },
+    "status": {
+      "Scheduled": "מתוזמן",
+      "Completed": "הושלם",
+      "Cancelled": "בוטל",
+      "NoShow": "לא הופיע"
+    },
+    "form": {
+      "client": "לקוח",
+      "selectClient": "בחר לקוח",
+      "title": "כותרת",
+      "titlePlaceholder": "למשל, סקירה רבעונית",
+      "service": "שירות",
+      "selectService": "בחר שירות",
+      "date": "תאריך",
+      "time": "שעה",
+      "staff": "חבר צוות",
+      "staffPlaceholder": "למשל, יוחנן סמית'",
+      "duration": "משך",
+      "description": "תיאור",
+      "descriptionPlaceholder": "הוסף הערות נוספות..."
+    },
+    "services": {
+      "consulting": "ייעוץ",
+      "projectManagement": "ניהול פרויקטים",
+      "strategy": "אסטרטגיה",
+      "financialPlanning": "תכנון פיננסי",
+      "support": "תמיכה",
+      "training": "הכשרה"
+    },
+    "duration": {
+      "30": "30 דקות",
+      "45": "45 דקות",
+      "60": "60 דקות",
+      "90": "90 דקות",
+      "120": "120 דקות"
+    },
+    "validation": {
+      "requiredFields": "אנא מלא את כל השדות הנדרשים"
+    },
+    "errors": {
+      "createFailed": "נכשל ביצירת הפגישה",
+      "updateFailed": "נכשל בעדכון הפגישה",
+      "cancelFailed": "נכשל בביטול הפגישה",
+      "deleteFailed": "נכשל במחיקת הפגישה"
+    },
+    "confirmCancel": "האם אתה בטוח שברצונך לבטל פגישה זו?",
+    "confirmDelete": "האם אתה בטוח שברצונך למחוק לצמיתות פגישה זו?"
+  },
+  "login": {
+    "title": "Clienta",
+    "systemLabel": "פלטפורמת עסקיםית לניהול מבוסס לקוחות",
+    "productTitle": "פלטפורמת ניהול לעסקים מבוססי לקוחות",
+    "productDescription": "ניהול מרכזי של פעולות, אוטומציה של תהליכים עסקיים ובינה עסקית.",
+    "capabilities": {
+      "clientData": "רישומי לקוחות והיסטוריה",
+      "workflows": "תזמון פגישות",
+      "analytics": "מעקב פיננסי",
+      "security": "ניהול נתונים מאובטח"
+    },
+    "accessTitle": "גישה למערכת",
+    "accessDescription": "הזן את פרטי ההתחברות שלך כדי להמשיך",
+    "subtitle": "מערכת הפעלה דיגיטלית לעסק שלך",
+    "headline": "התחבר לחשבונך",
+    "description": "נהל את הלקוחות, הפגישות והחשבוניות שלך במקום אחד",
+    "features": {
+      "unifiedManagement": "ניהול לקוחות מאוחד",
+      "automatedWorkflows": "תהליכים אוטומטיים",
+      "realTimeInsights": "תובנות בזמן אמת",
+      "multiLanguage": "תמיכה בריבוי שפות"
+    },
+    "copyright": "© 2024 Clienta. Enterprise Business Platform.",
+    "email": "אימייל",
+    "password": "סיסמה",
+    "rememberMe": "זכור אותי",
+    "forgotPassword": "שכחת סיסמה?",
+    "signIn": "התחבר",
+    "signingIn": "מתחבר...",
+    "success": "התחברות הצליחה! מועבר...",
+    "invalidCredentials": "אימייל או סיסמה לא נכונים. אנא נסה שוב.",
+    "emailRequired": "אנא הזן אימייל",
+    "emailInvalid": "אנא הזן כתובת אימייל חוקית",
+    "passwordRequired": "אנא הזן סיסמה",
+    "passwordMin": "הסיסמה חייבת להיות לפחות 6 תווים",
+    "demoTitle": "פרטי הדגמה",
+    "demoAdmin": "מנהל",
+    "demoStaff": "צוות",
+    "demoClient": "לקוח",
+    "hidePassword": "הסתר סיסמה",
+    "showPassword": "הצג סיסמה",
+    "noAccount": "אין לך חשבון?",
+    "contactUs": "צור קשר",
+    "noAccessYet": "עדיין אין לך גישה?",
+    "contactBusiness": "צור קשר עם העסק שלך כדי לקבל פרטי התחברות"
+  },
+  "unauthorized": {
+    "title": "גישה נדחתה",
+    "subtitle": "אין לך הרשאה לצפות בדף זה.",
+    "yourRole": "התפקיד שלך",
+    "insufficientPermissions": "לתפקיד שלך אין גישה למשאב זה.",
+    "contactAdmin": "צור קשר עם המנהל שלך אם אתה סבור שזו טעות.",
+    "backToDashboard": "חזרה ללוח הבקרה"
+  },
+  "client": {
+    "appointments": {
+      "title": "הפגישות שלי",
+      "subtitle": "צפה בפגישות המתוזמנות והקודמות שלך",
+      "filters": {
+        "all": "כל הפגישות",
+        "upcoming": "מתקרבות",
+        "past": "קודמות"
+      },
+      "loading": "טוען את הפגישות שלך...",
+      "emptyTitle": "לא נמצאו פגישות",
+      "emptySubtitle": "אין לך פגישות כרגע.",
+      "withStaff": "עם {{staff}}",
+      "detailsTitle": "פרטי הפגישה",
+      "details": {
+        "date": "תאריך",
+        "time": "שעה",
+        "staff": "חבר צוות",
+        "service": "סוג שירות",
+        "notes": "הערות"
+      },
+      "helpTitle": "צריך לבצע שינויים?",
+      "helpText": "אנא צור קשר עם הצוות שלנו כדי לשנות או לבטל פגישה זו."
+    },
+    "invoices": {
+      "title": "חשבוניות שלי",
+      "subtitle": "צפה ושלם את החשבוניות שלך",
+      "list": "כל החשבוניות",
+      "noInvoices": "לא נמצאו חשבוניות",
+      "summary": {
+        "total": "סכום כולל",
+        "paid": "שולם",
+        "pending": "ממתין"
+      },
+      "issued": "נפיקה",
+      "due": "לתשלום",
+      "items": "פריטים",
+      "downloadPDF": "הורד PDF"
+    },
+    "files": {
+      "title": "הקבצים שלי",
+      "subtitle": "גש למסמכים המאובטחים שלך",
+      "placeholder": "תצוגת קבצי לקוח - ראה רק את הקבצים שלך"
+    },
+    "profile": {
+      "title": "הפרופיל שלי",
+      "subtitle": "נהל את הגדרות החשבון שלך",
+      "placeholder": "תצוגת פרופיל לקוח - נהל את המידע האישי שלך"
+    },
+    "dashboard": {
+      "title": "ברוך שובך, {{name}}",
+      "subtitle": "לוח הבקרה האישי שלך",
+      "stats": {
+        "nextAppointment": "פגישה הבאה",
+        "pendingInvoices": "חשבוניות ממתינות",
+        "filesAvailable": "קבצים זמינים",
+        "lastVisit": "ביקור אחרון",
+        "lastVisitValue": "לפני 3 ימים"
+      }
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "ברוך שובך, {{name}}",
+      "subtitle": "הנה מה שקורה בעסק שלך היום",
+      "stats": {
+        "totalClients": "סה\"כ לקוחות",
+        "appointmentsToday": "פגישות היום",
+        "monthlyRevenue": "הכנסה חודשית",
+        "unpaidInvoices": "חשבוניות לא משולמות",
+        "vsLastMonth": "לעומת החודש הקודם",
+        "thisWeek": "{{count}} השבוע",
+        "outstanding": "{{amount}} לתשלום"
+      },
+      "activity": {
+        "title": "פעילות אחרונה",
+        "subtitle": "עדכונים אחרונים מהעסק שלך"
+      }
+    },
+    "clients": {
+      "title": "כל הלקוחות",
+      "subtitle": "נהל את כל חשבונות הלקוחות והמידע שלהם",
+      "noClients": "לא נמצאו לקוחות",
+      "noSearchResults": "לא נמצאו לקוחות התואמים את החיפוש שלך",
+      "tryDifferentSearch": "נסה להתאים את מונחי החיפוש שלך",
+      "add": "הוסף לקוח",
+      "addButton": "הוסף לקוח",
+      "addNew": "הוסף לקוח חדש",
+      "directoryTitle": "ספריית לקוחות",
+      "searchPlaceholder": "חפש לפי שם או דוא\"ל...",
+      "filter": "סנן",
+      "view": "צפה",
+      "edit": "ערוך",
+      "delete": "מחק",
+      "deleteButton": "מחק",
+      "link": "קישור",
+      "sendLink": "שלח קישור התחברות",
+      "activate": "הפעל",
+      "activateButton": "הפעל",
+      "deactivate": "השבת",
+      "blockButton": "חסום",
+      "noPermission": "אין לך הרשאה לפעולה זו",
+      "confirmDelete": "האם אתה בטוח שברצונך למחוק את הלקוח הזה? פעולה זו אינה ניתנת לביטול.",
+      "confirmActivate": "האם אתה בטוח שברצונך להפעיל את הלקוח הזה?",
+      "confirmDeactivate": "האם אתה בטוח שברצונך להשבית את הלקוח הזה?",
+      "deleteError": "נכשל במחיקת הלקוח. אנא נסה שוב.",
+      "statusUpdateError": "נכשל בעדכון סטטוס הלקוח. אנא נסה שוב.",
+      "loginLinkSent": "קישור התחברות נשלח ל-{{email}}",
+      "loginLinkError": "נכשל בשליחת קישור ההתחברות. אנא נסה שוב.",
+      "statusActive": "פעיל",
+      "statusInactive": "לא פעיל",
+      "appointments": "פגישות",
+      "joinedDate": "הצטרף {{date}}",
+      "table": {
+        "client": "לקוח",
+        "contact": "איש קשר",
+        "appointments": "פגישות",
+        "lastVisit": "ביקור אחרון"
+      },
+      "id": "ID",
+      "status": {
+        "active": "פעיל",
+        "inactive": "לא פעיל"
+      },
+      "viewProfile": "צפה בפרופיל",
+      "editClient": "ערוך פרטי לקוח",
+      "memberSince": "חבר מאז {{date}}",
+      "confirmDeleteNote": "האם אתה בטוח שברצונך למחוק את ההערה הזו?",
+      "sections": {
+        "appointments": "פגישות",
+        "invoices": "חשבוניות",
+        "files": "קבצים",
+        "notes": "הערות"
+      },
+      "withStaff": "עם {{staff}}",
+      "invoiceStatus": {
+        "paid": "שולם",
+        "pending": "ממתין",
+        "overdue": "מאוחר"
+      },
+      "download": "הורד",
+      "notes": {
+        "placeholder": "הוסף הערה על הלקוח הזה...",
+        "add": "הוסף הערה",
+        "delete": "מחק הערה"
+      },
+      "form": {
+        "name": "שם מלא",
+        "namePlaceholder": "הזן את השם המלא של הלקוח",
+        "email": "כתובת דוא\"ל",
+        "emailPlaceholder": "client@example.com",
+        "phone": "מספר טלפון",
+        "phonePlaceholder": "+1 (555) 000-0000",
+        "dateOfBirth": "תאריך לידה",
+        "address": "כתובת",
+        "addressPlaceholder": "הזן את כתובת הלקוח",
+        "submit": "הוסף לקוח",
+        "update": "עדכן לקוח"
+        ,"internalNote": "הערה פנימית",
+        "internalNotePlaceholder": "הערות או תובנות על הלקוח הזה (לא יראו ללקוח)"
+      },
+      "createSuccess": "הלקוח נוצר בהצלחה",
+      "createError": "נכשל ביצירת הלקוח. אנא נסה שוב."
+    },
+    "clientProfile": {
+      "fullName": "שם מלא",
+      "email": "דוא\"ל",
+      "phone": "טלפון",
+      "address": "כתובת",
+      "createdAt": "נוצר ב",
+      "status": "סטטוס",
+      "active": "פעיל",
+      "inactive": "לא פעיל",
+      "title": "פרופיל לקוח",
+      "subtitle": "תצוגה מקיפה של אינטראקציות והיסטוריית הלקוח",
+      "notFound": "פרופיל הלקוח לא נמצא",
+      "memberSince": "חבר מאז",
+      "lastVisit": "ביקור אחרון",
+      "totalAppointments": "סך כל הפגישות",
+      "totalInvoiced": "סך כל החשבוניות",
+      "files": "קבצים",
+      "notes": "הערות",
+      "completed": "הושלם",
+      "paid": "שולם",
+      "appointmentsTitle": "פגישות",
+      "createAppointment": "צור פגישה",
+      "sendEmail": "שלח דוא\"ל",
+      "sendEmailTo": "שלח דוא\"ל ל-{{name}}",
+      "emailTo": "אל",
+      "emailSubject": "נושא",
+      "emailSubjectPlaceholder": "הזן את נושא הדוא\"ל",
+      "emailMessage": "הודעה",
+      "emailMessagePlaceholder": "הזן את ההודעה שלך...",
+      "sendEmailButton": "שלח דוא\"ל",
+      "emailValidationError": "אנא מלא את כל השדות הנדרשים",
+      "emailSentSuccess": "דוא\"ל נשלח בהצלחה ל-{{email}}",
+      "emailSentError": "נכשל בשליחת הדוא\"ל. אנא נסה שוב.",
+      "invoicesTitle": "חשבוניות",
+      "filesTitle": "קבצים",
+      "notesTitle": "הערות פנימיות",
+      "noAppointments": "לא נקבעו פגישות עדיין",
+      "noInvoices": "לא נוצרו חשבוניות עדיין",
+      "noFiles": "לא הועלו קבצים עדיין",
+      "noNotes": "לא נוספו הערות עדיין",
+      "date": "תאריך",
+      "service": "שירות",
+      "staff": "צוות",
+      "invoiceNumber": "חשבונית #",
+      "amount": "סכום",
+      "download": "הורד"
+    },
+    "settings": {
+      "title": "הגדרות עסקיות",
+      "description": "נהל את פרטי העסק והמיתוג שלך",
+      "businessDetails": "פרטי העסק",
+      "branding": "מיתוג",
+      "businessName": "שם העסק",
+      "businessNamePlaceholder": "הזן את שם העסק שלך",
+      "phone": "מספר טלפון",
+      "phonePlaceholder": "+1 (555) 000-0000",
+      "email": "כתובת דוא\"ל",
+      "emailPlaceholder": "info@business.com",
+      "address": "כתובת",
+      "addressPlaceholder": "הזן את כתובת העסק שלך",
+      "logo": "לוגו העסק",
+      "currentLogo": "לוגו נוכחי",
+      "uploadLogo": "לחץ כדי להעלות לוגו",
+      "logoRequirements": "PNG, JPG או GIF (מקסימום 2MB)",
+      "logoHelper": "הלוגו יוצג בדף הכניסה ובמערכת כולה",
+      "invalidImageType": "אנא העלה קובץ תמונה תקין",
+      "imageTooLarge": "גודל התמונה חייב להיות פחות מ-2MB",
+      "saveSuccess": "הגדרות העסק נשמרו בהצלחה",
+      "saveError": "נכשל בשמירת ההגדרות. אנא נסה שוב.",
+      "changesSaved": "השינויים נשמרים אוטומטית",
+      "note": "הערה",
+      "noteText": "הגדרות אלו יוצגו בכל המערכת כולל דף הכניסה, כותרות ומידע ליצירת קשר."
+    },
+    "invoices": {
+      "title": "כל החשבוניות",
+      "description": "נהל חשבוניות ותשלומים עבור כל הלקוחות",
+      "create": "צור חשבונית",
+      "createNew": "צור חשבונית חדשה",
+      "list": "רשימת חשבוניות",
+      "search": "חפש לפי מספר חשבונית או לקוח...",
+      "filter": "סנן",
+      "download": "PDF",
+      "table": {
+        "number": "חשבונית #",
+        "client": "לקוח",
+        "amount": "סכום",
+        "date": "תאריך",
+        "dueDate": "תאריך יעד",
+        "status": "סטטוס"
+      },
+      "status": {
+        "paid": "שולם",
+        "pending": "ממתין",
+        "overdue": "מאוחר"
+      },
+      "form": {
+        "client": "לקוח",
+        "selectClient": "בחר לקוח",
+        "date": "תאריך חשבונית",
+        "dueDate": "תאריך יעד",
+        "lineItems": "פרטי שורה",
+        "addItem": "הוסף פריט",
+        "description": "תיאור",
+        "quantity": "כמות",
+        "price": "מחיר",
+        "total": "סך הכל",
+        "notes": "הערות",
+        "notesPlaceholder": "הוסף הערות או תנאי תשלום...",
+        "submit": "צור חשבונית"
+      }
+    },
+    "reports": {
+      "title": "דוחות וניתוחים",
+      "description": "תובנות עסקיות ומדדי ביצועים",
+      "revenue": {
+        "title": "דוח הכנסות",
+        "subtitle": "הכנסות חודשיות ומגמות צמיחה"
+      },
+      "performance": {
+        "title": "מדדי ביצועים",
+        "subtitle": "ביצועי צוות ושירות"
+      },
+      "financial": {
+        "title": "סיכום פיננסי",
+        "subtitle": "ניתוח הכנסות, הוצאות ורווח"
+      },
+      "clients": {
+        "title": "ניתוח לקוחות",
+        "subtitle": "שימור ומעורבות לקוחות"
+      }
+    },
+    "staff": {
+      "title": "ניהול צוות",
+      "subtitle": "נהל חברי צוות, הרשאותיהם וגישתם",
+      "addNew": "הוסף חבר צוות",
+      "permissions": "הרשאות",
+      "searchPlaceholder": "חפש לפי שם, דוא\"ל או תפקיד...",
+      "noResults": "לא נמצאו חברי צוות",
+      "table": {
+        "name": "שם",
+        "email": "דוא\"ל",
+        "role": "תפקיד",
+        "status": "סטטוס",
+        "lastLogin": "כניסה אחרונה",
+        "actions": "פעולות"
+      },
+      "status": {
+        "active": "פעיל",
+        "blocked": "חסום"
+      },
+      "actions": {
+        "edit": "ערוך",
+        "block": "חסום",
+        "unblock": "בטל חסימה",
+        "delete": "מחק",
+        "sendLink": "שלח קישור כניסה"
+      },
+      "createTitle": "הוסף חבר צוות",
+      "editTitle": "ערוך חבר צוות",
+      "create": "צור חבר צוות",
+      "update": "עדכן חבר צוות",
+      "form": {
+        "basicInfo": "מידע בסיסי",
+        "name": "שם מלא",
+        "namePlaceholder": "הזן את השם המלא של חבר הצוות",
+        "email": "כתובת דוא\"ל",
+        "emailPlaceholder": "staff@business.com",
+        "role": "תפקיד",
+        "rolePlaceholder": "למשל, מזכיר, מנהל, יועץ",
+        "roleHint": "תיאור תפקיד חופשי (אופציונלי)",
+        "permissions": "הרשאות",
+        "permissionsHint": "בחר מה חבר הצוות הזה יכול לעשות",
+        "menuVisibility": "נראות בתפריט",
+        "menuVisibilityHint": "בחר אילו פריטי תפריט נראים"
+      },
+      "permissions": {
+        "manage_clients": {
+          "title": "נהל לקוחות",
+          "description": "צפה, הוסף, ערוך ומחק לקוחות"
+        },
+        "manage_appointments": {
+          "title": "נהל פגישות",
+          "description": "צור וערוך פגישות עבור לקוחות"
+        },
+        "manage_notes": {
+          "title": "נהל הערות",
+          "description": "הוסף, ערוך ומחק הערות פנימיות על לקוחות"
+        },
+        "manage_files": {
+          "title": "נהל קבצים",
+          "description": "העלה ונהל קבצים של לקוחות"
+        }
+      },
+      "menuItems": {
+        "clients": "צפה בלקוחות",
+        "appointments": "צפה בפגישות"
+      },
+      "validation": {
+        "requiredFields": "אנא מלא את כל השדות הנדרשים"
+      },
+      "errors": {
+        "saveFailed": "שגיאה בשמירת חבר הצוות",
+        "toggleFailed": "שגיאה בשינוי הסטטוס",
+        "deleteFailed": "שגיאה במחיקת חבר הצוות",
+        "sendLinkFailed": "שגיאה בשליחת קישור הכניסה"
+      },
+      "confirmDelete": "האם אתה בטוח שברצונך למחוק את חבר הצוות הזה?",
+      "loginLinkSent": "קישור כניסה נשלח ל-{{email}}"
+    }
+  }
+}

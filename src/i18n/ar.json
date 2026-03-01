@@ -1,0 +1,105 @@
+{
+  "app": {
+    "name": "Clienta",
+    "clientHub": "مركز العملاء",
+    "operations": "العمليات"
+  },
+
+  "common": {
+    "home": "الرئيسية",
+    "back": "رجوع",
+    "search": "بحث",
+    "actions": "إجراءات",
+    "status": "الحالة",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ...",
+    "sending": "جارٍ الإرسال...",
+    "loading": "جارٍ التحميل...",
+    "noResults": "لا توجد نتائج",
+    "noData": "لا توجد بيانات",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "address": "العنوان",
+    "signOut": "تسجيل الخروج",
+    "notifications": "الإشعارات",
+    "expand": "توسيع",
+    "collapse": "تصغير",
+    "dashboard": "لوحة التحكم",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "confirmDelete": "هل أنت متأكد أنك تريد الحذف؟"
+  },
+
+  "nav": {
+    "mainMenu": "القائمة الرئيسية",
+    "allClients": "كل العملاء",
+    "allAppointments": "كل المواعيد",
+    "allInvoices": "كل الفواتير",
+    "reports": "التقارير",
+    "staff": "إدارة الموظفين",
+    "appointments": "المواعيد",
+    "invoices": "الفواتير",
+    "files": "الملفات",
+    "profile": "الملف الشخصي"
+  },
+
+  "layout": {
+    "signedInAs": "مسجل الدخول باسم",
+    "welcomeBack": "مرحبًا بعودتك",
+    "manageOperations": "إدارة العمليات ونشاط العملاء",
+    "manageClientHub": "إدارة مواعيدك وملفك الشخصي",
+    "userMenu": "قائمة المستخدم"
+  },
+
+  "language": {
+    "label": "اللغة",
+    "en": "الإنجليزية",
+    "he": "العبرية",
+    "ar": "العربية"
+  },
+
+  "admin": {
+    "clientProfile": {
+      "title": "ملف العميل",
+      "notFound": "لم يتم العثور على ملف العميل",
+      "fullName": "الاسم الكامل",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "address": "العنوان",
+      "createdAt": "تاريخ الإنشاء",
+      "lastVisit": "آخر زيارة",
+      "notesTitle": "ملاحظات داخلية",
+      "noNotes": "لا توجد ملاحظات بعد"
+    },
+   "reports": {
+      "title": "التقارير والتحليلات",
+      "description": "رؤى الأعمال ومؤشرات الأداء",
+      "revenue": {
+        "title": "تقرير الإيرادات",
+        "subtitle": "اتجاهات الإيرادات والنمو الشهرية"
+      },
+       "performance": {
+        "title": "تقرير الأداء",
+        "subtitle": "أداء الفريق والخدمة"
+      },
+     "financial": {
+        "title": "التقرير المالي",
+        "subtitle": "تحليل الإيرادات والمصروفات والأرباح"
+      },
+      "clients": {
+        "title": "تحليل العملاء",
+        "subtitle": "الاحتفاظ بالعملاء والمشاركة"
+      }
+    },
+    "clients": {
+      "statusActive": "نشط",
+      "statusInactive": "غير نشط",
+      "notes": {
+        "placeholder": "أضف ملاحظة عن هذا العميل...",
+        "add": "إضافة ملاحظة"
+      }
+    }
+  }
+}

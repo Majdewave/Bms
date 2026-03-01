@@ -1,0 +1,607 @@
+{
+  "app": {
+    "name": "Clienta",
+    "tagline": "Client Management Made Simple",
+    "clientHub": "Client Hub",
+    "operations": "Operations"
+  },
+  "common": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "home": "Home",
+    "back": "Back",
+    "search": "Search",
+    "actions": "Actions",
+    "status": "Status",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "saving": "Saving...",
+    "sending": "Sending...",
+    "loading": "Loading...",
+    "noResults": "No results found",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "signOut": "Sign Out",
+    "notifications": "Notifications",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "dashboard": "Dashboard"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications",
+    "markAllRead": "Mark all as read",
+    "viewAll": "View all notifications",
+    "delete": "Delete notification",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hours ago",
+    "daysAgo": "{{count}} days ago"
+  },
+  "staff": {
+    "banner": {
+      "title": "Staff Access View",
+      "description": "You are logged in as a staff member. Some features are available to administrators only."
+    },
+    "clients": {
+      "title": "Business Clients",
+      "subtitle": "View and manage all business clients",
+      "placeholder": "Access all clients in your business",
+      "viewTitle": "Client Management",
+      "viewDescription": "Manage all clients in your business. For any administrative questions, contact your administrator.",
+      "emptyState": {
+        "title": "No clients yet",
+        "description": "Start by creating your first client. Ask your administrator if you need help."
+      }
+    },
+    "appointments": {
+      "viewTitle": "Appointments Management",
+      "viewDescription": "Manage all appointments for your business clients.",
+      "emptyState": {
+        "title": "No appointments scheduled yet",
+        "description": "Start by creating appointments for your clients."
+      }
+    },
+    "dashboard": {
+      "title": "Welcome, {{name}}",
+      "subtitle": "Your daily schedule and tasks",
+      "stats": {
+        "todayAppointments": "Today's Appointments",
+        "pendingTasks": "Pending Tasks",
+        "completedToday": "Completed Today",
+        "assignedClients": "Total Clients"
+      },
+      "cardTitle": "Staff Dashboard",
+      "cardText": "You have full access to all business clients and appointments."
+    }
+  },
+  "nav": {
+    "mainMenu": "Main Menu",
+    "allClients": "All Clients",
+    "allAppointments": "All Appointments",
+    "allInvoices": "All Invoices",
+    "reports": "Reports",
+    "staff": "Staff Management",
+    "settings": "Business Settings",
+    "appointments": "Appointments",
+    "invoices": "Invoices",
+    "files": "Files",
+    "profile": "Profile"
+  },
+  "layout": {
+    "signedInAs": "Signed in as",
+    "welcomeBack": "Welcome back",
+    "manageOperations": "Manage operations and client activity",
+    "manageClientHub": "Manage your appointments and profile",
+    "userMenu": "User menu"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "he": "Hebrew",
+    "ar": "Arabic"
+  },
+  "appointments": {
+    "title": "Appointments",
+    "subtitle": "Manage all client appointments",
+    "create": "Create Appointment",
+    "createTitle": "Create Appointment",
+    "editTitle": "Edit Appointment",
+    "update": "Update Appointment",
+    "searchPlaceholder": "Search appointments...",
+    "filters": {
+      "all": "All Status"
+    },
+    "loading": "Loading appointments...",
+    "empty": "No appointments found",
+    "noSearchResults": "No appointments match your filters",
+    "tryDifferentFilters": "Try adjusting your search or filter criteria",
+    "table": {
+      "client": "Client",
+      "appointment": "Appointment",
+      "datetime": "Date & Time",
+      "staff": "Staff"
+    },
+    "actions": {
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "status": {
+      "Scheduled": "Scheduled",
+      "Completed": "Completed",
+      "Cancelled": "Cancelled",
+      "NoShow": "No Show"
+    },
+    "form": {
+      "client": "Client",
+      "selectClient": "Select a client",
+      "title": "Title",
+      "titlePlaceholder": "e.g., Quarterly Review",
+      "service": "Service",
+      "selectService": "Select a service",
+      "date": "Date",
+      "time": "Time",
+      "staff": "Staff Member",
+      "staffPlaceholder": "e.g., John Smith",
+      "duration": "Duration",
+      "description": "Description",
+      "descriptionPlaceholder": "Add any additional notes..."
+    },
+    "services": {
+      "consulting": "Consulting",
+      "projectManagement": "Project Management",
+      "strategy": "Strategy",
+      "financialPlanning": "Financial Planning",
+      "support": "Support",
+      "training": "Training"
+    },
+    "duration": {
+      "30": "30 mins",
+      "45": "45 mins",
+      "60": "60 mins",
+      "90": "90 mins",
+      "120": "120 mins"
+    },
+    "validation": {
+      "requiredFields": "Please fill in all required fields"
+    },
+    "errors": {
+      "createFailed": "Failed to create appointment",
+      "updateFailed": "Failed to update appointment",
+      "cancelFailed": "Failed to cancel appointment",
+      "deleteFailed": "Failed to delete appointment"
+    },
+    "confirmCancel": "Are you sure you want to cancel this appointment?",
+    "confirmDelete": "Are you sure you want to permanently delete this appointment?"
+  },
+  "login": {
+    "title": "Clienta",
+    "systemLabel": "Business Platform",
+    "productTitle": "Management platform for client-based businesses",
+    "productDescription": "Centralized operations, workflow automation, and business intelligence.",
+    "capabilities": {
+      "clientData": "Client records & history",
+      "workflows": "Appointment scheduling",
+      "analytics": "Financial tracking",
+      "security": "Secure data management"
+    },
+    "accessTitle": "System Access",
+    "accessDescription": "Enter your credentials to continue",
+    "subtitle": "A digital operating system for your business",
+    "headline": "Sign in to your account",
+    "description": "Manage your clients, appointments, and invoices all in one place",
+    "features": {
+      "unifiedManagement": "Unified client management",
+      "automatedWorkflows": "Automated workflows",
+      "realTimeInsights": "Real-time insights",
+      "multiLanguage": "Multi-language support"
+    },
+    "copyright": "© 2024 Clienta. Enterprise Business Platform.",
+    "email": "Email",
+    "password": "Password",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "success": "Login successful! Redirecting...",
+    "invalidCredentials": "Invalid email or password. Please try again.",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "passwordRequired": "Password is required",
+    "passwordMin": "Password must be at least 6 characters",
+    "demoTitle": "Demo credentials",
+    "demoAdmin": "Admin",
+    "demoStaff": "Staff",
+    "demoClient": "Client",
+    "hidePassword": "Hide password",
+    "showPassword": "Show password",
+    "noAccount": "Don't have an account?",
+    "contactUs": "Contact us",
+    "noAccessYet": "Don't have access yet?",
+    "contactBusiness": "Contact your business to get login credentials"
+  },
+  "unauthorized": {
+    "title": "Access Denied",
+    "subtitle": "You don't have permission to view this page.",
+    "yourRole": "Your role",
+    "insufficientPermissions": "Your role does not have access to this resource.",
+    "contactAdmin": "Contact your administrator if you believe this is an error.",
+    "backToDashboard": "Back to dashboard"
+  },
+  "client": {
+    "appointments": {
+      "title": "My Appointments",
+      "subtitle": "View your scheduled and past appointments",
+      "filters": {
+        "all": "All Appointments",
+        "upcoming": "Upcoming",
+        "past": "Past"
+      },
+      "loading": "Loading your appointments...",
+      "emptyTitle": "No appointments found",
+      "emptySubtitle": "You don't have any appointments yet.",
+      "withStaff": "with {{staff}}",
+      "detailsTitle": "Appointment Details",
+      "details": {
+        "date": "Date",
+        "time": "Time",
+        "staff": "Staff Member",
+        "service": "Service Type",
+        "notes": "Notes"
+      },
+      "helpTitle": "Need to make changes?",
+      "helpText": "Please contact our team to reschedule or cancel this appointment."
+    },
+    "invoices": {
+      "title": "My Invoices",
+      "subtitle": "View and pay your invoices",
+      "list": "All Invoices",
+      "noInvoices": "No invoices found",
+      "summary": {
+        "total": "Total Amount",
+        "paid": "Paid",
+        "pending": "Pending"
+      },
+      "issued": "Issued",
+      "due": "Due",
+      "items": "Items",
+      "downloadPDF": "Download PDF"
+    },
+    "files": {
+      "title": "My Files",
+      "subtitle": "Access your secure documents",
+      "placeholder": "Client files view - only see your own files"
+    },
+    "profile": {
+      "title": "My Profile",
+      "subtitle": "Manage your account settings",
+      "placeholder": "Client profile view - manage your personal information"
+    },
+    "dashboard": {
+      "title": "Welcome back, {{name}}",
+      "subtitle": "Your personal dashboard",
+      "stats": {
+        "nextAppointment": "Next Appointment",
+        "pendingInvoices": "Pending Invoices",
+        "filesAvailable": "Files Available",
+        "lastVisit": "Last Visit",
+        "lastVisitValue": "3 days ago"
+      }
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Welcome back, {{name}}",
+      "subtitle": "Here's what's happening with your business today",
+      "stats": {
+        "totalClients": "Total Clients",
+        "appointmentsToday": "Appointments Today",
+        "monthlyRevenue": "Monthly Revenue",
+        "unpaidInvoices": "Unpaid Invoices",
+        "vsLastMonth": "vs last month",
+        "thisWeek": "{{count}} this week",
+        "outstanding": "{{amount}} outstanding"
+      },
+      "activity": {
+        "title": "Recent Activity",
+        "subtitle": "Latest updates from your business"
+      }
+    },
+    "clients": {
+      "title": "All Clients",
+      "subtitle": "Manage all client accounts and information",
+      "noClients": "No clients found",
+      "noSearchResults": "No clients match your search",
+      "tryDifferentSearch": "Try adjusting your search terms",
+      "add": "Add Client",
+      "addButton": "Add Client",
+      "addNew": "Add New Client",
+      "directoryTitle": "Client Directory",
+      "searchPlaceholder": "Search by name or email...",
+      "filter": "Filter",
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteButton": "Delete",
+      "link": "Link",
+      "sendLink": "Send login link",
+      "activate": "Activate",
+      "activateButton": "Activate",
+      "deactivate": "Deactivate",
+      "blockButton": "Block",
+      "noPermission": "אין לך הרשאה לפעולה זו",
+      "confirmDelete": "Are you sure you want to delete this client? This action cannot be undone.",
+      "confirmActivate": "Are you sure you want to activate this client?",
+      "confirmDeactivate": "Are you sure you want to deactivate this client?",
+      "deleteError": "Failed to delete client. Please try again.",
+      "statusUpdateError": "Failed to update client status. Please try again.",
+      "loginLinkSent": "Login link sent to {{email}}",
+      "loginLinkError": "Failed to send login link. Please try again.",
+      "statusActive": "Active",
+      "statusInactive": "Inactive",
+      "appointments": "Appointments",
+      "joinedDate": "Joined {{date}}",
+      "table": {
+        "client": "Client",
+        "contact": "Contact",
+        "appointments": "Appointments",
+        "lastVisit": "Last Visit"
+      },
+      "id": "ID",
+      "status": {
+        "active": "active",
+        "inactive": "inactive"
+      },
+      "viewProfile": "View Profile",
+      "editClient": "Edit Client Details",
+      "memberSince": "Member since {{date}}",
+      "confirmDeleteNote": "Are you sure you want to delete this note?",
+      "sections": {
+        "appointments": "Appointments",
+        "invoices": "Invoices",
+        "files": "Files",
+        "notes": "Notes"
+      },
+      "withStaff": "with {{staff}}",
+      "invoiceStatus": {
+        "paid": "paid",
+        "pending": "pending",
+        "overdue": "overdue"
+      },
+      "download": "Download",
+      "notes": {
+        "placeholder": "Add a note about this client...",
+        "add": "Add Note",
+        "delete": "Delete Note"
+      },
+      "form": {
+        "name": "Full Name",
+        "namePlaceholder": "Enter client's full name",
+        "email": "Email Address",
+        "emailPlaceholder": "client@example.com",
+        "phone": "Phone Number",
+        "phonePlaceholder": "+1 (555) 000-0000",
+        "dateOfBirth": "Date of Birth",
+        "address": "Address",
+        "addressPlaceholder": "Enter client's address",
+        "submit": "Add Client",
+        "update": "Update Client"
+        ,"internalNote": "Internal Note"
+      },
+      "createSuccess": "Client created successfully",
+      "createError": "Failed to create client. Please try again."
+    },
+    "clientProfile": {
+      "fullName": "Full Name",
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address",
+      "createdAt": "Created At",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "title": "Client Profile",
+      "subtitle": "360° view of client interactions and history",
+      "notFound": "Client profile not found",
+      "memberSince": "Member Since",
+      "lastVisit": "Last Visit",
+      "totalAppointments": "Total Appointments",
+      "totalInvoiced": "Total Invoiced",
+      "files": "Files",
+      "notes": "Notes",
+      "completed": "completed",
+      "paid": "Paid",
+      "appointmentsTitle": "Appointments",
+      "createAppointment": "Create Appointment",
+      "sendEmail": "Send Email",
+      "sendEmailTo": "Send Email to {{name}}",
+      "emailTo": "To",
+      "emailSubject": "Subject",
+      "emailSubjectPlaceholder": "Enter email subject",
+      "emailMessage": "Message",
+      "emailMessagePlaceholder": "Enter your message...",
+      "sendEmailButton": "Send Email",
+      "emailValidationError": "Please fill in all required fields",
+      "emailSentSuccess": "Email sent successfully to {{email}}",
+      "emailSentError": "Failed to send email. Please try again.",
+      "invoicesTitle": "Invoices",
+      "filesTitle": "Files",
+      "notesTitle": "Internal Notes",
+      "noAppointments": "No appointments scheduled yet",
+      "noInvoices": "No invoices created yet",
+      "noFiles": "No files uploaded yet",
+      "noNotes": "No notes added yet",
+      "date": "Date",
+      "service": "Service",
+      "staff": "Staff",
+      "invoiceNumber": "Invoice #",
+      "amount": "Amount",
+      "download": "Download"
+    },
+    "settings": {
+      "title": "Business Settings",
+      "description": "Manage your business information and branding",
+      "businessDetails": "Business Details",
+      "branding": "Branding",
+      "businessName": "Business Name",
+      "businessNamePlaceholder": "Enter your business name",
+      "phone": "Phone Number",
+      "phonePlaceholder": "+1 (555) 000-0000",
+      "email": "Email Address",
+      "emailPlaceholder": "info@business.com",
+      "address": "Address",
+      "addressPlaceholder": "Enter your business address",
+      "logo": "Business Logo",
+      "currentLogo": "Current Logo",
+      "uploadLogo": "Click to upload logo",
+      "logoRequirements": "PNG, JPG or GIF (max 2MB)",
+      "logoHelper": "The logo will be displayed on the login page and throughout the system",
+      "invalidImageType": "Please upload a valid image file",
+      "imageTooLarge": "Image size must be less than 2MB",
+      "saveSuccess": "Business settings saved successfully",
+      "saveError": "Failed to save settings. Please try again.",
+      "changesSaved": "Changes are saved automatically",
+      "note": "Note",
+      "noteText": "These settings will be displayed across the system including login page, headers, and contact information."
+    },
+    "invoices": {
+      "title": "All Invoices",
+      "description": "Manage invoices and payments for all clients",
+      "create": "Create Invoice",
+      "createNew": "Create New Invoice",
+      "list": "Invoice List",
+      "search": "Search by invoice number or client...",
+      "filter": "Filter",
+      "download": "PDF",
+      "table": {
+        "number": "Invoice #",
+        "client": "Client",
+        "amount": "Amount",
+        "date": "Date",
+        "dueDate": "Due Date",
+        "status": "Status"
+      },
+      "status": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "overdue": "Overdue"
+      },
+      "form": {
+        "client": "Client",
+        "selectClient": "Select a client",
+        "date": "Invoice Date",
+        "dueDate": "Due Date",
+        "lineItems": "Line Items",
+        "addItem": "Add Item",
+        "description": "Description",
+        "quantity": "Qty",
+        "price": "Price",
+        "total": "Total",
+        "notes": "Notes",
+        "notesPlaceholder": "Add any notes or payment terms...",
+        "submit": "Create Invoice"
+      }
+    },
+    "reports": {
+      "title": "Reports & Analytics",
+      "description": "Business insights and performance metrics",
+      "revenue": {
+        "title": "Revenue Report",
+        "subtitle": "Monthly revenue and growth trends"
+      },
+      "performance": {
+        "title": "Performance Metrics",
+        "subtitle": "Staff and service performance"
+      },
+      "financial": {
+        "title": "Financial Summary",
+        "subtitle": "Income, expenses, and profit analysis"
+      },
+      "clients": {
+        "title": "Client Analytics",
+        "subtitle": "Client retention and engagement"
+      }
+    },
+    "staff": {
+      "title": "Staff Management",
+      "subtitle": "Manage staff members, their permissions and access",
+      "addNew": "Add Staff Member",
+      "permissions": "permissions",
+      "searchPlaceholder": "Search by name, email or role...",
+      "noResults": "No staff members found",
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "status": "Status",
+        "lastLogin": "Last Login",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "blocked": "Blocked"
+      },
+      "actions": {
+        "edit": "Edit",
+        "block": "Block",
+        "unblock": "Unblock",
+        "delete": "Delete",
+        "sendLink": "Send Login Link"
+      },
+      "createTitle": "Add Staff Member",
+      "editTitle": "Edit Staff Member",
+      "create": "Create Staff",
+      "update": "Update Staff",
+      "form": {
+        "basicInfo": "Basic Information",
+        "name": "Full Name",
+        "namePlaceholder": "Enter staff member's full name",
+        "email": "Email Address",
+        "emailPlaceholder": "staff@business.com",
+        "role": "Role",
+        "rolePlaceholder": "e.g., Secretary, Manager, Consultant",
+        "roleHint": "Free text role description (optional)",
+        "permissions": "Permissions",
+        "permissionsHint": "Select what this staff member can do",
+        "menuVisibility": "Menu Visibility",
+        "menuVisibilityHint": "Select which menu items are visible"
+      },
+      "permissions": {
+        "manage_clients": {
+          "title": "Manage Clients",
+          "description": "View, add, edit and delete clients"
+        },
+        "manage_appointments": {
+          "title": "Manage Appointments",
+          "description": "Create and edit appointments"
+        },
+        "manage_notes": {
+          "title": "Manage Notes",
+          "description": "Add, edit and delete internal notes"
+        },
+        "manage_files": {
+          "title": "Manage Files",
+          "description": "Upload and manage client files"
+        }
+      },
+      "menuItems": {
+        "clients": "View Clients",
+        "appointments": "View Appointments"
+      },
+      "validation": {
+        "requiredFields": "Please fill in all required fields"
+      },
+      "errors": {
+        "saveFailed": "Failed to save staff member",
+        "toggleFailed": "Failed to change status",
+        "deleteFailed": "Failed to delete staff member",
+        "sendLinkFailed": "Failed to send login link"
+      },
+      "confirmDelete": "Are you sure you want to delete this staff member?",
+      "loginLinkSent": "Login link sent to {{email}}"
+    }
+  }
+}
