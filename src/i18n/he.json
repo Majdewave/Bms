@@ -531,7 +531,7 @@
       "title": "ניהול צוות",
       "subtitle": "נהל חברי צוות, הרשאותיהם וגישתם",
       "addNew": "הוסף חבר צוות",
-      "permissions": "הרשאות",
+       "permissionsLabel": "הרשאות",
       "searchPlaceholder": "חפש לפי שם, דוא\"ל או תפקיד...",
       "noResults": "לא נמצאו חברי צוות",
       "table": {
@@ -569,7 +569,9 @@
         "permissions": "הרשאות",
         "permissionsHint": "בחר מה חבר הצוות הזה יכול לעשות",
         "menuVisibility": "נראות בתפריט",
-        "menuVisibilityHint": "בחר אילו פריטי תפריט נראים"
+        "menuVisibilityHint": "בחר אילו פריטי תפריט נראים",
+         "password": "סיסמה",
+        "passwordPlaceholder": "הזן סיסמה לחבר הצוות הזה"
       },
       "permissions": {
         "manage_clients": {

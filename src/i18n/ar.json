@@ -1,13 +1,15 @@
 {
   "app": {
     "name": "Clienta",
-    "clientHub": "مركز العملاء",
-    "operations": "العمليات"
+    "tagline": "منصة إدارة الأعمال المعتمدة على العملاء",
+    "clientHub": "Client Hub",
+    "operations": "Operations"
   },
-
   "common": {
-    "home": "الرئيسية",
-    "back": "رجوع",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "home": "الصفحة الرئيسية",
+    "back": "عودة",
     "search": "بحث",
     "actions": "إجراءات",
     "status": "الحالة",
@@ -18,88 +20,593 @@
     "sending": "جارٍ الإرسال...",
     "loading": "جارٍ التحميل...",
     "noResults": "لا توجد نتائج",
-    "noData": "لا توجد بيانات",
     "email": "البريد الإلكتروني",
     "phone": "الهاتف",
     "address": "العنوان",
     "signOut": "تسجيل الخروج",
     "notifications": "الإشعارات",
     "expand": "توسيع",
-    "collapse": "تصغير",
+    "collapse": "طي",
     "dashboard": "لوحة التحكم",
-    "edit": "تعديل",
-    "delete": "حذف",
-    "confirmDelete": "هل أنت متأكد أنك تريد الحذف؟"
+    "clients": "العملاء"
   },
-
+  "notifications": {
+    "title": "الإشعارات",
+    "empty": "لا توجد إشعارات",
+    "markAllRead": "وضع علامة مقروءة على الكل",
+    "viewAll": "عرض جميع الإشعارات",
+    "delete": "حذف الإشعار",
+    "justNow": "الآن",
+    "minutesAgo": "منذ {{count}} دقيقة",
+    "hoursAgo": "منذ {{count}} ساعة",
+    "daysAgo": "منذ {{count}} يوم"
+  },
+  "staff": {
+    "banner": {
+      "title": "عرض وصول الفريق",
+      "description": "أنت متصل كعضو في الفريق. بعض الميزات متاحة فقط للمسؤولين."
+    },
+    "clients": {
+      "title": "العملاء",
+      "subtitle": "عرض وإدارة جميع العملاء",
+      "placeholder": "انتقل إلى جميع العملاء في عملك",
+      "viewTitle": "إدارة العملاء",
+      "viewDescription": "قم بإدارة جميع العملاء في عملك. للأسئلة الإدارية، اتصل بمديرك.",
+      "emptyState": {
+        "title": "لا توجد عملاء بعد",
+        "description": "ابدأ بإنشاء عميلك الأول. اسأل مديرك إذا كنت بحاجة إلى مساعدة."  
+      }
+    },
+    "appointments": {
+      "viewTitle": "إدارة المواعيد",
+      "viewDescription": "قم بإدارة جميع المواعيد لعملائك التجاريين.",
+      "emptyState": {
+        "title": "لا توجد مواعيد مجدولة بعد",
+        "description": "ابدأ بإنشاء مواعيد لعملائك."
+      }
+    },
+    "dashboard": {
+      "title": "مرحبًا, {{name}}",
+      "subtitle": "جدول المواعيد والمهام اليومية الخاصة بك",
+      "stats": {
+        "todayAppointments": "פגישות היום",
+        "pendingTasks": "المهام المعلقة",
+        "completedToday": "تم الإنجاز اليوم",
+        "assignedClients": "إجمالي العملاء"
+      },
+      "cardTitle": "لوحة تحكم الفريق",
+      "cardText": "لديك وصول كامل لجميع العملاء التجاريين والمواعيد."
+    }
+  },
   "nav": {
     "mainMenu": "القائمة الرئيسية",
-    "allClients": "كل العملاء",
-    "allAppointments": "كل المواعيد",
-    "allInvoices": "كل الفواتير",
+    "allClients": "جميع العملاء",
+    "allAppointments": "جميع المواعيد",
+    "allInvoices": "جميع الفواتير",
     "reports": "التقارير",
-    "staff": "إدارة الموظفين",
+    "staff": "إدارة الفريق",
+    "settings": "إعدادات الأعمال",
     "appointments": "المواعيد",
     "invoices": "الفواتير",
     "files": "الملفات",
     "profile": "الملف الشخصي"
   },
-
   "layout": {
-    "signedInAs": "مسجل الدخول باسم",
+    "signedInAs": "متصل كـ",
     "welcomeBack": "مرحبًا بعودتك",
     "manageOperations": "إدارة العمليات ونشاط العملاء",
-    "manageClientHub": "إدارة مواعيدك وملفك الشخصي",
+    "manageClientHub": "إدارة المواعيد والملف الشخصي الخاص بك",
     "userMenu": "قائمة المستخدم"
   },
-
   "language": {
     "label": "اللغة",
     "en": "الإنجليزية",
     "he": "العبرية",
     "ar": "العربية"
   },
-
+  "appointments": {
+    "title": "المواعيد",
+    "subtitle": "إدارة جميع مواعيد العملاء",
+    "create": "إنشاء موعد",
+    "createTitle": "إنشاء موعد",
+    "editTitle": "تعديل موعد",
+    "update": "تحديث موعد",
+    "searchPlaceholder": "بحث عن المواعيد...",
+    "filters": {
+      "all": "كل الحالات"
+    },
+    "loading": "جارٍ تحميل المواعيد...",
+    "empty": "لا توجد مواعيد",
+    "noSearchResults": "لا توجد مواعيد تتوافق مع الفلاتر الخاصة بك",
+    "tryDifferentFilters": "حاول تعديل معايير البحث أو الفلتر الخاصة بك",
+    "table": {
+      "client": "العميل",
+      "appointment": "الموعد",
+      "datetime": "التاريخ والوقت",
+      "staff": "الفريق"
+    },
+    "actions": {
+      "edit": "تعديل",
+      "cancel": "إلغاء",
+      "delete": "حذف"
+    },
+    "status": {
+      "Scheduled": "مجدول",
+      "Completed": "مكتمل",
+      "Cancelled": "ملغى",
+      "NoShow": "لم يحضر"
+    },
+    "form": {
+      "client": "العميل",
+      "selectClient": "اختر العميل",
+      "title": "العنوان",
+      "titlePlaceholder": "على سبيل المثال، مراجعة ربع سنوية",
+      "service": "الخدمة",
+      "selectService": "اختر الخدمة",
+      "date": "التاريخ",
+      "time": "الوقت",
+      "staff": "الفريق",
+      "staffPlaceholder": "على سبيل المثال، جون سميث",
+      "duration": "المدة",
+      "description": "الوصف",
+      "descriptionPlaceholder": "أضف ملاحظات إضافية..."
+    },
+    "services": {
+      "consulting": "استشارات",
+      "projectManagement": "إدارة المشاريع",
+      "strategy": "استراتيجية",
+      "financialPlanning": "التخطيط المالي",
+      "support": "دعم",
+      "training": "تدريب"
+    },
+    "duration": {
+      "15": "15 دقيقة",
+      "30": "30 دقيقة",
+      "45": "45 دقيقة",
+      "60": "60 دقيقة",
+      "90": "90 دقيقة",
+      "120": "120 دقيقة"
+    },
+    "validation": {
+      "requiredFields": "يرجى ملء جميع الحقول المطلوبة"
+    },
+    "errors": {
+      "createFailed": "فشل في إنشاء الموعد",
+      "updateFailed": "فشل في تحديث الموعد",
+      "cancelFailed": "فشل في إلغاء الموعد",
+      "deleteFailed": "فشل في حذف الموعد"
+    },
+    "confirmCancel": "هل أنت متأكد أنك تريد إلغاء هذا الموعد؟",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا الموعد نهائيًا؟"
+  },
+  "login": {
+    "title": "Clienta",
+    "systemLabel": "منصة أعمال لإدارة العملاء",
+    "productTitle": "عنوان المنتج",
+    "productDescription": "ניהול מרכזי של פעולות, אוטומציה של תהליכים עסקיים ובינה עסקית.",
+    "capabilities": {
+      "clientData": "רישומי לקוחות והיסטוריה",
+      "workflows": "תזמון פגישות",
+      "analytics": "מעקב פיננסי",
+      "security": "معلومات محمية وأمان"
+    },
+    "accessTitle": "גישה למערכת",
+    "accessDescription": "أدخل تفاصيل تسجيل الدخول الخاصة بك للمتابعة",
+    "subtitle": "نظام تشغيل رقمي لعملك",
+    "headline": "تسجيل الدخول إلى حسابك",
+    "description": "قم بإدارة عملائك ومواعيدك وفواتيرك في مكان واحد",
+    "features": {
+      "unifiedManagement": "إدارة موحدة للعملاء",
+      "automatedWorkflows": "عمليات تلقائية",
+      "realTimeInsights": "رؤى في الوقت الفعلي",
+      "multiLanguage": "دعم متعدد اللغات"
+    },
+    "copyright": "© 2024 Clienta. Enterprise Business Platform.",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "rememberMe": "تذكرني",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "signIn": "تسجيل الدخول",
+    "signingIn": "جارٍ تسجيل الدخول...",
+    "success": "تم تسجيل الدخول بنجاح! جاري التحويل...",
+    "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.",
+    "emailRequired": "يرجى إدخال البريد الإلكتروني",
+    "emailInvalid": "يرجى إدخال بريد إلكتروني صالح",
+    "passwordRequired": "يرجى إدخال كلمة المرور",
+    "passwordMin": "يجب أن تكون كلمة المرور مكونة من 6 أحرف على الأقل",
+    "demoTitle": "تفاصيل العرض التجريبي",
+    "demoAdmin": "مسؤول",
+    "demoStaff": "فريق",
+    "demoClient": "عميل",
+    "hidePassword": "إخفاء كلمة المرور",
+    "showPassword": "عرض كلمة المرور",
+    "noAccount": "ليس لديك حساب؟",
+    "contactUs": "اتصل بنا",
+    "noAccessYet": "ليس لديك وصول بعد؟",
+    "contactBusiness": "اتصل بعملك للحصول على تفاصيل تسجيل الدخول"
+  },
+  "unauthorized": {
+    "title": "تم رفض الوصول",
+    "subtitle": "ليس لديك إذن لعرض هذه الصفحة.",
+    "yourRole": "دورك",
+    "insufficientPermissions": "دورك ليس لديه الوصول إلى هذا المورد.",
+    "contactAdmin": "اتصل بمسؤولك إذا كنت تعتقد أن هذا خطأ.",
+    "backToDashboard": "العودة إلى لوحة التحكم"
+  },
+  "client": {
+    "appointments": {
+      "title": "مواعيدي",
+      "subtitle": "عرض المواعيد المجدولة والسابقة الخاصة بك",
+      "filters": {
+        "all": "كل المواعيد",
+        "upcoming": "القادمة",
+        "past": "السابقة"
+      },
+      "loading": "جارٍ تحميل مواعيدك...",
+      "emptyTitle": "لم يتم العثور على مواعيد",
+      "emptySubtitle": "ليس لديك مواعيد حالياً.",
+      "withStaff": "مع {{staff}}",
+      "detailsTitle": "تفاصيل الموعد",
+      "details": {
+        "date": "التاريخ",
+        "time": "الوقت",
+        "staff": "عضو الفريق",
+        "service": "نوع الخدمة",
+        "notes": "ملاحظات"
+      },
+      "helpTitle": "هل تحتاج إلى إجراء تغييرات؟",
+      "helpText": "يرجى الاتصال بفريقنا لتغيير أو إلغاء هذا الموعد."
+    },
+    "invoices": {
+      "title": "الفواتير الخاصة بي",
+      "subtitle": "عرض ودفع الفواتير الخاصة بك",
+      "list": "كل الفواتير",
+      "noInvoices": "لم يتم العثور على فواتير",
+      "summary": {
+        "total": "المجموع الكلي",
+        "paid": "مدفوع",
+        "pending": "قيد الانتظار"
+      },
+      "issued": "تم الإصدار",
+      "due": "مستحق",
+      "items": "العناصر",
+      "downloadPDF": "تحميل PDF"
+    },
+    "files": {
+      "title": "ملفاتي",
+      "subtitle": "الوصول إلى مستنداتك المحمية",
+      "placeholder": "عرض ملفات العميل - عرض ملفاتك فقط"
+    },
+    "profile": {
+      "title": "ملفي الشخصي",
+      "subtitle": "إدارة إعدادات حسابك",
+      "placeholder": "عرض ملف العميل - إدارة معلوماتك الشخصية"
+    },
+    "dashboard": {
+      "title": "مرحباً بعودتك، {{name}}",
+      "subtitle": "لوحة التحكم الشخصية الخاصة بك",
+      "stats": {
+        "nextAppointment": "الموعد القادم",
+        "pendingInvoices": "الفواتير المعلقة",
+        "filesAvailable": "الملفات المتاحة",
+        "lastVisit": "آخر زيارة",
+        "lastVisitValue": "منذ 3 أيام"
+      }
+    }
+  },
   "admin": {
+    "dashboard": {
+      "title": "مرحباً بعودتك، {{name}}",
+      "subtitle": "إليك ما يحدث في عملك اليوم",
+      "stats": {
+        "totalClients": "إجمالي العملاء",
+        "appointmentsToday": "مواعيد اليوم",
+        "monthlyRevenue": "الإيرادات الشهرية",
+        "unpaidInvoices": "الفواتير غير المدفوعة",
+        "vsLastMonth": "مقارنة بالشهر الماضي",
+        "thisWeek": "{{count}} هذا الأسبوع",
+        "outstanding": "{{amount}} مستحق"
+      },
+      "activity": {
+        "title": "النشاط الأخير",
+        "subtitle": "آخر التحديثات من عملك"
+      }
+    },
+    "clients": {
+      "title": "كل العملاء",
+      "subtitle": "إدارة جميع حسابات العملاء ومعلوماتهم",
+      "noClients": "لم يتم العثور على عملاء",
+      "noSearchResults": "لم يتم العثور على عملاء يطابقون بحثك",
+      "tryDifferentSearch": "حاول تعديل مصطلحات البحث الخاصة بك",
+      "add": "إضافة عميل",
+      "addButton": "إضافة عميل",
+      "addNew": "إضافة عميل جديد",
+      "directoryTitle": "دليل العملاء",
+      "searchPlaceholder": "ابحث بالاسم أو البريد الإلكتروني...",
+      "filter": "تصفية",
+      "view": "عرض",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "deleteButton": "حذف",
+      "link": "رابط",
+      "sendLink": "إرسال رابط تسجيل الدخول",
+      "activate": "تفعيل",
+      "activateButton": "تفعيل",
+      "deactivate": "تعطيل",
+      "blockButton": "حظر",
+      "noPermission": "ليس لديك إذن للقيام بهذا الإجراء",
+      "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا العميل؟ هذا الإجراء لا يمكن التراجع عنه.",
+      "confirmActivate": "هل أنت متأكد أنك تريد تفعيل هذا العميل؟",
+      "confirmDeactivate": "هل أنت متأكد أنك تريد تعطيل هذا العميل؟",
+      "deleteError": "فشل في حذف العميل. يرجى المحاولة مرة أخرى.",
+      "statusUpdateError": "فشل في تحديث حالة العميل. يرجى المحاولة مرة أخرى.",
+      "loginLinkSent": "تم إرسال رابط تسجيل الدخول إلى {{email}}",
+      "loginLinkError": "فشل في إرسال رابط تسجيل الدخول. يرجى المحاولة مرة أخرى.",
+      "statusActive": "نشط",
+      "statusInactive": "غير نشط",
+      "appointments": "المواعيد",
+      "joinedDate": "انضم في {{date}}",
+      "table": {
+        "client": "عميل",
+        "contact": "جهة اتصال",
+        "appointments": "المواعيد",
+        "lastVisit": "آخر زيارة"
+      },
+      "id": "ID",
+      "status": {
+        "active": "نشط",
+        "inactive": "غير نشط"
+      },
+      "viewProfile": "عرض الملف الشخصي",
+      "editClient": "تعديل معلومات العميل",
+      "memberSince": "عضو منذ {{date}}",
+      "confirmDeleteNote": "هل أنت متأكد أنك تريد حذف هذه الملاحظة؟",
+      "sections": {
+        "appointments": "المواعيد",
+        "invoices": "الفواتير",
+        "files": "الملفات",
+        "notes": "الملاحظات"
+      },
+      "withStaff": "עם {{staff}}",
+      "invoiceStatus": {
+        "paid": "تم الدفع",
+        "pending": "منتظر",
+        "overdue": "متأخر"
+      },
+      "download": "تحميل",
+      "notes": {
+        "placeholder": "أضف ملاحظة عن هذا العميل...",
+        "add": "أضف ملاحظة",
+        "delete": "حذف الملاحظة"
+      },
+      "form": {
+        "name": "الاسم الكامل",
+        "namePlaceholder": "أدخل الاسم الكامل للعميل",
+        "email": "البريد الإلكتروني",
+        "emailPlaceholder": "client@example.com",
+        "phone": "رقم الهاتف",
+        "phonePlaceholder": "+1 (555) 000-0000",
+        "dateOfBirth": "تاريخ الميلاد",
+        "address": "العنوان",
+        "addressPlaceholder": "أدخل عنوان العميل",
+        "submit": "أضف عميل",
+        "update": "تحديث العميل"
+        ,"internalNote": "ملاحظة داخلية",
+        "internalNotePlaceholder": "ملاحظات أو رؤى حول هذا العميل (لن يراها العميل)"
+      },
+      "createSuccess": "تم إنشاء العميل بنجاح",
+      "createError": "فشل في إنشاء العميل. يرجى المحاولة مرة أخرى."
+    },
     "clientProfile": {
-      "title": "ملف العميل",
-      "notFound": "لم يتم العثور على ملف العميل",
       "fullName": "الاسم الكامل",
       "email": "البريد الإلكتروني",
-      "phone": "الهاتف",
+      "phone": "رقم الهاتف",
       "address": "العنوان",
-      "createdAt": "تاريخ الإنشاء",
+      "createdAt": "تم الإنشاء في",
+      "status": "الحالة",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "title": "ملف العميل",
+      "subtitle": "عرض شامل لتفاعلات العميل وتاريخه",
+      "notFound": "ملف العميل غير موجود",
+      "memberSince": "عضو منذ",
       "lastVisit": "آخر زيارة",
-      "notesTitle": "ملاحظات داخلية",
-      "noNotes": "لا توجد ملاحظات بعد"
+      "totalAppointments": "إجمالي المواعيد",
+      "totalInvoiced": "إجمالي الفواتير",
+      "files": "الملفات",
+      "notes": "الملاحظات",
+      "completed": "مكتمل",
+      "paid": "مدفوع",
+      "appointmentsTitle": "المواعيد",
+      "createAppointment": "إنشاء موعد",
+      "sendEmail": "إرسال بريد إلكتروني",
+      "sendEmailTo": "إرسال بريد إلكتروني إلى {{name}}",
+      "emailTo": "إلى",
+      "emailSubject": "الموضوع",
+      "emailSubjectPlaceholder": "أدخل موضوع البريد الإلكتروني",
+      "emailMessage": "الرسالة",
+      "emailMessagePlaceholder": "أدخل رسالتك...",
+      "sendEmailButton": "إرسال البريد الإلكتروني",
+      "emailValidationError": "يرجى ملء جميع الحقول المطلوبة",
+      "emailSentSuccess": "تم إرسال البريد الإلكتروني بنجاح إلى {{email}}",
+      "emailSentError": "فشل في إرسال البريد الإلكتروني. يرجى المحاولة مرة أخرى.",
+      "invoicesTitle": "الفواتير",
+      "filesTitle": "الملفات",
+      "notesTitle": "الملاحظات الداخلية",
+      "noAppointments": "لم يتم تحديد أي مواعيد بعد",
+      "noInvoices": "لم يتم إنشاء أي فواتير بعد",
+      "noFiles": "لم يتم تحميل أي ملفات بعد",
+      "noNotes": "لم يتم إضافة أي ملاحظات بعد",
+      "date": "التاريخ",
+      "service": "الخدمة",
+      "staff": "الموظف",
+      "invoiceNumber": "الفاتورة",
+      "amount": "المبلغ",
+      "download": "تحميل"
     },
-   "reports": {
+    "settings": {
+      "title": "إعدادات العمل",
+      "description": "إدارة تفاصيل العمل والعلامة التجارية الخاصة بك",
+      "businessDetails": "تفاصيل العمل",
+      "branding": "العلامة التجارية",
+      "businessName": "اسم العمل",
+      "businessNamePlaceholder": "أدخل اسم عملك",
+      "phone": "رقم الهاتف",
+      "phonePlaceholder": "+1 (555) 000-0000",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "info@business.com",
+      "address": "العنوان",
+      "addressPlaceholder": "أدخل عنوان عملك",
+      "logo": "شعار العمل",
+      "currentLogo": "الشعار الحالي",
+      "uploadLogo": "انقر لتحميل الشعار",
+      "logoRequirements": "PNG, JPG أو GIF (الحد الأقصى 2MB)",
+      "logoHelper": "سيتم عرض الشعار في صفحة تسجيل الدخول وفي النظام بأكمله",
+      "invalidImageType": "يرجى تحميل ملف صورة صالح",
+      "imageTooLarge": "يجب أن يكون حجم الصورة أقل من 2MB",
+      "saveSuccess": "تم حفظ إعدادات العمل بنجاح",
+      "saveError": "فشل في حفظ الإعدادات. يرجى المحاولة مرة أخرى.",
+      "changesSaved": "يتم حفظ التغييرات تلقائيًا",
+      "note": "ملاحظة",
+      "noteText": "ستظهر هذه الإعدادات في جميع أنحاء النظام بما في ذلك صفحة تسجيل الدخول والعناوين ومعلومات الاتصال."
+    },
+    "invoices": {
+      "title": "جميع الفواتير",
+      "description": "إدارة الفواتير والمدفوعات لجميع العملاء",
+      "create": "إنشاء فاتورة",
+      "createNew": "إنشاء فاتورة جديدة",
+      "list": "قائمة الفواتير",
+      "search": "ابحث حسب رقم الفاتورة أو العميل...",
+      "filter": "تصفية",
+      "download": "PDF",
+      "table": {
+        "number": "الفاتورة #",
+        "client": "العميل",
+        "amount": "المبلغ",
+        "date": "التاريخ",
+        "dueDate": "تاريخ الاستحقاق",
+        "status": "الحالة"
+      },
+      "status": {
+        "paid": "مدفوع",
+        "pending": "قيد الانتظار",
+        "overdue": "متأخر"
+      },
+      "form": {
+        "client": "العميل",
+        "selectClient": "اختر العميل",
+        "date": "تاريخ الفاتورة",
+        "dueDate": "تاريخ الاستحقاق",
+        "lineItems": "تفاصيل البند",
+        "addItem": "أضف بند",
+        "description": "الوصف",
+        "quantity": "الكمية",
+        "price": "السعر",
+        "total": "الإجمالي",
+        "notes": "ملاحظات",
+        "notesPlaceholder": "أضف ملاحظات أو شروط الدفع...",
+        "submit": "إنشاء فاتورة"
+      }
+    },
+    "reports": {
       "title": "التقارير والتحليلات",
       "description": "رؤى الأعمال ومؤشرات الأداء",
       "revenue": {
         "title": "تقرير الإيرادات",
-        "subtitle": "اتجاهات الإيرادات والنمو الشهرية"
+        "subtitle": "الإيرادات الشهرية واتجاهات النمو"
       },
-       "performance": {
-        "title": "تقرير الأداء",
+      "performance": {
+        "title": "مؤشرات الأداء",
         "subtitle": "أداء الفريق والخدمة"
       },
-     "financial": {
-        "title": "التقرير المالي",
+      "financial": {
+        "title": "الملخص المالي",
         "subtitle": "تحليل الإيرادات والمصروفات والأرباح"
       },
       "clients": {
         "title": "تحليل العملاء",
-        "subtitle": "الاحتفاظ بالعملاء والمشاركة"
+        "subtitle": "الاحتفاظ بالعملاء ومشاركتهم"
       }
     },
-    "clients": {
-      "statusActive": "نشط",
-      "statusInactive": "غير نشط",
-      "notes": {
-        "placeholder": "أضف ملاحظة عن هذا العميل...",
-        "add": "إضافة ملاحظة"
-      }
+    "staff": {
+      "title": "إدارة الفريق",
+      "subtitle": "إدارة أعضاء الفريق، أذوناتهم ووصولهم",
+      "addNew": "إضافة عضو فريق",
+      "permissionsLabel": "الأذونات",
+      "searchPlaceholder": "ابحث بالاسم أو البريد الإلكتروني أو الدور...",
+      "noResults": "لم يتم العثور على أعضاء الفريق",
+      "table": {
+        "name": "الاسم",
+        "email": "البريد الإلكتروني",
+        "role": "الدور",
+        "status": "الحالة",
+        "lastLogin": "آخر تسجيل دخول",
+        "actions": "الإجراءات"
+      },
+      "status": {
+        "active": "نشط",
+        "blocked": "محظور"
+      },
+      "actions": {
+        "edit": "تعديل",
+        "block": "حظر",
+        "unblock": "إلغاء الحظر",
+        "delete": "حذف",
+        "sendLink": "إرسال رابط تسجيل الدخول"
+      },
+      "createTitle": "إضافة عضو فريق",
+      "editTitle": "تعديل عضو فريق",
+      "create": "إنشاء عضو فريق",
+      "update": "تحديث عضو فريق",
+      "form": {
+        "basicInfo": "معلومات أساسية",
+        "name": "الاسم الكامل",
+        "namePlaceholder": "أدخل الاسم الكامل لعضو الفريق",
+        "email": "البريد الإلكتروني",
+        "emailPlaceholder": "staff@business.com",
+        "role": "الدور",
+        "rolePlaceholder": "على سبيل المثال، سكرتير، مدير، مستشار",
+        "roleHint": "وصف الدور بشكل حر (اختياري)",
+        "permissions": "الأذونات",
+        "permissionsHint": "اختر ما يمكن لهذا العضو القيام به",
+        "menuVisibility": "رؤية القائمة",
+        "menuVisibilityHint": "اختر عناصر القائمة التي تكون مرئية لهذا العضو",
+        "password": "كلمة المرور",
+        "passwordPlaceholder": "أدخل كلمة مرور لهذا العضو (اختياري)"
+      },
+      "permissions": {
+        "manage_clients": {
+          "title": "إدارة العملاء",
+          "description": "عرض، إضافة، تعديل وحذف العملاء"
+        },
+        "manage_appointments": {
+          "title": "إدارة المواعيد",
+          "description": "إنشاء وتحرير المواعيد للعملاء"
+        },
+        "manage_notes": {
+          "title": "إدارة الملاحظات",
+          "description": "إضافة، تعديل وحذف الملاحظات الداخلية عن العملاء"
+        },
+        "manage_files": {
+          "title": "إدارة الملفات",
+          "description": "رفع وإدارة ملفات العملاء"
+        }
+      },
+      "menuItems": {
+        "clients": "عرض العملاء",
+        "appointments": "عرض المواعيد"
+      },
+      "validation": {
+        "requiredFields": "يرجى ملء جميع الحقول المطلوبة"
+      },
+      "errors": {
+        "saveFailed": "خطأ في حفظ عضو الفريق",
+        "toggleFailed": "خطأ في تغيير الحالة",
+        "deleteFailed": "خطأ في حذف عضو الفريق",
+        "sendLinkFailed": "خطأ في إرسال رابط تسجيل الدخول"
+      },
+      "confirmDelete": "هل أنت متأكد أنك تريد حذف عضو الفريق هذا؟",
+      "loginLinkSent": "تم إرسال رابط تسجيل الدخول إلى {{email}}"
     }
   }
 }

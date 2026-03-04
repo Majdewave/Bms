@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader, Badge } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
-import { staffService } from '@/api'
+import { staffService } from '@/api/staff'
 import type { StaffMember, StaffPermission, VisibleMenuItem } from '@/api'
 import { useTranslation } from 'react-i18next'
 import {
@@ -39,6 +39,7 @@ export default function AdminStaff() {
     VisibleMenuItems: [] as VisibleMenuItem[],
   })
 
+  
   useEffect(() => {
     if (!hasPermission('manage_staff')) {
       navigate('/unauthorized')
@@ -207,13 +208,13 @@ export default function AdminStaff() {
       {/* Search */}
       <div className="card">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input
             type="text"
             placeholder={t('admin.staff.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-10 w-full"
+            className="input ps-10 w-full"
           />
         </div>
       </div>
@@ -229,7 +230,7 @@ export default function AdminStaff() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                  <th className="px-6 py-3 text-start text-xs font-semibold text-slate-600 uppercase">
                     {t('admin.staff.table.name')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
@@ -244,7 +245,7 @@ export default function AdminStaff() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
                     {t('admin.staff.table.lastLogin')}
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
+                  <th className="px-6 py-3 text-end text-xs font-semibold text-slate-600 uppercase">
                     {t('admin.staff.table.actions')}
                   </th>
                 </tr>
@@ -276,7 +277,7 @@ export default function AdminStaff() {
                     <td className="px-6 py-4 text-sm text-slate-600">
                       {staffMember.lastLogin ? formatDate(staffMember.lastLogin) : '—'}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-end">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openEditModal(staffMember)}

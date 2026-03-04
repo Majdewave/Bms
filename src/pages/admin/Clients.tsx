@@ -397,13 +397,13 @@ const filteredClients = (clients ?? [])
         <CardContent>
           <div className="flex gap-4 mb-6">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className="absolute start-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
                 type="text"
                 placeholder={t('admin.clients.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="input pl-10"
+                className="input ps-10"
               />
             </div>
             <button className="btn btn-secondary btn-md">
@@ -443,7 +443,7 @@ const filteredClients = (clients ?? [])
               <table className="w-full text-sm lg:text-base">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="text-left py-3 px-2 lg:px-4 font-semibold text-slate-900 text-xs lg:text-sm">
+                    <th className="text-start py-3 px-2 lg:px-4 font-semibold text-slate-900 text-xs lg:text-sm">
                       {t('admin.clients.table.client')}
                     </th>
                     <th className="text-left py-3 px-2 lg:px-4 font-semibold text-slate-900 text-xs lg:text-sm">
@@ -452,13 +452,13 @@ const filteredClients = (clients ?? [])
                     <th className="text-left py-3 px-2 lg:px-4 font-semibold text-slate-900 text-xs lg:text-sm">
                       {t('common.status')}
                     </th>
-                    <th className="hidden md:table-cell text-left py-3 px-2 lg:px-4 font-semibold text-slate-900 text-xs lg:text-sm">
+                    <th className="hidden md:table-cell text-start py-3 px-2 lg:px-4 font-semibold text-slate-900 text-xs lg:text-sm">
                       {t('admin.clients.table.appointments')}
                     </th>
-                    <th className="hidden lg:table-cell text-left py-3 px-2 lg:px-4 font-semibold text-slate-900 text-xs lg:text-sm">
+                    <th className="hidden lg:table-cell text-start py-3 px-2 lg:px-4 font-semibold text-slate-900 text-xs lg:text-sm">
                       {t('admin.clients.table.lastVisit')}
                     </th>
-                    <th className="text-left py-3 px-2 lg:px-4 font-semibold text-slate-900 text-xs lg:text-sm">
+                    <th className="text-start py-3 px-2 lg:px-4 font-semibold text-slate-900 text-xs lg:text-sm">
                       {t('common.actions')}
                     </th>
                   </tr>
@@ -522,7 +522,7 @@ const filteredClients = (clients ?? [])
                             >
                               {t('common.actions')}
                             </button>
-                            <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-normal">
+                            <div className="absolute bottom-full end-0 mb-2 w-48 p-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-normal">
                               {t('admin.clients.noPermission')}
                             </div>
                           </div>
@@ -539,14 +539,14 @@ const filteredClients = (clients ?? [])
                               <MoreVertical className="w-4 h-4 lg:w-5 lg:h-5" />
                             </button>
                             {openDropdownId === client.id && (
-                              <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+                              <div className="absolute end-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     navigate(`/admin/clients/${client.id}`);
                                     setOpenDropdownId(null);
                                   }}
-                                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"
+                                  className="w-full text-start px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"
                                 >
                                   <FileText className="w-4 h-4" />
                                   {t('admin.clients.view')}
@@ -558,7 +558,7 @@ const filteredClients = (clients ?? [])
                                     handleSendLoginLink(client.id, client.email);
                                     setOpenDropdownId(null);
                                   }}
-                                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"
+                                  className="w-full text-start px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"
                                 >
                                   <Phone className="w-4 h-4" />
                                   {t('admin.clients.link')}
@@ -569,7 +569,7 @@ const filteredClients = (clients ?? [])
                                     handleToggleClientStatus(client.id, client.status);
                                     setOpenDropdownId(null);
                                   }}
-                                  className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 ${
+                                  className={`w-full text-start px-4 py-2 text-sm transition-colors flex items-center gap-2 ${
                                     client.status === 'active'
                                       ? 'text-orange-600 hover:bg-orange-50'
                                       : 'text-green-600 hover:bg-green-50'
@@ -587,7 +587,7 @@ const filteredClients = (clients ?? [])
                                     handleDeleteClient(client.id);
                                     setOpenDropdownId(null);
                                   }}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                                  className="w-full text-start px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                   {t('admin.clients.deleteButton')}
@@ -842,7 +842,7 @@ const filteredClients = (clients ?? [])
                               <button
                                 onClick={() => handleDeleteNote(note.id)}
                                 disabled={deletingNoteId === note.id}
-                                className="ml-2 p-2 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                                className="ms-2 p-2 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
                                 title={t('admin.clients.deleteNote')}
                               >
                                 <Trash2 className="w-4 h-4" />

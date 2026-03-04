@@ -96,13 +96,13 @@ export default function AdminAppointments() {
       <div className="card">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
               placeholder={t('appointments.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input pl-10 w-full"
+              className="input ps-10 w-full"
             />
           </div>
 
@@ -133,10 +133,10 @@ export default function AdminAppointments() {
             <table className="w-full">
               <thead className="bg-slate-50 border-b">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs">{t('appointments.table.client')}</th>
-                  <th className="px-6 py-3 text-left text-xs">{t('appointments.table.datetime')}</th>
-                  <th className="px-6 py-3 text-left text-xs">{t('appointments.table.staff')}</th>
-                  <th className="px-6 py-3 text-right text-xs">{t('common.actions')}</th>
+                  <th className="px-6 py-3 text-center text-xs">{t('appointments.table.client')}</th>
+                  <th className="px-6 py-3 text-center text-xs">{t('appointments.table.datetime')}</th>
+                  <th className="px-6 py-3 text-center text-xs">{t('appointments.table.staff')}</th>
+                  <th className="px-6 py-3 text-center text-xs">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,7 +169,7 @@ export default function AdminAppointments() {
                       {appointment.staffName || '-'}
                     </td>
 
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-end">
                       <div className="relative">
                         <button
                           onClick={() =>
@@ -183,13 +183,13 @@ export default function AdminAppointments() {
                         </button>
 
                         {openDropdownId === appointment.id && (
-                          <div className="absolute right-0 mt-1 w-40 bg-white border rounded-lg shadow-lg z-20">
+                          <div className="absolute end-0 mt-1 w-40 bg-white border rounded-lg shadow-lg z-20">
                             <button
                               onClick={() => {
                                 setEditingAppointment(appointment)
                                 setOpenDropdownId(null)
                               }}
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+                              className="w-full text-start px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
                             >
                               <Edit className="w-4 h-4" />
                               {t('appointments.actions.edit')}
@@ -197,7 +197,7 @@ export default function AdminAppointments() {
 
                             <button
                               onClick={() => handleDeleteAppointment(appointment.id)}
-                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                              className="w-full text-start px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                             >
                               <Trash2 className="w-4 h-4" />
                               {t('appointments.actions.delete')}

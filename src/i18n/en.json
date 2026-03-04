@@ -388,11 +388,13 @@
         "address": "Address",
         "addressPlaceholder": "Enter client's address",
         "submit": "Add Client",
-        "update": "Update Client"
-        ,"internalNote": "Internal Note"
-      },
-      "createSuccess": "Client created successfully",
-      "createError": "Failed to create client. Please try again."
+        "update": "Update Client",
+        "internalNote": "Internal Note",
+        "password": "Password",
+        "passwordPlaceholder": "Set a password for client login (optional)",
+        "createSuccess": "Client created successfully",
+        "createError": "Failed to create client. Please try again."
+      }
     },
     "clientProfile": {
       "fullName": "Full Name",
@@ -532,6 +534,7 @@
       "permissions": "permissions",
       "searchPlaceholder": "Search by name, email or role...",
       "noResults": "No staff members found",
+       "permissionsLabel": "Permissions",
       "table": {
         "name": "Name",
         "email": "Email",
@@ -567,7 +570,9 @@
         "permissions": "Permissions",
         "permissionsHint": "Select what this staff member can do",
         "menuVisibility": "Menu Visibility",
-        "menuVisibilityHint": "Select which menu items are visible"
+        "menuVisibilityHint": "Select which menu items are visible",
+        "password": "Password",
+        "passwordPlaceholder": "Enter a password for this staff member"
       },
       "permissions": {
         "manage_clients": {
