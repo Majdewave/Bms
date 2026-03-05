@@ -3,7 +3,6 @@ import { X } from 'lucide-react'
 import { appointmentsService, type AppointmentClient, type Appointment } from '@/api'
 import { servicesService, type BusinessService } from '@/api/servicesService'
 import { staffService, type StaffMember } from '@/api/staff'
-import { useTranslation } from 'react-i18next'
 
 interface CreateAppointmentModalProps {
   onClose: () => void
@@ -21,7 +20,7 @@ export default function CreateAppointmentModal({
   appointment
 }: CreateAppointmentModalProps) {
 
-  const { t } = useTranslation()
+  // const { t } = useTranslation()
 
   const [clients, setClients] = useState<AppointmentClient[]>([])
   const [services, setServices] = useState<BusinessService[]>([])
@@ -52,13 +51,13 @@ export default function CreateAppointmentModal({
       const start = new Date(appointment.startTime)
       setFormData({
         clientId: appointment.clientId,
-        serviceId: appointment.serviceId ?? '',
-        staffId: appointment.staffId ?? '',
+        serviceId: '',
+        staffId: '',
         date: start.toISOString().split('T')[0],
         time: start.toTimeString().slice(0, 5),
         duration: '60',
         description: appointment.notes ?? '',
-        status: appointment.Status ?? 'scheduled', // Use Status from appointment if available
+        status: appointment.status ?? 'scheduled',
       })
     }
   }, [mode, appointment])
@@ -74,8 +73,17 @@ export default function CreateAppointmentModal({
   }
 
   const loadStaffMembers = async () => {
-    const data = await staffService.getStaffMembers()
-    setStaffMembers(Array.isArray(data) ? data : [])
+    try {
+      const staff = await staffService.getStaffMembers()
+      if (!staff) {
+        setStaffMembers([])
+        return
+      }
+      setStaffMembers(Array.isArray(staff) ? staff : [])
+    } catch {
+      console.warn("Staff not allowed for this user")
+      setStaffMembers([])
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,24 +101,24 @@ export default function CreateAppointmentModal({
       const durationMinutes = parseInt(formData.duration) || 60
       const endLocal = new Date(startLocal.getTime() + durationMinutes * 60000)
 
-      const payload = {
-        ClientId: formData.clientId,
-        ServiceId: formData.serviceId || null,
-        StaffId: formData.staffId || null,
-        StartTime: startLocal.toISOString(),
-        EndTime: endLocal.toISOString(),
-        Status: formData.status,
-        Notes: formData.description || undefined,
-      }
-
       if (mode === 'edit' && appointment) {
-        await appointmentsService.updateAppointment(appointment.id, payload)
+        await appointmentsService.updateAppointment(appointment.id, {
+          startTime: startLocal.toISOString(),
+          endTime: endLocal.toISOString(),
+          status: formData.status,
+          notes: formData.description || undefined,
+        })
       } else {
-        await appointmentsService.createAppointment(payload)
+        await appointmentsService.createAppointment({
+          clientId: formData.clientId,
+          startTime: startLocal.toISOString(),
+          endTime: endLocal.toISOString(),
+          notes: formData.description || undefined,
+        })
       }
 
       onSuccess?.()
-      onClose()
+      onClose?.()
     } catch (error) {
       console.error(error)
       alert('שגיאה בשמירת תור')
@@ -151,7 +159,7 @@ export default function CreateAppointmentModal({
               <option value="">בחר לקוח</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.fullName}
+                  {c.name || c.email || c.id}
                 </option>
               ))}
             </select>
@@ -183,18 +191,14 @@ export default function CreateAppointmentModal({
             <input
               type="date"
               value={formData.date}
-              onChange={(e) =>
-                setFormData({ ...formData, date: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               className="border rounded-lg px-3 py-2"
               required
             />
             <input
               type="time"
               value={formData.time}
-              onChange={(e) =>
-                setFormData({ ...formData, time: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
               className="border rounded-lg px-3 py-2"
               required
             />
@@ -207,9 +211,7 @@ export default function CreateAppointmentModal({
             </label>
             <select
               value={formData.staffId}
-              onChange={(e) =>
-                setFormData({ ...formData, staffId: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, staffId: e.target.value })}
               className="w-full border rounded-lg px-3 py-2"
             >
               <option value="">בחר איש צוות</option>

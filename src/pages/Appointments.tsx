@@ -15,15 +15,20 @@ export default function Appointments() {
     const loadAppointments = async () => {
       setLoading(true)
       try {
+        let data = null
         if (activeTab === 'upcoming') {
-          const data = await appointmentsService.getUpcomingAppointments()
-          setAppointments(data)
+          data = await appointmentsService.getUpcomingAppointments()
         } else {
-          const data = await appointmentsService.getPastAppointments()
+          data = await appointmentsService.getPastAppointments()
+        }
+        if (!data) {
+          setAppointments([])
+        } else {
           setAppointments(data)
         }
       } catch (error) {
-        console.error('Failed to load appointments:', error)
+        console.warn('Failed to load appointments:', error)
+        setAppointments([])
       } finally {
         setLoading(false)
       }

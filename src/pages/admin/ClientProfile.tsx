@@ -35,25 +35,39 @@ export default function ClientProfile() {
   const [savingClient, setSavingClient] = useState(false)
   const [newNote, setNewNote] = useState("")
 
-  // ================================
-  // LOAD DATA
-  // ================================
+  /* ================================
+     LOAD DATA
+  ================================ */
+
   useEffect(() => {
     const loadData = async () => {
-      if (!clientId) return
+
+      if (!clientId) {
+        setLoading(false)
+        return
+      }
+
+      /* חשוב: אם זה /clients/new לא לקרוא ל-API */
+      if (clientId === "new") {
+        setLoading(false)
+        return
+      }
 
       try {
         const clientData = await apiClient.get<Client>(
           `/api/clients/${clientId}`
         )
-        setClient(clientData)
+
+        setClient(clientData ?? null)
 
         const notesData = await apiClient.get<Note[]>(
           `/api/notes?clientId=${clientId}`
         )
-        setNotes(notesData || [])
+
+        setNotes(Array.isArray(notesData) ? notesData : [])
+
       } catch (err) {
-        console.error(err)
+        console.error("Load client failed:", err)
       } finally {
         setLoading(false)
       }
@@ -65,9 +79,10 @@ export default function ClientProfile() {
   const formatDate = (date?: string | null) =>
     date ? new Date(date).toLocaleString(i18n.language) : "-"
 
-  // ================================
-  // EDIT CLIENT
-  // ================================
+  /* ================================
+     EDIT CLIENT
+  ================================ */
+
   const handleClientChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -79,6 +94,7 @@ export default function ClientProfile() {
   const saveClient = async () => {
     if (!client) return
     setSavingClient(true)
+
     try {
       await apiClient.put(`/api/clients/${client.id}`, client)
       setEditingClient(false)
@@ -89,9 +105,10 @@ export default function ClientProfile() {
     }
   }
 
-  // ================================
-  // TOGGLE STATUS (FOR 3 DOTS MENU)
-  // ================================
+  /* ================================
+     STATUS TOGGLE
+  ================================ */
+
   const handleToggleStatus = async () => {
     if (!client) return
 
@@ -108,11 +125,12 @@ export default function ClientProfile() {
     }
   }
 
-  // ================================
-  // NOTES
-  // ================================
+  /* ================================
+     NOTES
+  ================================ */
+
   const addNote = async () => {
-    if (!newNote.trim() || !clientId) return
+    if (!newNote.trim() || !clientId || clientId === "new") return
 
     try {
       const created = await apiClient.post<Note>(`/api/notes`, {
@@ -120,7 +138,10 @@ export default function ClientProfile() {
         content: newNote.trim(),
       })
 
-      setNotes(prev => [created, ...prev])
+      if (created) {
+        setNotes(prev => [created, ...prev])
+      }
+
       setNewNote("")
     } catch (err) {
       console.error("Add note failed:", err)
@@ -139,9 +160,10 @@ export default function ClientProfile() {
     setNotes(prev => prev.filter(n => n.id !== id))
   }
 
-  // ================================
-  // RENDER
-  // ================================
+  /* ================================
+     RENDER
+  ================================ */
+
   if (loading)
     return (
       <div className="p-10 text-center text-gray-500">
@@ -161,13 +183,17 @@ export default function ClientProfile() {
       className="max-w-4xl mx-auto p-8 space-y-8"
       dir={isRTL ? "rtl" : "ltr"}
     >
+
       {/* HEADER */}
+
       <div className="flex justify-between items-center">
+
         <h1 className="text-2xl font-bold text-slate-800">
           {t("admin.clientProfile.title")}
         </h1>
 
         <div className="flex gap-3">
+
           <button
             onClick={() => navigate(-1)}
             className="px-4 py-2 bg-slate-200 rounded-lg"
@@ -183,10 +209,12 @@ export default function ClientProfile() {
               {t("common.edit")}
             </button>
           )}
+
         </div>
       </div>
 
       {/* CLIENT CARD */}
+
       <div className="bg-white rounded-2xl shadow-md p-8 space-y-6">
 
         <Field
@@ -247,9 +275,9 @@ export default function ClientProfile() {
           isRTL={isRTL}
         />
 
-        {/* SAVE / CANCEL */}
         {editingClient && (
           <div className="flex justify-end gap-3 pt-4">
+
             <button
               onClick={() => setEditingClient(false)}
               className="px-4 py-2 bg-gray-300 rounded-lg"
@@ -264,17 +292,21 @@ export default function ClientProfile() {
             >
               {savingClient ? t("common.saving") : t("common.save")}
             </button>
+
           </div>
         )}
       </div>
 
       {/* NOTES */}
+
       <div className="bg-white rounded-2xl shadow-md p-8 space-y-6">
+
         <h3 className="text-lg font-semibold text-slate-800">
           {t("admin.clientProfile.notesTitle")}
         </h3>
 
         <div className="space-y-3">
+
           <textarea
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
@@ -292,9 +324,11 @@ export default function ClientProfile() {
               {t("admin.clients.notes.add")}
             </button>
           </div>
+
         </div>
 
         <div className="space-y-4">
+
           {notes.length === 0 && (
             <div className="text-slate-400">
               {t("admin.clientProfile.noNotes")}
@@ -312,6 +346,7 @@ export default function ClientProfile() {
               isRTL={isRTL}
             />
           ))}
+
         </div>
       </div>
     </div>
@@ -321,6 +356,7 @@ export default function ClientProfile() {
 /* ================= COMPONENTS ================= */
 
 function Field({ label, name, value, editing, onChange, isRTL }: any) {
+
   if (!editing)
     return <Display label={label} value={value || "-"} isRTL={isRTL} />
 
@@ -329,11 +365,14 @@ function Field({ label, name, value, editing, onChange, isRTL }: any) {
       <label className={`block text-sm text-slate-500 mb-2 ${isRTL ? "text-right" : "text-left"}`}>
         {label}
       </label>
+
       <input
         name={name}
         value={value || ""}
         onChange={onChange}
-        className={`w-full border rounded-lg p-3 ${isRTL ? "text-right" : "text-left"}`}
+        className={`w-full border rounded-lg p-3 ${
+          isRTL ? "text-right" : "text-left"
+        }`}
       />
     </div>
   )
@@ -349,11 +388,13 @@ function Display({ label, value, isRTL }: any) {
 }
 
 function NoteCard({ note, onUpdate, onDelete, t, language, isRTL }: any) {
+
   const [editing, setEditing] = useState(false)
   const [content, setContent] = useState(note.content)
 
   return (
     <div className="border rounded-xl p-4 bg-slate-50 space-y-3">
+
       {editing ? (
         <>
           <textarea
@@ -363,13 +404,16 @@ function NoteCard({ note, onUpdate, onDelete, t, language, isRTL }: any) {
               isRTL ? "text-right" : "text-left"
             }`}
           />
+
           <div className="flex justify-end gap-2">
+
             <button
               onClick={() => setEditing(false)}
               className="px-3 py-1 bg-gray-300 rounded"
             >
               {t("common.cancel")}
             </button>
+
             <button
               onClick={() => {
                 onUpdate(note.id, content)
@@ -379,6 +423,7 @@ function NoteCard({ note, onUpdate, onDelete, t, language, isRTL }: any) {
             >
               {t("common.save")}
             </button>
+
           </div>
         </>
       ) : (
@@ -386,24 +431,31 @@ function NoteCard({ note, onUpdate, onDelete, t, language, isRTL }: any) {
           <p className={isRTL ? "text-right" : "text-left"}>
             {note.content}
           </p>
+
           <div className="flex justify-between text-xs text-slate-400">
+
             <span>
               {new Date(note.createdAt).toLocaleString(language)}
             </span>
+
             <div className="flex gap-3">
+
               <button
                 onClick={() => setEditing(true)}
                 className="text-blue-600"
               >
                 {t("common.edit")}
               </button>
+
               <button
                 onClick={() => onDelete(note.id)}
                 className="text-red-600"
               >
                 {t("common.delete")}
               </button>
+
             </div>
+
           </div>
         </>
       )}

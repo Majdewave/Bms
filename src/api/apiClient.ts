@@ -53,15 +53,17 @@ async function request<T>(
 
   // Handle non-ok responses
   if (!response.ok) {
+    if (response.status === 403) {
+      console.warn("Forbidden request:", url)
+      return null as T
+    }
     let errorMessage = `Request failed with status ${response.status}`
     let errorData: any
-
     try {
       const text = await response.text()
       // Log response status and text for non-ok responses
       console.error(`[API Error] Status: ${response.status}`)
       console.error(`[API Error] Response:`, text)
-      
       try {
         errorData = JSON.parse(text)
         errorMessage = errorData.message || errorData.error || errorMessage
@@ -72,7 +74,6 @@ async function request<T>(
     } catch {
       // Could not read response body
     }
-
     throw new ApiError(errorMessage, response.status, errorData)
   }
 

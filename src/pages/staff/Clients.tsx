@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Container, PageHeader, Card, CardContent, Badge } from '@/components'
+import { Container, PageHeader, Card, CardContent } from '@/components'
 import { clientsService } from '@/api'
 import type { Client } from '@/api'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Plus, Mail, Phone, Calendar } from 'lucide-react'
+import { Search, Plus } from 'lucide-react'
 
 export default function StaffClients() {
   const navigate = useNavigate()
@@ -30,53 +30,56 @@ export default function StaffClients() {
     }
   }
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.phone.includes(searchQuery)
-  )
+const safeSearch = (searchQuery ?? '').toLowerCase()
 
-  const getStatusColor = (status: string) => {
-    return status === 'active' ? 'success' : 'slate'
-  }
+const filteredClients = (clients ?? []).filter((client) => {
+  const name = (client?.fullName ?? '').toLowerCase()
+  const email = (client?.email ?? '').toLowerCase()
+
+  return name.includes(safeSearch) || email.includes(safeSearch)
+})
+
 
   return (
     <Container>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <PageHeader
-            title={t('staff.clients.title')}
-            description={t('staff.clients.subtitle')}
-          />
-        </div>
-        {hasPermission('manage_clients') && (
-          <button
-            onClick={() => navigate('/admin/clients')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t('admin.clients.addButton')}
-          </button>
-        )}
-      </div>
-
-      {/* Search Bar */}
-      <Card className="mb-6">
-        <CardContent>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder={t('admin.clients.searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+      {/* Header with RTL flex row */}
+      <div className="flex flex-row-reverse items-center justify-between mb-6" dir="rtl">
+        <div className="flex items-center gap-4 w-full">
+          {/* Add Client Button on right */}
+          {hasPermission('manage_clients') && (
+            <button
+              onClick={() => navigate('/admin/clients')}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {t('admin.clients.addButton')}
+            </button>
+          )}
+          {/* Page Title/Subtitle center */}
+          <div className="flex-1 text-center">
+            <PageHeader
+              title={t('staff.clients.title')}
+              description={t('staff.clients.subtitle')}
             />
           </div>
-        </CardContent>
-      </Card>
+          {/* Search input on left */}
+          <div className="w-64">
+            <div className="relative">
+              <Search className="absolute right-3 top-3 w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder={t('admin.clients.searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pr-10 pl-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-right"
+                dir="rtl"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* Clients List */}
+      {/* Table UI */}
       {loading ? (
         <div className="text-center py-12">
           <p className="text-slate-500">{t('common.loading')}</p>
@@ -91,44 +94,52 @@ export default function StaffClients() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {filteredClients.map((client) => (
-            <Card key={client.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent>
-                <div
-                  onClick={() => navigate(`/admin/clients/${client.id}`)}
-                  className="flex items-start justify-between"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-slate-900">{client.name}</h3>
-                      <Badge variant={getStatusColor(client.status)}>
-                        {client.status === 'active' ? t('admin.clients.statusActive') : t('admin.clients.statusInactive')}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-slate-400" />
-                        <span>{client.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-slate-400" />
-                        <span>{client.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        <span>{t('admin.clients.joinedDate', { date: new Date(client.joinDate).toLocaleDateString() })}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-slate-900">{client.appointmentsCount}</p>
-                    <p className="text-xs text-slate-500">{t('admin.clients.appointments')}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white rounded-xl shadow-sm border border-slate-200 rtl text-right" dir="rtl">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500">{t('admin.clients.table.name')}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500">{t('admin.clients.table.phone')}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500">{t('admin.clients.table.email')}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500">{t('admin.clients.table.status')}</th>
+                <th className="px-6 py-3 text-xs font-semibold text-slate-500">{t('admin.clients.table.lastVisit')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredClients.map((client) => {
+                // Safe field handling
+                const name = client?.fullName ?? t('admin.clients.noName')
+                const phone = client?.phone ?? t('admin.clients.noPhone')
+                const email = client?.email ?? t('admin.clients.noEmail')
+                const status = client?.status ?? 'inactive'
+                // Last Visit: handle invalid/empty date
+                let lastVisit = ''
+                if (client?.lastVisit) {
+                  const dateObj = new Date(client.lastVisit)
+                  lastVisit = isNaN(dateObj.getTime()) ? t('admin.clients.noVisit') : dateObj.toLocaleDateString('he-IL')
+                } else {
+                  lastVisit = t('admin.clients.noVisit')
+                }
+                return (
+                  <tr
+                    key={client.id}
+                    className="hover:bg-slate-50 cursor-pointer transition"
+                    onClick={() => navigate(`/admin/clients/${client.id}`)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">{name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-slate-700">{phone}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-slate-700">{email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}`}>
+                        {status === 'active' ? t('admin.clients.statusActive') : t('admin.clients.statusInactive')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-slate-700">{lastVisit}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </Container>

@@ -31,34 +31,36 @@ import ClientInvoices from '@/pages/client/Invoices'
 import ClientFiles from '@/pages/client/Files'
 import ClientProfile from '@/pages/client/Profile'
 
-export const router = createBrowserRouter(
-  [
-    {
-      path: '/',
-      element: <Login />,
-    },
-    {
-      path: '/login',
-      element: <Login />,
-    },
-    {
-      path: '/unauthorized',
-      element: <Unauthorized />,
-    },
-    {
-      path: '/billing/success',
-      element: <BillingSuccess />,
-    },
-    {
-      path: '/billing',
-      element: (
-        <ProtectedRoute>
-          <BillingPage />
-        </ProtectedRoute>
-      ),
-    },
-    {
-      path: '/admin',
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Login />,
+  },
+  {
+    path: '/login',
+    element: <Login />,
+  },
+  {
+    path: '/unauthorized',
+    element: <Unauthorized />,
+  },
+  {
+    path: '/billing/success',
+    element: <BillingSuccess />,
+  },
+  {
+    path: '/billing',
+    element: (
+      <ProtectedRoute>
+        <BillingPage />
+      </ProtectedRoute>
+    ),
+  },
+
+  /* ================= ADMIN ================= */
+
+  {
+    path: '/admin',
     element: (
       <ProtectedRoute>
         <AdminLayout />
@@ -66,7 +68,7 @@ export const router = createBrowserRouter(
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
-      // Admin routes
+
       {
         path: 'dashboard',
         element: (
@@ -75,6 +77,7 @@ export const router = createBrowserRouter(
           </RoleBasedRoute>
         ),
       },
+
       {
         path: 'clients',
         element: (
@@ -83,6 +86,7 @@ export const router = createBrowserRouter(
           </PermissionBasedRoute>
         ),
       },
+
       {
         path: 'clients/:clientId',
         element: (
@@ -91,6 +95,7 @@ export const router = createBrowserRouter(
           </PermissionBasedRoute>
         ),
       },
+
       {
         path: 'appointments',
         element: (
@@ -99,6 +104,7 @@ export const router = createBrowserRouter(
           </PermissionBasedRoute>
         ),
       },
+
       {
         path: 'invoices',
         element: (
@@ -107,6 +113,7 @@ export const router = createBrowserRouter(
           </RoleBasedRoute>
         ),
       },
+
       {
         path: 'reports',
         element: (
@@ -115,6 +122,7 @@ export const router = createBrowserRouter(
           </RoleBasedRoute>
         ),
       },
+
       {
         path: 'settings',
         element: (
@@ -123,6 +131,7 @@ export const router = createBrowserRouter(
           </PermissionBasedRoute>
         ),
       },
+
       {
         path: 'staff',
         element: (
@@ -133,6 +142,9 @@ export const router = createBrowserRouter(
       },
     ],
   },
+
+  /* ================= STAFF ================= */
+
   {
     path: '/staff',
     element: (
@@ -142,7 +154,7 @@ export const router = createBrowserRouter(
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
-      // Staff routes
+
       {
         path: 'dashboard',
         element: (
@@ -151,24 +163,48 @@ export const router = createBrowserRouter(
           </RoleBasedRoute>
         ),
       },
+
       {
         path: 'appointments',
         element: (
-          <PermissionBasedRoute allowedRoles={['staff']} requiredPermission="manage_appointments">
+          <PermissionBasedRoute
+            allowedRoles={['staff']}
+            requiredPermission="manage_appointments"
+          >
             <StaffAppointments />
           </PermissionBasedRoute>
         ),
       },
+
       {
         path: 'clients',
         element: (
-          <PermissionBasedRoute allowedRoles={['staff']} requiredPermission="manage_clients">
+          <PermissionBasedRoute
+            allowedRoles={['staff']}
+            requiredPermission="manage_clients"
+          >
             <StaffClients />
+          </PermissionBasedRoute>
+        ),
+      },
+
+      /* 🔧 זה התיקון */
+      {
+        path: 'clients/:clientId',
+        element: (
+          <PermissionBasedRoute
+            allowedRoles={['staff']}
+            requiredPermission="manage_clients"
+          >
+            <AdminClientProfile />
           </PermissionBasedRoute>
         ),
       },
     ],
   },
+
+  /* ================= CLIENT ================= */
+
   {
     path: '/client',
     element: (
@@ -178,7 +214,7 @@ export const router = createBrowserRouter(
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
-      // Client routes
+
       {
         path: 'dashboard',
         element: (
@@ -187,6 +223,7 @@ export const router = createBrowserRouter(
           </RoleBasedRoute>
         ),
       },
+
       {
         path: 'appointments',
         element: (
@@ -195,6 +232,7 @@ export const router = createBrowserRouter(
           </RoleBasedRoute>
         ),
       },
+
       {
         path: 'invoices',
         element: (
@@ -203,6 +241,7 @@ export const router = createBrowserRouter(
           </RoleBasedRoute>
         ),
       },
+
       {
         path: 'files',
         element: (
@@ -211,6 +250,7 @@ export const router = createBrowserRouter(
           </RoleBasedRoute>
         ),
       },
+
       {
         path: 'profile',
         element: (
