@@ -45,7 +45,7 @@ const allMenuItems: MenuItem[] = [
   // Staff routes
   { icon: LayoutDashboard, label: 'Dashboard', path: '/staff/dashboard', roles: ['staff'] },
   { icon: Calendar, label: 'My Appointments', path: '/staff/appointments', roles: ['staff'] },
-  { icon: Users, label: 'Manage Clients', path: '/staff/clients', roles: ['staff'] },
+  { icon: Users, label: 'Manage Clients', path: '/admin/clients', roles: ['staff'] },
 ]
 
 export default function AdminLayout() {

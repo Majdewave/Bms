@@ -331,6 +331,7 @@
       "activate": "Activate",
       "activateButton": "Activate",
       "deactivate": "Deactivate",
+      "deactivateButton": "Deactivate",
       "blockButton": "Block",
       "noPermission": "אין לך הרשאה לפעולה זו",
       "confirmDelete": "Are you sure you want to delete this client? This action cannot be undone.",

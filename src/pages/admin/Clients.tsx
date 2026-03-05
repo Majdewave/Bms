@@ -70,7 +70,7 @@ const filteredClients = (clients ?? []).filter((client) => {
   const [showCreateModal, setShowCreateModal] = useState(false)
 
   return (
-    <Container>
+    <Container maxWidth="xl">
       {isStaffView && (
         <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
           <div className="flex items-center gap-2">

@@ -333,6 +333,7 @@
       "activate": "تفعيل",
       "activateButton": "تفعيل",
       "deactivate": "تعطيل",
+      "deactivateButton": "تعطيل",
       "blockButton": "حظر",
       "noPermission": "ليس لديك إذن للقيام بهذا الإجراء",
       "confirmDelete": "هل أنت متأكد أنك تريد حذف هذا العميل؟ هذا الإجراء لا يمكن التراجع عنه.",
