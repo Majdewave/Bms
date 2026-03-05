@@ -54,8 +54,8 @@ async function request<T>(
   // Handle non-ok responses
   if (!response.ok) {
     if (response.status === 403) {
-      console.warn("Forbidden request:", url)
-      return null as T
+      // Return a structured forbidden response
+      return { forbidden: true } as T;
     }
     let errorMessage = `Request failed with status ${response.status}`
     let errorData: any

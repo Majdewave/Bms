@@ -13,8 +13,12 @@ export interface Appointment {
 }
 
 export const appointmentsService = {
-  async getAppointments(): Promise<Appointment[]> {
-    return await get<Appointment[]>('/api/appointments')
+  async getAppointments(): Promise<{ forbidden: boolean; data: Appointment[] }> {
+    const result = await get<any>('/api/appointments');
+    if (result?.forbidden) {
+      return { forbidden: true, data: [] };
+    }
+    return { forbidden: false, data: result };
   },
 
   async createAppointment(payload: {

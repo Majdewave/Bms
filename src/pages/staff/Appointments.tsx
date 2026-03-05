@@ -51,18 +51,18 @@ export default function StaffAppointments() {
     setLoading(true)
 
     try {
-      const data = await appointmentsService.getAppointments()
-
-      if (Array.isArray(data)) {
-        setAppointments(data)
-      } else {
-        setAppointments([])
+      const result = await appointmentsService.getAppointments();
+      if (result.forbidden) {
+        setAppointments([]);
+        setLoading(false);
+        return;
       }
+      setAppointments(result.data);
     } catch (error) {
-      console.error(error)
-      setAppointments([])
+      console.error(error);
+      setAppointments([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -86,7 +86,7 @@ export default function StaffAppointments() {
 
   const safeSearch = searchQuery.toLowerCase()
 
-  const filteredAppointments = appointments
+  const filteredAppointments = (appointments ?? [])
     .filter((apt) => {
       const name = (apt?.clientName ?? '').toLowerCase()
 
