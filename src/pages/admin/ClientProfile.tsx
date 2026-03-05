@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
+import { useAuth } from "@/contexts/AuthContext"
 import * as apiClient from "@/api/apiClient"
 
 interface Client {
@@ -25,7 +26,9 @@ export default function ClientProfile() {
   const { clientId } = useParams<{ clientId: string }>()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+  const { user } = useAuth()
 
+  const isAdmin = user?.role === "admin"
   const isRTL = i18n.language === "he" || i18n.language === "ar"
 
   const [client, setClient] = useState<Client | null>(null)
@@ -275,16 +278,32 @@ export default function ClientProfile() {
           isRTL={isRTL}
         />
 
+        {/* Admin-only actions */}
+        {isAdmin && !editingClient && (
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={handleToggleStatus}
+              className={`px-4 py-2 rounded-lg ${client.isActive ? "bg-yellow-500 text-white" : "bg-green-600 text-white"}`}
+            >
+              {client.isActive ? t("admin.clients.deactivateButton") : t("admin.clients.activateButton")}
+            </button>
+            <button
+              onClick={() => {/* send code logic here */}}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+            >
+              {t("admin.clients.sendLink")}
+            </button>
+          </div>
+        )}
+
         {editingClient && (
           <div className="flex justify-end gap-3 pt-4">
-
             <button
               onClick={() => setEditingClient(false)}
               className="px-4 py-2 bg-gray-300 rounded-lg"
             >
               {t("common.cancel")}
             </button>
-
             <button
               onClick={saveClient}
               disabled={savingClient}
@@ -292,7 +311,6 @@ export default function ClientProfile() {
             >
               {savingClient ? t("common.saving") : t("common.save")}
             </button>
-
           </div>
         )}
       </div>
