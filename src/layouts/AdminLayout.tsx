@@ -20,9 +20,10 @@ import {
   UserPlus,
   Users,
   X,
-} from 'lucide-react'
+} from "lucide-react"
 
 import { useAuth, UserRole } from '@/contexts/AuthContext'
+import type { Permission } from '@/utils/permissions'
 import NotificationsDropdown from '@/components/NotificationsDropdown'
 import ClientaLogo from '@/components/Logo'
 
@@ -31,7 +32,7 @@ interface MenuItem {
   label: string
   path: string
   roles: UserRole[]
-  permission?: string
+    permission?: Permission
 }
 
 const allMenuItems: MenuItem[] = [
@@ -52,19 +53,14 @@ const allMenuItems: MenuItem[] = [
 
 export default function AdminLayout() {
 
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
-
   const location = useLocation()
   const navigate = useNavigate()
 
   const { user, logout, hasPermission } = useAuth()
 
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
 
   const menuItems = useMemo(() => {
-
     if (!user) return []
 
     return allMenuItems.filter((item) => {
@@ -74,16 +70,12 @@ export default function AdminLayout() {
       }
 
       if (item.roles.includes('staff') && user.role === 'staff') {
-
         if (!item.permission) return true
-
         return hasPermission(item.permission)
       }
 
       return false
-
     })
-
   }, [user, hasPermission])
 
   const getMenuLabel = (label: string) => {
@@ -199,17 +191,14 @@ export default function AdminLayout() {
 
       <aside
         className={`${
-          sidebarCollapsed ? 'w-20' : 'w-64'
+          'w-64'
         } bg-white border-r border-slate-200 flex flex-col`}
       >
 
         <div className="p-6 border-b border-slate-200">
 
           <Link to={homePath}>
-            {sidebarCollapsed
-              ? <ClientaLogo variant="icon" />
-              : <ClientaLogo variant="full" />
-            }
+            <ClientaLogo variant="full" />
           </Link>
 
         </div>
@@ -237,8 +226,7 @@ export default function AdminLayout() {
 
                 <Icon className="w-5 h-5" />
 
-                {!sidebarCollapsed &&
-                  getMenuLabel(item.label)}
+                {getMenuLabel(item.label)}
 
               </Link>
             )
@@ -250,23 +238,21 @@ export default function AdminLayout() {
 
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors`}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors"
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
-            <span className={sidebarCollapsed ? 'hidden' : 'block'}>
+            <span className="block">
               {t('common.signOut')}
             </span>
           </button>
-          {!sidebarCollapsed && (
-            <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-[14px] font-semibold text-slate-800 leading-tight">
-                {user?.name}
-              </p>
-              <p className="text-xs text-slate-500 mt-1 truncate">
-                {user?.email}
-              </p>
-            </div>
-          )}
+          <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200 shadow-sm">
+            <p className="text-[14px] font-semibold text-slate-800 leading-tight">
+              {user?.name}
+            </p>
+            <p className="text-xs text-slate-500 mt-1 truncate">
+              {user?.email}
+            </p>
+          </div>
 
         </div>
 

@@ -16,62 +16,84 @@ export default function Clients() {
   const [clients, setClients] = useState<Client[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+
+  const canView =
+    hasPermission?.('view_clients') ||
+    hasPermission?.('manage_clients')
 
   useEffect(() => {
-    loadClients()
-  }, [])
-
-  const loadClients = async () => {
-    try {
-      const data = await clientsService.getClients()
-      setClients(Array.isArray(data) ? data : [])
-    } catch (error) {
-      console.error('Failed to load clients:', error)
-      setClients([])
-    } finally {
+    if (!canView) {
+      setError('You do not have permission to view clients.')
       setLoading(false)
+      return
     }
-  }
 
-  // ---------- SAFE SEARCH ----------
-const safeSearch = (searchQuery ?? '').toLowerCase()
+    setLoading(true)
 
-const filteredClients = (clients ?? []).filter((client) => {
-  const name = (client?.fullName ?? '').toLowerCase()
-  const email = (client?.email ?? '').toLowerCase()
+    clientsService
+      .getClients()
+      .then((res: any) => {
+        const data = Array.isArray(res) ? res : res?.data ?? []
+        setClients(data)
+      })
+      .catch((err: any) => {
+        setError(err?.message ?? 'Failed to load clients')
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [canView])
 
-  return name.includes(safeSearch) || email.includes(safeSearch)
-})
+  const safeClients = Array.isArray(clients) ? clients : []
 
-  // ---------- HELPERS ----------
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '-'
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return '-'
+  const filteredClients = safeClients.filter((client) => {
+    if (!searchQuery) return true
 
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }
+    const q = searchQuery.toLowerCase()
 
-  const getInitials = (name?: string) => {
-    if (!name || typeof name !== 'string') return '?'
+    return (
+      client.fullName?.toLowerCase().includes(q) ||
+      client.email?.toLowerCase().includes(q) ||
+      client.phone?.toLowerCase().includes(q)
+    )
+  })
 
+  function getInitials(name?: string | null) {
+    if (!name) return 'U'
     return name
       .split(' ')
-      .map((n) => n?.[0] ?? '')
+      .map((n) => n[0])
       .join('')
+      .toUpperCase()
   }
 
-  const isStaffView = (user?.role ?? '').toLowerCase() === 'staff'
+  function formatDate(dateString?: string | null) {
+    if (!dateString) return '-'
+    const date = new Date(dateString)
+    return date.toLocaleDateString()
+  }
 
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  if (!canView) {
+    return (
+      <div className="text-red-500">
+        You do not have permission to view clients.
+      </div>
+    )
+  }
+
+  if (loading) {
+    return <div className="p-6">Loading...</div>
+  }
+
+  if (error) {
+    return <div className="text-red-500 p-6">{error}</div>
+  }
 
   return (
     <Container maxWidth="xl">
-      {isStaffView && (
+      {user?.role === 'staff' && (
         <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-blue-600" />
@@ -113,7 +135,6 @@ const filteredClients = (clients ?? []).filter((client) => {
 
         <CardContent>
 
-          {/* SEARCH */}
           <div className="flex gap-4 mb-6">
             <div className="flex-1 relative">
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -133,23 +154,14 @@ const filteredClients = (clients ?? []).filter((client) => {
             </button>
           </div>
 
-          {/* LOADING */}
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-            </div>
-
-          ) : filteredClients.length === 0 ? (
-
+          {filteredClients.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-slate-900">
                 {t('admin.clients.noClients')}
               </h3>
             </div>
-
           ) : (
-
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
 
@@ -174,7 +186,6 @@ const filteredClients = (clients ?? []).filter((client) => {
                 </thead>
 
                 <tbody className="divide-y">
-
                   {filteredClients.map((client) => {
 
                     const clientId = client?.id ?? ''
@@ -183,9 +194,10 @@ const filteredClients = (clients ?? []).filter((client) => {
                       <tr
                         key={clientId}
                         className="hover:bg-slate-50 cursor-pointer"
-                        onClick={() => clientId && navigate(`/admin/clients/${clientId}`)}
+                        onClick={() =>
+                          clientId && navigate(`/admin/clients/${clientId}`)
+                        }
                       >
-
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
 
@@ -241,16 +253,14 @@ const filteredClients = (clients ?? []).filter((client) => {
                       </tr>
                     )
                   })}
-
                 </tbody>
+
               </table>
             </div>
-
           )}
 
         </CardContent>
       </Card>
-
     </Container>
   )
 }
