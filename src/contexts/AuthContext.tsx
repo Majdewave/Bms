@@ -11,6 +11,7 @@ export interface AuthUser {
   role: UserRole
   businessId?: string
   avatar?: string
+  permissions: string[]
 }
 
 interface AuthContextType {
@@ -59,6 +60,18 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<AuthUser | null>(null)
+    // Refresh user state from API
+    const refreshUser = async () => {
+      setLoading(true);
+      try {
+        const updatedUser = await authService.getCurrentUser();
+        setUser(updatedUser);
+      } catch (error) {
+        localStorage.removeItem('authToken');
+        setUser(null);
+      }
+      setLoading(false);
+    };
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -99,7 +112,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const checkPermission = (permission: Permission): boolean => {
     if (!user) return false
-    return hasPermission(user.role, permission)
+    return user.permissions?.includes(permission)
   }
 
   const value: AuthContextType = {
@@ -113,6 +126,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isAdmin: user?.role === 'admin',
     isStaff: user?.role === 'staff',
     isClient: user?.role === 'client',
+    refreshUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

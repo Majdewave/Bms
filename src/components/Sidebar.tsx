@@ -24,18 +24,12 @@ const menuItems = [
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true)
   const location = useLocation()
-  const { user } = useAuth()
-  
-  // Debug: log user to verify role
-  console.log('Sidebar user:', user)
-  
-  // Check if user is admin (case-insensitive)
-  const isAdmin = user?.role?.toLowerCase() === 'admin'
+  const { user, hasPermission } = useAuth()
 
-  // Filter menu items based on user role
+  // Filter menu items based on permissions
   const visibleMenuItems = menuItems.filter((item) => {
-    if (item.adminOnly && !isAdmin) return false
-    return true
+    if (!item.permission) return true;
+    return hasPermission(item.permission);
   })
 
   return (
