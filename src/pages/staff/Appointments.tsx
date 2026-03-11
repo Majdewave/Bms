@@ -35,8 +35,7 @@ export default function StaffAppointments() {
   const [editingAppointment, setEditingAppointment] =
     useState<AppointmentRow | null>(null)
 
-  const [openDropdownId, setOpenDropdownId] =
-    useState<string | null>(null)
+  // Removed dropdown state
 
   useEffect(() => {
     if (!hasPermission?.('manage_appointments')) {
@@ -51,18 +50,19 @@ export default function StaffAppointments() {
     setLoading(true)
 
     try {
-      const result = await appointmentsService.getAppointments();
-      if (result.forbidden) {
-        setAppointments([]);
-        setLoading(false);
-        return;
+      const data = await appointmentsService.getAppointments()
+
+      if (!data) {
+        setAppointments([])
+        return
       }
-      setAppointments(result.data);
+
+      setAppointments(data)
     } catch (error) {
-      console.error(error);
-      setAppointments([]);
+      console.error('Failed loading appointments:', error)
+      setAppointments([])
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
@@ -93,7 +93,8 @@ export default function StaffAppointments() {
       const matchesSearch = name.includes(safeSearch)
 
       const matchesStatus =
-        statusFilter === 'all' || apt?.status === statusFilter
+        statusFilter === 'all' ||
+        (apt?.status ?? '').toLowerCase() === statusFilter
 
       return matchesSearch && matchesStatus
     })
@@ -218,7 +219,7 @@ export default function StaffAppointments() {
                 {filteredAppointments.map((appointment) => (
                   <tr
                     key={appointment.id}
-                    className="hover:bg-slate-50"
+                    className="hover:bg-slate-50 relative"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -254,42 +255,19 @@ export default function StaffAppointments() {
 
                     <td className="px-6 py-4 text-end">
                       <button
-                        onClick={() =>
-                          setOpenDropdownId(
-                            openDropdownId === appointment.id
-                              ? null
-                              : appointment.id
-                          )
-                        }
+                        onClick={() => setEditingAppointment(appointment)}
                         className="p-2 hover:bg-slate-100 rounded-lg"
+                        title={t('appointments.actions.edit')}
                       >
-                        <MoreVertical className="w-4 h-4" />
+                        <Edit className="w-4 h-4" />
                       </button>
-
-                      {openDropdownId === appointment.id && (
-                        <div className="absolute right-6 mt-2 w-40 bg-white border rounded-lg shadow-lg z-20">
-                          <button
-                            onClick={() => {
-                              setEditingAppointment(appointment)
-                              setOpenDropdownId(null)
-                            }}
-                            className="w-full px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
-                          >
-                            <Edit className="w-4 h-4" />
-                            {t('appointments.actions.edit')}
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              handleDelete(appointment.id)
-                            }
-                            className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            {t('appointments.actions.delete')}
-                          </button>
-                        </div>
-                      )}
+                      <button
+                        onClick={() => handleDelete(appointment.id)}
+                        className="p-2 hover:bg-red-50 rounded-lg text-red-600"
+                        title={t('appointments.actions.delete')}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}

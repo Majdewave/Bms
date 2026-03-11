@@ -546,6 +546,7 @@
       },
       "status": {
         "active": "Active",
+        "inactive": "Inactive",
         "blocked": "Blocked"
       },
       "actions": {

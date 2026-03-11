@@ -546,6 +546,7 @@
       },
       "status": {
         "active": "نشط",
+        "inactive": "غير نشط",
         "blocked": "محظور"
       },
       "actions": {

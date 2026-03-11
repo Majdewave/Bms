@@ -545,6 +545,7 @@
       },
       "status": {
         "active": "פעיל",
+        "inactive": "לא פעיל",
         "blocked": "חסום"
       },
       "actions": {

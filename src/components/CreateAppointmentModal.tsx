@@ -20,8 +20,6 @@ export default function CreateAppointmentModal({
   appointment
 }: CreateAppointmentModalProps) {
 
-  // const { t } = useTranslation()
-
   const [clients, setClients] = useState<AppointmentClient[]>([])
   const [services, setServices] = useState<BusinessService[]>([])
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
@@ -35,7 +33,7 @@ export default function CreateAppointmentModal({
     time: '',
     duration: '60',
     description: '',
-    status: 'scheduled', // Add status field with default value
+    status: 'Scheduled'
   })
 
   // Load dropdown data
@@ -48,16 +46,18 @@ export default function CreateAppointmentModal({
   // Fill form if editing
   useEffect(() => {
     if (mode === 'edit' && appointment) {
+
       const start = new Date(appointment.startTime)
+
       setFormData({
-        clientId: appointment.clientId,
-        serviceId: '',
-        staffId: '',
+        clientId: appointment.clientId ?? '',
+        serviceId: (appointment as any).serviceId ?? '',
+        staffId: (appointment as any).staffId ?? '',
         date: start.toISOString().split('T')[0],
         time: start.toTimeString().slice(0, 5),
         duration: '60',
         description: appointment.notes ?? '',
-        status: appointment.status ?? 'scheduled',
+        status: appointment.status ?? 'Scheduled'
       })
     }
   }, [mode, appointment])
@@ -75,13 +75,9 @@ export default function CreateAppointmentModal({
   const loadStaffMembers = async () => {
     try {
       const staff = await staffService.getStaffMembers()
-      if (!staff) {
-        setStaffMembers([])
-        return
-      }
       setStaffMembers(Array.isArray(staff) ? staff : [])
     } catch {
-      console.warn("Staff not allowed for this user")
+      console.warn('Staff not allowed for this user')
       setStaffMembers([])
     }
   }
@@ -101,24 +97,25 @@ export default function CreateAppointmentModal({
       const durationMinutes = parseInt(formData.duration) || 60
       const endLocal = new Date(startLocal.getTime() + durationMinutes * 60000)
 
+      const payload = {
+        clientId: formData.clientId,
+        serviceId: formData.serviceId || undefined,
+        staffId: formData.staffId || undefined,
+        startTime: startLocal.toISOString(),
+        endTime: endLocal.toISOString(),
+        status: formData.status,
+        notes: formData.description || undefined
+      }
+
       if (mode === 'edit' && appointment) {
-        await appointmentsService.updateAppointment(appointment.id, {
-          startTime: startLocal.toISOString(),
-          endTime: endLocal.toISOString(),
-          status: formData.status,
-          notes: formData.description || undefined,
-        })
+        await appointmentsService.updateAppointment(appointment.id, payload)
       } else {
-        await appointmentsService.createAppointment({
-          clientId: formData.clientId,
-          startTime: startLocal.toISOString(),
-          endTime: endLocal.toISOString(),
-          notes: formData.description || undefined,
-        })
+        await appointmentsService.createAppointment(payload)
       }
 
       onSuccess?.()
       onClose?.()
+
     } catch (error) {
       console.error(error)
       alert('שגיאה בשמירת תור')
@@ -129,6 +126,7 @@ export default function CreateAppointmentModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+
       <div className="bg-white rounded-lg shadow-xl w-full max-w-xl">
 
         {/* Header */}
@@ -136,6 +134,7 @@ export default function CreateAppointmentModal({
           <h2 className="text-xl font-bold">
             {mode === 'edit' ? 'ערוך פגישה' : 'קבע תור'}
           </h2>
+
           <button onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
@@ -148,6 +147,7 @@ export default function CreateAppointmentModal({
             <label className="block text-sm font-semibold mb-1">
               לקוח *
             </label>
+
             <select
               value={formData.clientId}
               onChange={(e) =>
@@ -157,6 +157,7 @@ export default function CreateAppointmentModal({
               required
             >
               <option value="">בחר לקוח</option>
+
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name || c.email || c.id}
@@ -170,6 +171,7 @@ export default function CreateAppointmentModal({
             <label className="block text-sm font-semibold mb-1">
               שירות
             </label>
+
             <select
               value={formData.serviceId}
               onChange={(e) =>
@@ -178,6 +180,7 @@ export default function CreateAppointmentModal({
               className="w-full border rounded-lg px-3 py-2"
             >
               <option value="">בחר שירות</option>
+
               {services.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -188,20 +191,27 @@ export default function CreateAppointmentModal({
 
           {/* DATE + TIME */}
           <div className="grid grid-cols-2 gap-4">
+
             <input
               type="date"
               value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, date: e.target.value })
+              }
               className="border rounded-lg px-3 py-2"
               required
             />
+
             <input
               type="time"
               value={formData.time}
-              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, time: e.target.value })
+              }
               className="border rounded-lg px-3 py-2"
               required
             />
+
           </div>
 
           {/* STAFF */}
@@ -209,12 +219,16 @@ export default function CreateAppointmentModal({
             <label className="block text-sm font-semibold mb-1">
               איש צוות
             </label>
+
             <select
               value={formData.staffId}
-              onChange={(e) => setFormData({ ...formData, staffId: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, staffId: e.target.value })
+              }
               className="w-full border rounded-lg px-3 py-2"
             >
               <option value="">בחר איש צוות</option>
+
               {staffMembers.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.fullName}
@@ -237,6 +251,7 @@ export default function CreateAppointmentModal({
             <option value="120">120 דקות</option>
           </select>
 
+          {/* NOTES */}
           <textarea
             value={formData.description}
             onChange={(e) =>
@@ -247,21 +262,31 @@ export default function CreateAppointmentModal({
             placeholder="הערות"
           />
 
+          {/* FOOTER */}
           <div className="flex justify-end gap-2 pt-4 border-t">
+
             <button type="button" onClick={onClose}>
               ביטול
             </button>
+
             <button
               type="submit"
               disabled={saving}
               className="btn-primary"
             >
-              {saving ? 'שומר...' : mode === 'edit' ? 'עדכן פגישה' : 'שמור'}
+              {saving
+                ? 'שומר...'
+                : mode === 'edit'
+                ? 'עדכן פגישה'
+                : 'שמור'}
             </button>
+
           </div>
 
         </form>
+
       </div>
+
     </div>
   )
 }

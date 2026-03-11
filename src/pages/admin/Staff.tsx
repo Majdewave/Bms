@@ -37,6 +37,7 @@ export default function AdminStaff() {
     RoleLabel: '',
     Permissions: [] as StaffPermission[],
     VisibleMenuItems: [] as VisibleMenuItem[],
+     IsActive: true
   })
 
   
@@ -132,6 +133,7 @@ export default function AdminStaff() {
       RoleLabel: staffMember.roleLabel || staffMember.role || '',
       Permissions: staffMember.permissions || [],
       VisibleMenuItems: staffMember.visibleMenuItems || [],
+        IsActive: staffMember.isActive ?? true
     })
     setShowModal(true)
   }
