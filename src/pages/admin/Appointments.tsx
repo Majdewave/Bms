@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MoreVertical, Calendar, Clock, User, Plus, Search, Filter, Trash2, Edit } from 'lucide-react'
+import { Calendar, Clock, User, Plus, Search, Filter, Trash2, Edit } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader, CreateAppointmentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
@@ -21,7 +21,7 @@ export default function AdminAppointments() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRow | null>(null)
 
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
+  // Removed dropdown state for inline actions
 
   const isStaffView = user?.role === 'staff'
 
@@ -170,40 +170,17 @@ export default function AdminAppointments() {
                     </td>
 
                     <td className="px-6 py-4 text-end">
-                      <div className="relative">
-                        <button
-                          onClick={() =>
-                            setOpenDropdownId(
-                              openDropdownId === appointment.id ? null : appointment.id
-                            )
-                          }
-                          className="p-2 hover:bg-slate-100 rounded-lg"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-
-                        {openDropdownId === appointment.id && (
-                          <div className="absolute end-0 mt-1 w-40 bg-white border rounded-lg shadow-lg z-20">
-                            <button
-                              onClick={() => {
-                                setEditingAppointment(appointment)
-                                setOpenDropdownId(null)
-                              }}
-                              className="w-full text-start px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
-                            >
-                              <Edit className="w-4 h-4" />
-                              {t('appointments.actions.edit')}
-                            </button>
-
-                            <button
-                              onClick={() => handleDeleteAppointment(appointment.id)}
-                              className="w-full text-start px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              {t('appointments.actions.delete')}
-                            </button>
-                          </div>
-                        )}
+                      <div className="flex items-center gap-3 justify-end">
+                        <Edit
+                          className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
+                          onClick={() => setEditingAppointment(appointment)}
+                          title={t('appointments.actions.edit')}
+                        />
+                        <Trash2
+                          className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
+                          onClick={() => handleDeleteAppointment(appointment.id)}
+                          title={t('appointments.actions.delete')}
+                        />
                       </div>
                     </td>
                   </tr>

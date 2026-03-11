@@ -1,5 +1,6 @@
 import { Bell, Settings, User, LogOut } from 'lucide-react'
 import { useState } from 'react'
+import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -12,6 +13,8 @@ export default function Header() {
 
         {/* Right Side - Actions */}
         <div className="flex items-center gap-4 ml-auto">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
           {/* Notifications */}
           <button
             className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg"

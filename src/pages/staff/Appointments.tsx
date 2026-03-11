@@ -253,21 +253,17 @@ export default function StaffAppointments() {
                       {appointment.staffName ?? '-'}
                     </td>
 
-                    <td className="px-6 py-4 text-end">
-                      <button
-                        onClick={() => setEditingAppointment(appointment)}
-                        className="p-2 hover:bg-slate-100 rounded-lg"
+                    <td className="px-6 py-4 text-end flex gap-2 justify-end">
+                      <Edit
+                        className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
                         title={t('appointments.actions.edit')}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(appointment.id)}
-                        className="p-2 hover:bg-red-50 rounded-lg text-red-600"
+                        onClick={() => setEditingAppointment(appointment)}
+                      />
+                      <Trash2
+                        className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
                         title={t('appointments.actions.delete')}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        onClick={() => handleDelete(appointment.id)}
+                      />
                     </td>
                   </tr>
                 ))}

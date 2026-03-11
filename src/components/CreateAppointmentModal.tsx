@@ -125,154 +125,141 @@ export default function CreateAppointmentModal({
   }
 
   return (
+
+
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-xl">
-
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] flex flex-col p-0">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-bold">
             {mode === 'edit' ? 'ערוך פגישה' : 'קבע תור'}
           </h2>
-
           <button onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-
-          {/* CLIENT */}
-          <div>
-            <label className="block text-sm font-semibold mb-1">
-              לקוח *
-            </label>
-
+        <form onSubmit={handleSubmit} className="flex flex-col flex-grow min-h-0">
+          <div className="flex-grow min-h-0 overflow-y-auto p-6 space-y-4">
+            {/* CLIENT */}
+            <div>
+              <label className="block text-sm font-semibold mb-1">
+                לקוח *
+              </label>
+              <select
+                value={formData.clientId}
+                onChange={(e) =>
+                  setFormData({ ...formData, clientId: e.target.value })
+                }
+                className="w-full border rounded-lg px-3 py-2"
+                required
+              >
+                <option value="">בחר לקוח</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name || c.email || c.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* SERVICE */}
+            <div>
+              <label className="block text-sm font-semibold mb-1">
+                שירות
+              </label>
+              <select
+                value={formData.serviceId}
+                onChange={(e) =>
+                  setFormData({ ...formData, serviceId: e.target.value })
+                }
+                className="w-full border rounded-lg px-3 py-2"
+              >
+                <option value="">בחר שירות</option>
+                {services.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* DATE + TIME */}
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) =>
+                  setFormData({ ...formData, date: e.target.value })
+                }
+                className="border rounded-lg px-3 py-2"
+                required
+              />
+              <input
+                type="time"
+                value={formData.time}
+                onChange={(e) =>
+                  setFormData({ ...formData, time: e.target.value })
+                }
+                className="border rounded-lg px-3 py-2"
+                required
+              />
+            </div>
+            {/* STAFF */}
+            <div>
+              <label className="block text-sm font-semibold mb-1">
+                איש צוות
+              </label>
+              <select
+                value={formData.staffId}
+                onChange={(e) =>
+                  setFormData({ ...formData, staffId: e.target.value })
+                }
+                className="w-full border rounded-lg px-3 py-2"
+              >
+                <option value="">בחר איש צוות</option>
+                {staffMembers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.fullName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* DURATION */}
             <select
-              value={formData.clientId}
+              value={formData.duration}
               onChange={(e) =>
-                setFormData({ ...formData, clientId: e.target.value })
+                setFormData({ ...formData, duration: e.target.value })
               }
               className="w-full border rounded-lg px-3 py-2"
-              required
             >
-              <option value="">בחר לקוח</option>
-
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name || c.email || c.id}
-                </option>
-              ))}
+              <option value="30">30 דקות</option>
+              <option value="60">60 דקות</option>
+              <option value="90">90 דקות</option>
+              <option value="120">120 דקות</option>
             </select>
-          </div>
-
-          {/* SERVICE */}
-          <div>
-            <label className="block text-sm font-semibold mb-1">
-              שירות
-            </label>
-
-            <select
-              value={formData.serviceId}
+            {/* NOTES */}
+            <textarea
+              value={formData.description}
               onChange={(e) =>
-                setFormData({ ...formData, serviceId: e.target.value })
+                setFormData({ ...formData, description: e.target.value })
               }
+              rows={3}
               className="w-full border rounded-lg px-3 py-2"
-            >
-              <option value="">בחר שירות</option>
-
-              {services.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* DATE + TIME */}
-          <div className="grid grid-cols-2 gap-4">
-
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) =>
-                setFormData({ ...formData, date: e.target.value })
-              }
-              className="border rounded-lg px-3 py-2"
-              required
+              placeholder="הערות"
             />
-
-            <input
-              type="time"
-              value={formData.time}
-              onChange={(e) =>
-                setFormData({ ...formData, time: e.target.value })
-              }
-              className="border rounded-lg px-3 py-2"
-              required
-            />
-
           </div>
-
-          {/* STAFF */}
-          <div>
-            <label className="block text-sm font-semibold mb-1">
-              איש צוות
-            </label>
-
-            <select
-              value={formData.staffId}
-              onChange={(e) =>
-                setFormData({ ...formData, staffId: e.target.value })
-              }
-              className="w-full border rounded-lg px-3 py-2"
-            >
-              <option value="">בחר איש צוות</option>
-
-              {staffMembers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.fullName}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* DURATION */}
-          <select
-            value={formData.duration}
-            onChange={(e) =>
-              setFormData({ ...formData, duration: e.target.value })
-            }
-            className="w-full border rounded-lg px-3 py-2"
-          >
-            <option value="30">30 דקות</option>
-            <option value="60">60 דקות</option>
-            <option value="90">90 דקות</option>
-            <option value="120">120 דקות</option>
-          </select>
-
-          {/* NOTES */}
-          <textarea
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            rows={3}
-            className="w-full border rounded-lg px-3 py-2"
-            placeholder="הערות"
-          />
-
           {/* FOOTER */}
-          <div className="flex justify-end gap-2 pt-4 border-t">
-
-            <button type="button" onClick={onClose}>
+          <div className="flex justify-end gap-3 pt-4 border-t mt-6 bg-white sticky bottom-0 z-10 p-6">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-100"
+              onClick={onClose}
+              disabled={saving}
+            >
               ביטול
             </button>
-
             <button
               type="submit"
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
               disabled={saving}
-              className="btn-primary"
             >
               {saving
                 ? 'שומר...'
@@ -280,13 +267,9 @@ export default function CreateAppointmentModal({
                 ? 'עדכן פגישה'
                 : 'שמור'}
             </button>
-
           </div>
-
         </form>
-
       </div>
-
     </div>
   )
 }

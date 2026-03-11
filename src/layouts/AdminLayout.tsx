@@ -26,6 +26,7 @@ import { useAuth, UserRole } from '@/contexts/AuthContext'
 import type { Permission } from '@/utils/permissions'
 import NotificationsDropdown from '@/components/NotificationsDropdown'
 import ClientaLogo from '@/components/Logo'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 interface MenuItem {
   icon: ComponentType<{ className?: string }>
@@ -245,13 +246,18 @@ export default function AdminLayout() {
               {t('common.signOut')}
             </span>
           </button>
-          <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border border-slate-200 shadow-sm">
-            <p className="text-[14px] font-semibold text-slate-800 leading-tight">
-              {user?.name}
-            </p>
-            <p className="text-xs text-slate-500 mt-1 truncate">
-              {user?.email}
-            </p>
+          <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold">
+              {getInitials(user?.name)}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-gray-900">
+                {user?.name}
+              </span>
+              <span className="text-xs text-gray-500">
+                {user?.email}
+              </span>
+            </div>
           </div>
 
         </div>
@@ -293,7 +299,8 @@ export default function AdminLayout() {
 
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <NotificationsDropdown />
             <button
               onClick={handleLogout}
