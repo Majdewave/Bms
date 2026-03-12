@@ -112,6 +112,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const checkPermission = (permission: Permission): boolean => {
     if (!user) return false
+    if (user.role === 'admin') return true
     return user.permissions?.includes(permission)
   }
 

@@ -41,8 +41,10 @@ export const PERMISSION_MATRIX: Record<UserRole, Permission[]> = {
 /**
  * Check if a user role has a specific permission
  */
-export const hasPermission = (role: UserRole, permission: Permission): boolean => {
-  return PERMISSION_MATRIX[role].includes(permission)
+export function hasPermission(user: { role: UserRole, permissions?: Permission[] } | null | undefined, permission: Permission): boolean {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  return user.permissions?.includes(permission) ?? false;
 }
 
 /**

@@ -38,12 +38,13 @@ export default function StaffAppointments() {
   // Removed dropdown state
 
   useEffect(() => {
-    if (!hasPermission?.('manage_appointments')) {
-      navigate('/unauthorized')
-      return
+    // Prevent redirect before user is loaded
+    if (hasPermission === undefined) return;
+    if (!hasPermission('manage_appointments')) {
+      navigate('/unauthorized');
+      return;
     }
-
-    loadAppointments()
+    loadAppointments();
   }, [hasPermission, navigate])
 
   const loadAppointments = async () => {

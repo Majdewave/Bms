@@ -16,12 +16,10 @@ export default function AdminAppointments() {
   const [appointments, setAppointments] = useState<AppointmentRow[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'scheduled' | 'completed' | 'cancelled'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'scheduled' | 'completed' | 'cancelled' | 'noshow'>('all')
 
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRow | null>(null)
-
-  // Removed dropdown state for inline actions
 
   const isStaffView = user?.role === 'staff'
 
@@ -61,7 +59,7 @@ export default function AdminAppointments() {
         a.clientName.toLowerCase().includes(searchQuery.toLowerCase())
 
       const matchesStatus =
-        statusFilter === 'all' || a.status === statusFilter
+        statusFilter === 'all' || a.status.toLowerCase() === statusFilter
 
       return matchesSearch && matchesStatus
     })
@@ -87,38 +85,37 @@ export default function AdminAppointments() {
             className="btn-primary btn-md gap-2"
           >
             <Plus className="w-4 h-4" />
-            {t('appointments.createTitle')}
+            {t('appointments.new')}
           </button>
         }
       />
 
       {/* Filters */}
-      <div className="card">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder={t('appointments.searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input ps-10 w-full"
-            />
-          </div>
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="relative">
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            placeholder={t('appointments.searchPlaceholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input ps-10 w-64"
+          />
+        </div>
 
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-slate-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="input"
-            >
-              <option value="all">{t('appointments.filters.all')}</option>
-              <option value="scheduled">{t('appointments.status.scheduled')}</option>
-              <option value="completed">{t('appointments.status.completed')}</option>
-              <option value="cancelled">{t('appointments.status.cancelled')}</option>
-            </select>
-          </div>
+        <div className="flex items-center gap-2">
+          <Filter className="w-5 h-5 text-slate-400" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="input"
+          >
+            <option value="all">{t('appointments.filters.all')}</option>
+            <option value="scheduled">{t('appointments.status.scheduled')}</option>
+            <option value="completed">{t('appointments.status.completed')}</option>
+            <option value="cancelled">{t('appointments.status.cancelled')}</option>
+            <option value="noshow">{t('appointments.status.noshow')}</option>
+          </select>
         </div>
       </div>
 
@@ -136,12 +133,15 @@ export default function AdminAppointments() {
                   <th className="px-6 py-3 text-center text-xs">{t('appointments.table.client')}</th>
                   <th className="px-6 py-3 text-center text-xs">{t('appointments.table.datetime')}</th>
                   <th className="px-6 py-3 text-center text-xs">{t('appointments.table.staff')}</th>
+                  <th className="px-6 py-3 text-center text-xs">{t('appointments.table.status')}</th>
                   <th className="px-6 py-3 text-center text-xs">{t('common.actions')}</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredAppointments.map(appointment => (
                   <tr key={appointment.id} className="hover:bg-slate-50">
+
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <User className="w-5 h-5 text-primary" />
@@ -169,6 +169,24 @@ export default function AdminAppointments() {
                       {appointment.staffName || '-'}
                     </td>
 
+                    <td className="px-6 py-4 text-center">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold
+                          ${appointment.status === 'Scheduled'
+                            ? 'bg-blue-100 text-blue-700'
+                            : appointment.status === 'Completed'
+                            ? 'bg-green-100 text-green-700'
+                            : appointment.status === 'Cancelled'
+                            ? 'bg-red-100 text-red-700'
+                            : appointment.status === 'NoShow'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-gray-100 text-gray-700'
+                          }`}
+                      >
+                        {t(`appointments.status.${appointment.status.toLowerCase()}`)}
+                      </span>
+                    </td>
+
                     <td className="px-6 py-4 text-end">
                       <div className="flex items-center gap-3 justify-end">
                         <Edit
@@ -176,6 +194,7 @@ export default function AdminAppointments() {
                           onClick={() => setEditingAppointment(appointment)}
                           title={t('appointments.actions.edit')}
                         />
+
                         <Trash2
                           className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
                           onClick={() => handleDeleteAppointment(appointment.id)}
@@ -183,15 +202,16 @@ export default function AdminAppointments() {
                         />
                       </div>
                     </td>
+
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         )}
       </div>
 
-      {/* Create Modal */}
       {showCreateModal && (
         <CreateAppointmentModal
           onClose={() => setShowCreateModal(false)}
@@ -199,7 +219,6 @@ export default function AdminAppointments() {
         />
       )}
 
-      {/* Edit Modal */}
       {editingAppointment && (
         <CreateAppointmentModal
           mode="edit"
@@ -211,6 +230,7 @@ export default function AdminAppointments() {
           }}
         />
       )}
+
     </div>
   )
 }

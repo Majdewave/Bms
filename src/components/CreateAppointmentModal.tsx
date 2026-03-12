@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { appointmentsService, type AppointmentClient, type Appointment } from '@/api'
 import { servicesService, type BusinessService } from '@/api/servicesService'
 import { staffService, type StaffMember } from '@/api/staff'
+import { useTranslation } from 'react-i18next'
 
 interface CreateAppointmentModalProps {
   onClose: () => void
@@ -20,6 +21,8 @@ export default function CreateAppointmentModal({
   appointment
 }: CreateAppointmentModalProps) {
 
+  const { t } = useTranslation()
+
   const [clients, setClients] = useState<AppointmentClient[]>([])
   const [services, setServices] = useState<BusinessService[]>([])
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
@@ -31,22 +34,19 @@ export default function CreateAppointmentModal({
     staffId: '',
     date: '',
     time: '',
-    duration: '60',
+    duration: '',
     description: '',
     status: 'Scheduled'
   })
 
-  // Load dropdown data
   useEffect(() => {
     loadClients()
     loadServices()
     loadStaffMembers()
   }, [])
 
-  // Fill form if editing
   useEffect(() => {
     if (mode === 'edit' && appointment) {
-
       const start = new Date(appointment.startTime)
 
       setFormData({
@@ -54,13 +54,25 @@ export default function CreateAppointmentModal({
         serviceId: (appointment as any).serviceId ?? '',
         staffId: (appointment as any).staffId ?? '',
         date: start.toISOString().split('T')[0],
-        time: start.toTimeString().slice(0, 5),
-        duration: '60',
+        time: start.toTimeString().slice(0,5),
+        duration: '',
         description: appointment.notes ?? '',
         status: appointment.status ?? 'Scheduled'
       })
     }
   }, [mode, appointment])
+
+  useEffect(() => {
+    if (formData.serviceId) {
+      const selected = services.find(s => s.id === formData.serviceId)
+      if (selected) {
+        setFormData(prev => ({
+          ...prev,
+          duration: String(selected.defaultDurationMinutes)
+        }))
+      }
+    }
+  }, [formData.serviceId, services])
 
   const loadClients = async () => {
     const data = await appointmentsService.getClientsForAppointment()
@@ -77,18 +89,12 @@ export default function CreateAppointmentModal({
       const staff = await staffService.getStaffMembers()
       setStaffMembers(Array.isArray(staff) ? staff : [])
     } catch {
-      console.warn('Staff not allowed for this user')
       setStaffMembers([])
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!formData.clientId || !formData.date || !formData.time) {
-      alert('נא למלא שדות חובה')
-      return
-    }
 
     try {
       setSaving(true)
@@ -114,161 +120,166 @@ export default function CreateAppointmentModal({
       }
 
       onSuccess?.()
-      onClose?.()
+      onClose()
 
-    } catch (error) {
-      console.error(error)
-      alert('שגיאה בשמירת תור')
+    } catch (err) {
+      console.error(err)
+      alert('Error saving appointment')
     } finally {
       setSaving(false)
     }
   }
 
   return (
-
-
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] flex flex-col p-0">
-        {/* Header */}
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-scroll flex flex-col overflow-hidden">
+        {/* HEADER */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-bold">
-            {mode === 'edit' ? 'ערוך פגישה' : 'קבע תור'}
+            {mode === 'edit'
+              ? t('appointments.editTitle')
+              : t('appointments.createTitle')}
           </h2>
           <button onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="flex flex-col flex-grow min-h-0">
-          <div className="flex-grow min-h-0 overflow-y-auto p-6 space-y-4">
-            {/* CLIENT */}
-            <div>
-              <label className="block text-sm font-semibold mb-1">
-                לקוח *
-              </label>
-              <select
-                value={formData.clientId}
-                onChange={(e) =>
-                  setFormData({ ...formData, clientId: e.target.value })
-                }
-                className="w-full border rounded-lg px-3 py-2"
-                required
-              >
-                <option value="">בחר לקוח</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name || c.email || c.id}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* SERVICE */}
-            <div>
-              <label className="block text-sm font-semibold mb-1">
-                שירות
-              </label>
-              <select
-                value={formData.serviceId}
-                onChange={(e) =>
-                  setFormData({ ...formData, serviceId: e.target.value })
-                }
-                className="w-full border rounded-lg px-3 py-2"
-              >
-                <option value="">בחר שירות</option>
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* DATE + TIME */}
+
+        <form
+          id="create-appointment-form"
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1"
+        >
+
+          {/* BODY */}
+           <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <label className="block text-sm font-semibold">
+              {t('appointments.form.client')}
+            </label>
+            <select
+              value={formData.clientId}
+              onChange={e => setFormData({ ...formData, clientId: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2"
+              required
+            >
+              <option value="">{t('appointments.form.selectClient')}</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name || c.email}
+                </option>
+              ))}
+            </select>
+
+            <label className="block text-sm font-semibold">
+              {t('appointments.form.service')}
+            </label>
+            <select
+              value={formData.serviceId}
+              onChange={e => setFormData({ ...formData, serviceId: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2"
+            >
+              <option value="">{t('appointments.form.selectService')}</option>
+              {services.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+
+            <label className="block text-sm font-semibold">
+              {t('appointments.form.date')}
+            </label>
             <div className="grid grid-cols-2 gap-4">
               <input
                 type="date"
                 value={formData.date}
-                onChange={(e) =>
-                  setFormData({ ...formData, date: e.target.value })
-                }
+                onChange={e => setFormData({ ...formData, date: e.target.value })}
                 className="border rounded-lg px-3 py-2"
-                required
               />
               <input
                 type="time"
                 value={formData.time}
-                onChange={(e) =>
-                  setFormData({ ...formData, time: e.target.value })
-                }
+                onChange={e => setFormData({ ...formData, time: e.target.value })}
                 className="border rounded-lg px-3 py-2"
-                required
               />
             </div>
-            {/* STAFF */}
-            <div>
-              <label className="block text-sm font-semibold mb-1">
-                איש צוות
-              </label>
-              <select
-                value={formData.staffId}
-                onChange={(e) =>
-                  setFormData({ ...formData, staffId: e.target.value })
-                }
-                className="w-full border rounded-lg px-3 py-2"
-              >
-                <option value="">בחר איש צוות</option>
-                {staffMembers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.fullName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* DURATION */}
+
+            <label className="block text-sm font-semibold">
+              {t('appointments.form.staff')}
+            </label>
             <select
-              value={formData.duration}
-              onChange={(e) =>
-                setFormData({ ...formData, duration: e.target.value })
-              }
+              value={formData.staffId}
+              onChange={e => setFormData({ ...formData, staffId: e.target.value })}
               className="w-full border rounded-lg px-3 py-2"
             >
-              <option value="30">30 דקות</option>
-              <option value="60">60 דקות</option>
-              <option value="90">90 דקות</option>
-              <option value="120">120 דקות</option>
+              <option value="">{t('appointments.form.staffPlaceholder')}</option>
+              {staffMembers.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.fullName}
+                </option>
+              ))}
             </select>
-            {/* NOTES */}
+
+            {/* STATUS */}
+            <label className="block text-sm font-semibold mb-1">
+              {t('appointments.form.status')}
+            </label>
+            <select
+              value={formData.status}
+              onChange={e => setFormData({ ...formData, status: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2"
+            >
+              <option value="Scheduled">{t('appointments.status.scheduled')}</option>
+              <option value="Completed">{t('appointments.status.completed')}</option>
+              <option value="Cancelled">{t('appointments.status.cancelled')}</option>
+              <option value="NoShow">{t('appointments.status.noshow')}</option>
+            </select>
+
+            <label className="block text-sm font-semibold">
+              {t('appointments.form.duration')}
+            </label>
+            <div className="border rounded-lg px-3 py-2 bg-gray-100">
+              {formData.duration
+                ? t('appointments.duration', { minutes: formData.duration })
+                : '-'}
+            </div>
+
+            <label className="block text-sm font-semibold">
+              {t('appointments.form.description')}
+            </label>
             <textarea
               value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
+              onChange={e => setFormData({ ...formData, description: e.target.value })}
               rows={3}
               className="w-full border rounded-lg px-3 py-2"
-              placeholder="הערות"
+              placeholder={t('appointments.form.descriptionPlaceholder')}
             />
+
           </div>
+
           {/* FOOTER */}
-          <div className="flex justify-end gap-3 pt-4 border-t mt-6 bg-white sticky bottom-0 z-10 p-6">
+          <div className="flex justify-end gap-3 p-4 border-t bg-white shrink-0">
+
             <button
               type="button"
-              className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-100"
+              className="px-4 py-2 rounded-lg border"
               onClick={onClose}
-              disabled={saving}
             >
-              ביטול
+              {t('common.cancel')}
             </button>
+
             <button
               type="submit"
               className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
               disabled={saving}
             >
-              {saving
-                ? 'שומר...'
-                : mode === 'edit'
-                ? 'עדכן פגישה'
-                : 'שמור'}
+              {saving ? t('common.saving') : t('common.save')}
             </button>
+
           </div>
+
         </form>
+
       </div>
     </div>
   )

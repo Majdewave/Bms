@@ -114,6 +114,7 @@
     "filters": {
       "all": "All Status"
     },
+  
     "loading": "Loading appointments...",
     "empty": "No appointments found",
     "noSearchResults": "No appointments match your filters",
@@ -129,12 +130,6 @@
       "cancel": "Cancel",
       "delete": "Delete"
     },
-    "status": {
-      "Scheduled": "Scheduled",
-      "Completed": "Completed",
-      "Cancelled": "Cancelled",
-      "NoShow": "No Show"
-    },
     "form": {
       "client": "Client",
       "selectClient": "Select a client",
@@ -148,8 +143,15 @@
       "staffPlaceholder": "e.g., John Smith",
       "duration": "Duration",
       "description": "Description",
+      "status": "Status",
       "descriptionPlaceholder": "Add any additional notes..."
     },
+    "status": {
+        "scheduled": "Scheduled",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "noshow": "No Show"
+      },
     "services": {
       "consulting": "Consulting",
       "projectManagement": "Project Management",
@@ -158,13 +160,7 @@
       "support": "Support",
       "training": "Training"
     },
-    "duration": {
-      "30": "30 mins",
-      "45": "45 mins",
-      "60": "60 mins",
-      "90": "90 mins",
-      "120": "120 mins"
-    },
+    "duration": "{{minutes}} mins",
     "validation": {
       "requiredFields": "Please fill in all required fields"
     },
@@ -611,4 +607,5 @@
       "loginLinkSent": "Login link sent to {{email}}"
     }
   }
+  
 }

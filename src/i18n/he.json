@@ -130,12 +130,6 @@
       "cancel": "בטל",
       "delete": "מחק"
     },
-    "status": {
-      "Scheduled": "מתוזמן",
-      "Completed": "הושלם",
-      "Cancelled": "בוטל",
-      "NoShow": "לא הופיע"
-    },
     "form": {
       "client": "לקוח",
       "selectClient": "בחר לקוח",
@@ -149,8 +143,15 @@
       "staffPlaceholder": "למשל, יוחנן סמית'",
       "duration": "משך",
       "description": "תיאור",
+      "status": "סטטוס",
       "descriptionPlaceholder": "הוסף הערות נוספות..."
     },
+    "status": {
+        "scheduled": "מתוזמן",
+        "completed": "הושלם",
+        "cancelled": "בוטל",
+        "noshow": "לא הופיע"
+      },
     "services": {
       "consulting": "ייעוץ",
       "projectManagement": "ניהול פרויקטים",
@@ -159,13 +160,7 @@
       "support": "תמיכה",
       "training": "הכשרה"
     },
-    "duration": {
-      "30": "30 דקות",
-      "45": "45 דקות",
-      "60": "60 דקות",
-      "90": "90 דקות",
-      "120": "120 דקות"
-    },
+  "duration": "{{minutes}} דקות",
     "validation": {
       "requiredFields": "אנא מלא את כל השדות הנדרשים"
     },

@@ -123,23 +123,19 @@
       "client": "العميل",
       "appointment": "الموعد",
       "datetime": "التاريخ والوقت",
-      "staff": "الفريق"
+      "staff": "الفريق",
+      "status": "الحالة"
     },
     "actions": {
       "edit": "تعديل",
       "cancel": "إلغاء",
       "delete": "حذف"
     },
-    "status": {
-      "Scheduled": "مجدول",
-      "Completed": "مكتمل",
-      "Cancelled": "ملغى",
-      "NoShow": "لم يحضر"
-    },
     "form": {
       "client": "العميل",
       "selectClient": "اختر العميل",
       "title": "العنوان",
+      "status": "الحالة",
       "titlePlaceholder": "على سبيل المثال، مراجعة ربع سنوية",
       "service": "الخدمة",
       "selectService": "اختر الخدمة",
@@ -151,6 +147,12 @@
       "description": "الوصف",
       "descriptionPlaceholder": "أضف ملاحظات إضافية..."
     },
+    "status": {
+      "Scheduled": "مجدول",
+      "Completed": "مكتمل",
+      "Cancelled": "ملغى",
+      "noshow": "لم يحضر"
+    },
     "services": {
       "consulting": "استشارات",
       "projectManagement": "إدارة المشاريع",
@@ -159,14 +161,7 @@
       "support": "دعم",
       "training": "تدريب"
     },
-    "duration": {
-      "15": "15 دقيقة",
-      "30": "30 دقيقة",
-      "45": "45 دقيقة",
-      "60": "60 دقيقة",
-      "90": "90 دقيقة",
-      "120": "120 دقيقة"
-    },
+    "duration": "{{minutes}} دقيقة",
     "validation": {
       "requiredFields": "يرجى ملء جميع الحقول المطلوبة"
     },
@@ -563,6 +558,7 @@
       "form": {
         "basicInfo": "معلومات أساسية",
         "name": "الاسم الكامل",
+        "status": "الحالة",
         "namePlaceholder": "أدخل الاسم الكامل لعضو الفريق",
         "email": "البريد الإلكتروني",
         "emailPlaceholder": "staff@business.com",
