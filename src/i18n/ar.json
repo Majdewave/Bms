@@ -8,13 +8,22 @@
     "staff": "الموظف",
     "service": "الخدمة",
     "client": "العميل",
-    "time": "الوقت"
+    "time": "الوقت",
+    "activity": {
+      "time": "الوقت",
+      "action": "الإجراء",
+      "entity": "العنصر",
+      "performedBy": "تم بواسطة",
+      "appointmentCreated": "تم إنشاء موعد",
+      "clientCreated": "تم إنشاء عميل",
+      "staffCreated": "تمت إضافة موظف"
+    }
   },
   "app": {
     "name": "Clienta",
     "tagline": "منصة إدارة الأعمال المعتمدة على العملاء",
-    "clientHub": "Client Hub",
-    "operations": "Operations"
+    "clientHub": "مركز العملاء",
+    "operations": "العمليات"
   },
   "common": {
     "edit": "تعديل",

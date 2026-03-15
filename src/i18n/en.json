@@ -8,7 +8,16 @@
     "staff": "Staff",
     "service": "Service",
     "client": "Client",
-    "time": "Time"
+    "time": "Time",
+    "activity": {
+      "time": "Time",
+      "action": "Action",
+      "entity": "Entity",
+      "performedBy": "Performed By",
+      "appointmentCreated": "Appointment created",
+      "clientCreated": "Client created",
+      "staffCreated": "Staff member added"
+    }
   },
   "app": {
     "name": "Clienta",

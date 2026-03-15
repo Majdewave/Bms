@@ -1,3 +1,16 @@
+  // Returns translated label for activity action type
+  const getActionLabel = (type: string, t: any) => {
+    switch (type) {
+      case 'appointment_created':
+        return t('dashboard.activity.appointmentCreated');
+      case 'client_created':
+        return t('dashboard.activity.clientCreated');
+      case 'staff_created':
+        return t('dashboard.activity.staffCreated');
+      default:
+        return type;
+    }
+  };
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { dashboardService } from '@/api'
@@ -6,16 +19,16 @@ import { useTranslation } from 'react-i18next'
 import {
   Users,
   Calendar,
-  AlertCircle,
-  TrendingUp,
-  TrendingDown,
+  UserPlus,
   CheckCircle,
+  Clock,
 } from 'lucide-react'
 
 export default function AdminDashboard() {
   const { user } = useAuth()
   const { t, i18n } = useTranslation()
   const dir = i18n.dir()
+  const isRTL = dir === 'rtl'
   const [stats, setStats] = useState<any>(null)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,16 +60,14 @@ export default function AdminDashboard() {
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'payment':
-        return <DollarSign className="w-4 h-4" title={t('admin.dashboard.activity.icon.payment', 'Payment')} alt={t('admin.dashboard.activity.icon.payment', 'Payment')} />
-      case 'appointment':
-        return <Calendar className="w-4 h-4" title={t('admin.dashboard.activity.icon.appointment', 'Appointment')} alt={t('admin.dashboard.activity.icon.appointment', 'Appointment')} />
-      case 'client':
-        return <UserPlus className="w-4 h-4" title={t('admin.dashboard.activity.icon.client', 'Client')} alt={t('admin.dashboard.activity.icon.client', 'Client')} />
-      case 'invoice':
-        return <FileText className="w-4 h-4" title={t('admin.dashboard.activity.icon.invoice', 'Invoice')} alt={t('admin.dashboard.activity.icon.invoice', 'Invoice')} />
+      case 'appointment_created':
+        return <Calendar className="w-5 h-5" title={t('admin.dashboard.activity.icon.appointment_created', 'Appointment Created')} aria-label={t('admin.dashboard.activity.icon.appointment_created', 'Appointment Created')} role="img" />;
+      case 'client_created':
+        return <UserPlus className="w-5 h-5 text-blue-600" title={t('admin.dashboard.activity.icon.client_created', 'Client Created')} aria-label={t('admin.dashboard.activity.icon.client_created', 'Client Created')} role="img" />;
+      case 'staff_created':
+        return <Users className="w-5 h-5 text-purple-600" title={t('admin.dashboard.activity.icon.staff_created', 'Staff Created')} aria-label={t('admin.dashboard.activity.icon.staff_created', 'Staff Created')} role="img" />;
       default:
-        return <Clock className="w-4 h-4" title={t('admin.dashboard.activity.icon.default', 'Activity')} alt={t('admin.dashboard.activity.icon.default', 'Activity')} />
+        return <Calendar className="w-5 h-5 text-slate-400" title={t('admin.dashboard.activity.icon.default', 'Activity')} aria-label={t('admin.dashboard.activity.icon.default', 'Activity')} role="img" />;
     }
   }
 
@@ -211,45 +222,81 @@ export default function AdminDashboard() {
           description={t('admin.dashboard.activity.subtitle')}
         />
         <CardContent>
-          <div className="space-y-4">
-            {recentActivity.map((activity) => {
-              const showDetails = activity.type === 'appointment';
-              let formattedStartTime = '';
-              if (showDetails && activity.startTime) {
-                const start = new Date(activity.startTime);
-                formattedStartTime = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              }
-              return (
-                <div
-                  key={activity.id}
-                  className="flex items-start gap-4 p-4 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <div className={`p-2 rounded-lg ${getActivityColor(activity.type)}`}>
-                    {getActivityIcon(activity.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">{activity.title}</p>
-                    {showDetails && (
-                      <>
-                        <p className="text-xs text-slate-700 mt-0.5">
-                          {activity.clientName}
-                          {activity.serviceName && ` • ${activity.serviceName}`}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          with {activity.staffName} at {formattedStartTime}
-                        </p>
-                      </>
-                    )}
-                    <p className="text-sm text-slate-600 mt-0.5">{activity.description}</p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <span className="text-xs text-slate-500">
-                      {formatRelativeTime(activity.timestamp)}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="overflow-x-auto">
+            <table dir={dir} className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-100">
+                  {isRTL ? (
+                    <>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.action')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.entity')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.performedBy')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.time')}</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.action')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.entity')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.performedBy')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.time')}</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {recentActivity.map((activity, idx) => {
+                  let formattedStartTime = '';
+                  if (activity.startTime) {
+                    const start = new Date(activity.startTime);
+                    formattedStartTime = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  }
+                  // Action column
+                  const action = getActionLabel(activity.type, t);
+                  // Entity column
+                  let entity = '';
+                  if (activity.type === 'appointment_created') {
+                    entity = [activity.clientName, activity.serviceName].filter(Boolean).join(' • ');
+                  } else if (activity.type === 'client_created') {
+                    entity = activity.clientName || '';
+                  } else if (activity.type === 'staff_created') {
+                    entity = activity.staffName || '';
+                  }
+                  // Performed By column
+                  const performedBy = activity.performedBy || '';
+                  // Time column
+                  const time = formatRelativeTime(activity.timestamp);
+                  return (
+                    <tr key={activity.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                      {isRTL ? (
+                        <>
+                          <td className="px-4 py-2 text-right">
+                            <div className="flex items-center gap-2 justify-start">
+                              {getActivityIcon(activity.type)}
+                              <span className="font-semibold text-slate-900">{action}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 text-right">{entity}</td>
+                          <td className="px-4 py-2 text-right">{performedBy}</td>
+                          <td className="px-4 py-2 text-sm text-slate-500 text-right">{time}</td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-2 text-left">
+                            <div className="flex items-center gap-2">
+                              {getActivityIcon(activity.type)}
+                              <span className="font-semibold text-slate-900">{action}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 text-left">{entity}</td>
+                          <td className="px-4 py-2 text-left">{performedBy}</td>
+                          <td className="px-4 py-2 text-sm text-slate-500 text-left">{time}</td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>

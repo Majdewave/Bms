@@ -8,7 +8,16 @@
     "staff": "צוות",
     "service": "שירות",
     "client": "לקוח",
-    "time": "שעה"
+    "time": "שעה",
+     "activity": {
+        "time": "זמן",
+        "action": "פעולה",
+        "entity": "ישות",
+        "performedBy": "בוצע על ידי",
+        "appointmentCreated": "תור נוצר",
+        "clientCreated": "לקוח נוצר",
+        "staffCreated": "איש צוות נוסף"
+      }
   },
   "app": {
     "name": "Clienta",
