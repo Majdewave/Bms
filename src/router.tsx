@@ -1,30 +1,37 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { RoleBasedRoute } from '@/components/RoleBasedRoute'
 import { PermissionBasedRoute } from '@/components/PermissionBasedRoute'
+
 import Login from '@/pages/Login'
 import Unauthorized from '@/pages/Unauthorized'
 import BillingSuccess from '@/pages/BillingSuccess'
 import BillingPage from '@/pages/BillingPage'
+
 import AdminLayout from '@/layouts/AdminLayout'
 import ClientLayout from '@/layouts/ClientLayout'
 
-// Admin pages
+/* ================= ADMIN PAGES ================= */
+
 import AdminDashboard from '@/pages/admin/Dashboard'
 import AdminClients from '@/pages/admin/Clients'
 import AdminClientProfile from '@/pages/admin/ClientProfile'
+import EditClient from '@/pages/admin/EditClient'
 import AdminAppointments from '@/pages/admin/Appointments'
 import AdminInvoices from '@/pages/admin/Invoices'
 import AdminReports from '@/pages/admin/Reports'
 import AdminBusinessSettings from '@/pages/admin/BusinessSettings'
 import AdminStaff from '@/pages/admin/Staff'
 
-// Staff pages
+/* ================= STAFF PAGES ================= */
+
 import StaffDashboard from '@/pages/staff/Dashboard'
 import StaffAppointments from '@/pages/staff/Appointments'
 import StaffClients from '@/pages/staff/Clients'
 
-// Client pages
+/* ================= CLIENT PAGES ================= */
+
 import ClientDashboard from '@/pages/client/Dashboard'
 import ClientAppointments from '@/pages/client/Appointments'
 import ClientInvoices from '@/pages/client/Invoices'
@@ -36,18 +43,22 @@ export const router = createBrowserRouter([
     path: '/',
     element: <Login />,
   },
+
   {
     path: '/login',
     element: <Login />,
   },
+
   {
     path: '/unauthorized',
     element: <Unauthorized />,
   },
+
   {
     path: '/billing/success',
     element: <BillingSuccess />,
   },
+
   {
     path: '/billing',
     element: (
@@ -92,6 +103,15 @@ export const router = createBrowserRouter([
         element: (
           <PermissionBasedRoute requiredPermission="manage_clients">
             <AdminClientProfile />
+          </PermissionBasedRoute>
+        ),
+      },
+
+      {
+        path: 'clients/:clientId/edit',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_clients">
+            <EditClient />
           </PermissionBasedRoute>
         ),
       },
@@ -188,7 +208,6 @@ export const router = createBrowserRouter([
         ),
       },
 
-      /* 🔧 זה התיקון */
       {
         path: 'clients/:clientId',
         element: (

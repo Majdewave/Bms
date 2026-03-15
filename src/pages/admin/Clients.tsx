@@ -267,7 +267,7 @@ export default function Clients() {
                               role="button"
                               onClick={e => {
                                 e.stopPropagation();
-                                navigate(`/admin/clients/${clientId}/edit`);
+                                navigate(`/admin/clients/${clientId}`);
                               }}
                             />
                             {isBlocked ? (
