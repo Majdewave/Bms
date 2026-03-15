@@ -77,17 +77,33 @@ export interface RecentActivity {
 }
 
 // TODO: Backend endpoints not yet implemented - using mock data temporarily
-export const getAdminStats = async (): Promise<AdminDashboardStats> => {
-  // return get<AdminDashboardStats>('/api/dashboard/admin')
-  return Promise.resolve({
-    totalClients: { count: 0, change: '+0%', trend: 'up' as const },
-    upcomingAppointments: { today: 0, thisWeek: 0, total: 0 },
-    monthlyRevenue: { amount: 0, currency: 'ILS', change: '+0%', trend: 'up' as const },
-    unpaidInvoices: { count: 0, totalAmount: 0, currency: 'ILS' }
-  })
+export const getAdminStats = async (): Promise<any> => {
+  const data = await get<any>('/api/dashboard');
+  return {
+    totalClients: {
+      count: data.totalClients ?? 0,
+      change: '+0%',
+      trend: 'up',
+    },
+    appointmentsToday: {
+      count: data.appointmentsToday ?? 0,
+      change: '+0%',
+      trend: 'up',
+    },
+    completedToday: {
+      count: data.completedToday ?? 0,
+      change: '+0%',
+      trend: 'up',
+    },
+    openTasks: {
+      count: data.openTasks ?? 0,
+      change: '+0%',
+      trend: 'up',
+    },
+    upcomingAppointmentsList: data.upcomingAppointmentsList ?? []
+  };
 }
 
 export const getRecentActivity = async (): Promise<RecentActivity[]> => {
-  // return get<RecentActivity[]>('/api/dashboard/activity')
-  return Promise.resolve([])
+  return get<RecentActivity[]>('/api/dashboard/activity');
 }

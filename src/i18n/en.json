@@ -1,4 +1,15 @@
-{
+  {
+  "dashboard": {
+    "totalClients": "Total Clients",
+    "appointmentsToday": "Appointments Today",
+    "completedToday": "Completed Appointments Today",
+    "upcomingAppointments": "Upcoming Appointments",
+    "status": "Status",
+    "staff": "Staff",
+    "service": "Service",
+    "client": "Client",
+    "time": "Time"
+  },
   "app": {
     "name": "Clienta",
     "tagline": "Client Management Made Simple",
@@ -86,6 +97,7 @@
     "staff": "Staff Management",
     "settings": "Business Settings",
     "appointments": "Appointments",
+    "appointments.new": "New Appointment",
     "invoices": "Invoices",
     "files": "Files",
     "profile": "Profile"
@@ -105,6 +117,7 @@
   },
   "appointments": {
     "title": "Appointments",
+    "new": "New Appointment",
     "subtitle": "Manage all client appointments",
     "create": "Create Appointment",
     "createTitle": "Create Appointment",
@@ -295,6 +308,8 @@
       "stats": {
         "totalClients": "Total Clients",
         "appointmentsToday": "Appointments Today",
+        "completedToday": "Completed Today",
+        "openTasks": "Open Tasks",
         "monthlyRevenue": "Monthly Revenue",
         "unpaidInvoices": "Unpaid Invoices",
         "vsLastMonth": "vs last month",

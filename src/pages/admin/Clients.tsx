@@ -6,7 +6,7 @@ import { clientsService } from '@/api'
 import type { Client } from '@/api'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Filter, Plus, Mail, Phone, Users } from 'lucide-react'
+import { Search, Filter, Plus, Mail, Phone, Users, Edit, ShieldOff, ShieldCheck, Trash2 } from 'lucide-react'
 
 export default function Clients() {
   const navigate = useNavigate()
@@ -182,76 +182,122 @@ export default function Clients() {
                     <th className="text-start py-3 px-4">
                       {t('admin.clients.table.lastVisit')}
                     </th>
+                    <th className="text-start py-3 px-4">
+                      {t('common.actions')}
+                    </th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y">
                   {filteredClients.map((client) => {
-
                     const clientId = client?.id ?? ''
-
+                    const isBlocked = client?.isActive === false || client?.status === 'blocked' || client?.status === 'inactive';
+                    const handleBlock = async (e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      await clientsService.updateClient(clientId, {
+                        ...client,
+                        isActive: !client.isActive
+                      });
+                      // Refresh list
+                      const data = await clientsService.getClients();
+                      setClients(Array.isArray(data) ? data : data?.data ?? []);
+                    };
+                    const handleDelete = async (e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      if (window.confirm(t('admin.clients.confirmDelete') || 'Are you sure you want to delete this client?')) {
+                        await clientsService.deleteClient(clientId);
+                        // Refresh list
+                        const data = await clientsService.getClients();
+                        setClients(Array.isArray(data) ? data : data?.data ?? []);
+                      }
+                    };
                     return (
                       <tr
                         key={clientId}
                         className="hover:bg-slate-50 cursor-pointer"
-                        onClick={() =>
-                          clientId && navigate(`/admin/clients/${clientId}`)
-                        }
+                        onClick={() => clientId && navigate(`/admin/clients/${clientId}`)}
                       >
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
-
                             <div className="w-10 h-10 bg-primary-600 text-white rounded-lg flex items-center justify-center text-sm font-semibold">
                               {getInitials(client?.fullName)}
                             </div>
-
                             <div>
                               <p className="font-semibold">
                                 {client?.fullName ?? 'Unnamed'}
                               </p>
-
                               <p className="text-xs text-slate-500">
                                 {clientId.substring(0, 8)}
                               </p>
                             </div>
-
                           </div>
                         </td>
-
                         <td className="py-4 px-4">
                           <div className="space-y-1">
-
                             <div className="flex items-center gap-2 text-sm">
                               <Mail className="w-4 h-4 text-slate-400" />
                               {client?.email ?? '-'}
                             </div>
-
                             <div className="flex items-center gap-2 text-sm">
                               <Phone className="w-4 h-4 text-slate-400" />
                               {client?.phone ?? '-'}
                             </div>
-
                           </div>
                         </td>
-
                         <td className="py-4 px-4">
-                          <Badge
-                            variant={
-                              client?.status === 'inactive'
-                                ? 'slate'
-                                : 'success'
+                          <span
+                            className={
+                              isBlocked
+                                ? 'inline-block px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700'
+                                : 'inline-block px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700'
                             }
                           >
-                            {client?.status ?? 'active'}
-                          </Badge>
+                            {isBlocked ? t('admin.clients.blocked', 'Blocked') : t('admin.clients.active', 'Active')}
+                          </span>
                         </td>
-
                         <td className="py-4 px-4">
                           {formatDate(client?.lastVisit)}
                         </td>
-
+                        <td className="py-4 px-4">
+                          <div className="flex gap-3 items-center">
+                            <Edit
+                              className="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer"
+                              aria-label={t('common.edit')}
+                              title={t('common.edit')}
+                              role="button"
+                              onClick={e => {
+                                e.stopPropagation();
+                                navigate(`/admin/clients/${clientId}/edit`);
+                              }}
+                            />
+                            {isBlocked ? (
+                              <ShieldCheck
+                                className="w-5 h-5 text-green-500 hover:text-green-700 cursor-pointer"
+                                aria-label={t('admin.clients.activate', 'Activate')}
+                                title={t('admin.clients.activate', 'Activate')}
+                                role="button"
+                                onClick={handleBlock}
+                              />
+                            ) : (
+                              <ShieldOff
+                                className="w-5 h-5 text-yellow-500 hover:text-yellow-700 cursor-pointer"
+                                aria-label={t('admin.clients.block', 'Block')}
+                                title={t('admin.clients.block', 'Block')}
+                                role="button"
+                                onClick={handleBlock}
+                              />
+                            )}
+                            <Trash2
+                              className="w-5 h-5 text-red-500 hover:text-red-700 cursor-pointer"
+                              aria-label={t('common.delete')}
+                              title={t('common.delete')}
+                              role="button"
+                              onClick={handleDelete}
+                            />
+                          </div>
+                        </td>
                       </tr>
-                    )
+                    );
                   })}
                 </tbody>
 

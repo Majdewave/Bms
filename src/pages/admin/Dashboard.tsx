@@ -6,18 +6,16 @@ import { useTranslation } from 'react-i18next'
 import {
   Users,
   Calendar,
-  DollarSign,
   AlertCircle,
   TrendingUp,
   TrendingDown,
-  Clock,
-  FileText,
-  UserPlus,
+  CheckCircle,
 } from 'lucide-react'
 
 export default function AdminDashboard() {
   const { user } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const dir = i18n.dir()
   const [stats, setStats] = useState<any>(null)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,7 +35,6 @@ export default function AdminDashboard() {
         setLoading(false)
       }
     }
-
     loadDashboardData()
   }, [])
 
@@ -51,15 +48,15 @@ export default function AdminDashboard() {
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'payment':
-        return <DollarSign className="w-4 h-4" />
+        return <DollarSign className="w-4 h-4" title={t('admin.dashboard.activity.icon.payment', 'Payment')} alt={t('admin.dashboard.activity.icon.payment', 'Payment')} />
       case 'appointment':
-        return <Calendar className="w-4 h-4" />
+        return <Calendar className="w-4 h-4" title={t('admin.dashboard.activity.icon.appointment', 'Appointment')} alt={t('admin.dashboard.activity.icon.appointment', 'Appointment')} />
       case 'client':
-        return <UserPlus className="w-4 h-4" />
+        return <UserPlus className="w-4 h-4" title={t('admin.dashboard.activity.icon.client', 'Client')} alt={t('admin.dashboard.activity.icon.client', 'Client')} />
       case 'invoice':
-        return <FileText className="w-4 h-4" />
+        return <FileText className="w-4 h-4" title={t('admin.dashboard.activity.icon.invoice', 'Invoice')} alt={t('admin.dashboard.activity.icon.invoice', 'Invoice')} />
       default:
-        return <Clock className="w-4 h-4" />
+        return <Clock className="w-4 h-4" title={t('admin.dashboard.activity.icon.default', 'Activity')} alt={t('admin.dashboard.activity.icon.default', 'Activity')} />
     }
   }
 
@@ -109,44 +106,14 @@ export default function AdminDashboard() {
       />
 
       {/* Stats Grid */}
-      <Grid cols={4} gap="md" className="mb-8">
+      <Grid cols={3} gap="md" className="mb-8">
         <Card className="hover:shadow-lg transition-shadow">
           <CardContent>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm text-slate-500 font-medium">{t('admin.dashboard.stats.totalClients')}</p>
+                <p className="text-sm text-slate-500 font-medium">{t('dashboard.appointmentsToday')}</p>
                 <p className="text-3xl font-bold text-slate-900 mt-2">
-                  {stats?.totalClients.count}
-                </p>
-                <div className="flex items-center gap-1 mt-2">
-                  {stats?.totalClients.trend === 'up' ? (
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-red-600" />
-                  )}
-                  <span className={`text-sm font-medium ${stats?.totalClients.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                    {stats?.totalClients.change}
-                  </span>
-                  <span className="text-sm text-slate-500">{t('admin.dashboard.stats.vsLastMonth')}</span>
-                </div>
-              </div>
-              <div className="p-3 rounded-lg bg-blue-50 text-blue-600">
-                <Users className="w-6 h-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardContent>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm text-slate-500 font-medium">{t('admin.dashboard.stats.appointmentsToday')}</p>
-                <p className="text-3xl font-bold text-slate-900 mt-2">
-                  {stats?.upcomingAppointments.today}
-                </p>
-                <p className="text-sm text-slate-500 mt-2">
-                  {t('admin.dashboard.stats.thisWeek', { count: stats?.upcomingAppointments.thisWeek })}
+                  {stats?.appointmentsToday?.count ?? 0}
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-green-50 text-green-600">
@@ -160,24 +127,13 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm text-slate-500 font-medium">{t('admin.dashboard.stats.monthlyRevenue')}</p>
+                <p className="text-sm text-slate-500 font-medium">{t('dashboard.completedToday')}</p>
                 <p className="text-3xl font-bold text-slate-900 mt-2">
-                  {formatCurrency(stats?.monthlyRevenue.amount, stats?.monthlyRevenue.currency)}
+                  {stats?.completedToday?.count ?? 0}
                 </p>
-                <div className="flex items-center gap-1 mt-2">
-                  {stats?.monthlyRevenue.trend === 'up' ? (
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-red-600" />
-                  )}
-                  <span className={`text-sm font-medium ${stats?.monthlyRevenue.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                    {stats?.monthlyRevenue.change}
-                  </span>
-                  <span className="text-sm text-slate-500">{t('admin.dashboard.stats.vsLastMonth')}</span>
-                </div>
               </div>
-              <div className="p-3 rounded-lg bg-purple-50 text-purple-600">
-                <DollarSign className="w-6 h-6" />
+              <div className="p-3 rounded-lg bg-blue-50 text-blue-600">
+                <CheckCircle className="w-6 h-6" />
               </div>
             </div>
           </CardContent>
@@ -187,21 +143,66 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm text-slate-500 font-medium">{t('admin.dashboard.stats.unpaidInvoices')}</p>
+                <p className="text-sm text-slate-500 font-medium">{t('dashboard.totalClients')}</p>
                 <p className="text-3xl font-bold text-slate-900 mt-2">
-                  {stats?.unpaidInvoices.count}
-                </p>
-                <p className="text-sm text-amber-600 font-medium mt-2">
-                  {t('admin.dashboard.stats.outstanding', { amount: formatCurrency(stats?.unpaidInvoices.totalAmount, stats?.unpaidInvoices.currency) })}
+                  {stats?.totalClients?.count ?? 0}
                 </p>
               </div>
-              <div className="p-3 rounded-lg bg-amber-50 text-amber-600">
-                <AlertCircle className="w-6 h-6" />
+              <div className="p-3 rounded-lg bg-purple-50 text-purple-600">
+                <Users className="w-6 h-6" />
               </div>
             </div>
           </CardContent>
         </Card>
       </Grid>
+
+      {/* Upcoming Appointments Section */}
+      <Card className="mb-8">
+        <CardHeader title={t('dashboard.upcomingAppointments')} />
+        <CardContent>
+          {(!stats?.upcomingAppointmentsList || stats.upcomingAppointmentsList.length === 0) ? (
+            <div className="text-slate-400 py-4 text-center">No upcoming appointments</div>
+          ) : (
+            <div className="overflow-x-auto" dir={dir}>
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.time')}</th>
+                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.client')}</th>
+                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.service')}</th>
+                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.staff')}</th>
+                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.status')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.upcomingAppointmentsList.slice(0, 5).map((apt: any, idx: number) => {
+                    const dateObj = new Date(apt.startTime);
+                    const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return (
+                      <tr
+                        key={apt.id}
+                        className={
+                          `${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`
+                        }
+                      >
+                        <td className={`px-4 py-2 font-mono ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{time}</td>
+                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.clientName}</td>
+                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.serviceName}</td>
+                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.staffName}</td>
+                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                          <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700 capitalize">
+                            {apt.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Activity */}
       <Card>
@@ -211,25 +212,44 @@ export default function AdminDashboard() {
         />
         <CardContent>
           <div className="space-y-4">
-            {recentActivity.map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-start gap-4 p-4 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                <div className={`p-2 rounded-lg ${getActivityColor(activity.type)}`}>
-                  {getActivityIcon(activity.type)}
+            {recentActivity.map((activity) => {
+              const showDetails = activity.type === 'appointment';
+              let formattedStartTime = '';
+              if (showDetails && activity.startTime) {
+                const start = new Date(activity.startTime);
+                formattedStartTime = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              }
+              return (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-4 p-4 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  <div className={`p-2 rounded-lg ${getActivityColor(activity.type)}`}>
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-900">{activity.title}</p>
+                    {showDetails && (
+                      <>
+                        <p className="text-xs text-slate-700 mt-0.5">
+                          {activity.clientName}
+                          {activity.serviceName && ` • ${activity.serviceName}`}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          with {activity.staffName} at {formattedStartTime}
+                        </p>
+                      </>
+                    )}
+                    <p className="text-sm text-slate-600 mt-0.5">{activity.description}</p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <span className="text-xs text-slate-500">
+                      {formatRelativeTime(activity.timestamp)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900">{activity.title}</p>
-                  <p className="text-sm text-slate-600 mt-0.5">{activity.description}</p>
-                </div>
-                <div className="flex-shrink-0">
-                  <span className="text-xs text-slate-500">
-                    {formatRelativeTime(activity.timestamp)}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>

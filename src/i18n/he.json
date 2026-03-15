@@ -1,4 +1,15 @@
 {
+  "dashboard": {
+    "totalClients": "סה״כ לקוחות",
+    "appointmentsToday": "תורים היום",
+    "completedToday": "תורים שהושלמו היום",
+    "upcomingAppointments": "תורים קרובים",
+    "status": "סטטוס",
+    "staff": "צוות",
+    "service": "שירות",
+    "client": "לקוח",
+    "time": "שעה"
+  },
   "app": {
     "name": "Clienta",
     "tagline": "Client Management Made Simple",
@@ -87,6 +98,7 @@
     "staff": "ניהול צוות",
     "settings": "הגדרות עסקיות",
     "appointments": "פגישות",
+    "appointments.new": "פגישה חדשה",
     "invoices": "חשבוניות",
     "files": "קבצים",
     "profile": "פרופיל"
@@ -106,6 +118,7 @@
   },
   "appointments": {
     "title": "פגישות",
+    "new": "פגישה חדשה",
     "subtitle": "נהל את כל הפגישות של הלקוחות",
     "create": "צור פגישה",
     "createTitle": "צור פגישה",

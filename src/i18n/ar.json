@@ -1,4 +1,15 @@
-{
+  {
+  "dashboard": {
+    "totalClients": "إجمالي العملاء",
+    "appointmentsToday": "المواعيد اليوم",
+    "completedToday": "المواعيد المكتملة اليوم",
+    "upcomingAppointments": "المواعيد القادمة",
+    "status": "الحالة",
+    "staff": "الموظف",
+    "service": "الخدمة",
+    "client": "العميل",
+    "time": "الوقت"
+  },
   "app": {
     "name": "Clienta",
     "tagline": "منصة إدارة الأعمال المعتمدة على العملاء",
@@ -87,6 +98,7 @@
     "staff": "إدارة الفريق",
     "settings": "إعدادات الأعمال",
     "appointments": "المواعيد",
+    "appointments.new": "موعد جديد",
     "invoices": "الفواتير",
     "files": "الملفات",
     "profile": "الملف الشخصي"
@@ -106,6 +118,7 @@
   },
   "appointments": {
     "title": "المواعيد",
+    "new": "موعد جديد",
     "subtitle": "إدارة جميع مواعيد العملاء",
     "create": "إنشاء موعد",
     "createTitle": "إنشاء موعد",
