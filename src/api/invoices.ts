@@ -14,6 +14,7 @@ export interface Invoice {
   clientName: string
   clientEmail: string
   amount: number
+  invoiceDate: string
   date: string
   dueDate: string
   status: 'paid' | 'pending' | 'overdue'
@@ -25,6 +26,9 @@ export interface CreateInvoiceRequest {
   clientId: string
   invoiceNumber: string
   amount: number
+  invoiceDate?: string
+  dueDate?: string
+  notes?: string
 }
 
 const mockInvoices: Invoice[] = [
@@ -35,6 +39,7 @@ const mockInvoices: Invoice[] = [
     clientName: 'Sarah Johnson',
     clientEmail: 'sarah.j@example.com',
     amount: 2500.0,
+    invoiceDate: '2024-02-01',
     date: '2024-02-01',
     dueDate: '2024-02-15',
     status: 'paid',
@@ -49,6 +54,7 @@ const mockInvoices: Invoice[] = [
     clientName: 'Michael Chen',
     clientEmail: 'mchen@example.com',
     amount: 3750.5,
+    invoiceDate: '2024-02-05',
     date: '2024-02-05',
     dueDate: '2024-02-20',
     status: 'pending',
@@ -63,6 +69,7 @@ const mockInvoices: Invoice[] = [
     clientName: 'Emma Davis',
     clientEmail: 'emma.d@example.com',
     amount: 1200.0,
+    invoiceDate: '2024-01-20',
     date: '2024-01-20',
     dueDate: '2024-02-03',
     status: 'overdue',
@@ -88,7 +95,7 @@ export const getInvoices = async (): Promise<Invoice[]> => {
   return (data as any[]).map((invoice) => {
     const rawStatus = String(invoice.status ?? 'pending').toLowerCase()
     const status: Invoice['status'] = rawStatus === 'paid' || rawStatus === 'overdue' ? rawStatus : 'pending'
-    const date = invoice.date ?? invoice.createdAt ?? new Date().toISOString()
+    const invoiceDate = invoice.invoiceDate ?? invoice.date ?? invoice.createdAt ?? new Date().toISOString()
 
     return {
       id: String(invoice.id ?? ''),
@@ -97,8 +104,9 @@ export const getInvoices = async (): Promise<Invoice[]> => {
       clientName: String(invoice.clientName ?? ''),
       clientEmail: String(invoice.clientEmail ?? ''),
       amount: Number(invoice.amount ?? 0),
-      date: String(date),
-      dueDate: String(invoice.dueDate ?? date),
+      invoiceDate: String(invoiceDate),
+      date: String(invoiceDate),
+      dueDate: String(invoice.dueDate ?? invoiceDate),
       status,
       lineItems: Array.isArray(invoice.lineItems) ? invoice.lineItems : [],
       notes: invoice.notes,

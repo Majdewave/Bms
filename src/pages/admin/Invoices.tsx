@@ -11,6 +11,8 @@ import {
   Filter,
   X,
   Check,
+  Pencil,
+  Trash2,
 } from 'lucide-react'
 
 export default function AdminInvoices() {
@@ -21,11 +23,12 @@ export default function AdminInvoices() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null)
   const [newInvoice, setNewInvoice] = useState({
     clientId: '',
     invoiceNumber: `INV-${Date.now()}`,
     amount: 0,
-    date: new Date().toISOString().split('T')[0],
+    invoiceDate: new Date().toISOString().split('T')[0],
     dueDate: '',
     notes: '',
   })
@@ -51,31 +54,61 @@ export default function AdminInvoices() {
     }
   }
 
+  const closeModal = () => {
+    setShowCreateModal(false)
+    setEditingInvoiceId(null)
+    setNewInvoice({
+      clientId: '',
+      invoiceNumber: `INV-${Date.now()}`,
+      amount: 0,
+      invoiceDate: new Date().toISOString().split('T')[0],
+      dueDate: '',
+      notes: '',
+    })
+  }
+
   const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
     try {
-      const invoice = await invoicesService.createInvoice({
-        clientId: newInvoice.clientId,
-        invoiceNumber: newInvoice.invoiceNumber,
-        amount: newInvoice.amount,
-      })
+      if (editingInvoiceId) {
+        const token = localStorage.getItem('token')
+        const payload = {
+          clientId: newInvoice.clientId,
+          invoiceNumber: newInvoice.invoiceNumber,
+          amount: newInvoice.amount,
+          invoiceDate: new Date(newInvoice.invoiceDate).toISOString(),
+          dueDate: new Date(newInvoice.dueDate).toISOString(),
+          notes: newInvoice.notes,
+        }
 
-      console.log('CREATED FROM SERVER:', invoice)
+        console.log('UPDATE PAYLOAD:', payload)
+
+        const res = await fetch(`http://localhost:5146/api/invoices/${editingInvoiceId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) throw new Error('Failed to update invoice')
+      } else {
+        const invoice = await invoicesService.createInvoice({
+          clientId: newInvoice.clientId,
+          invoiceNumber: newInvoice.invoiceNumber,
+          amount: newInvoice.amount,
+          invoiceDate: new Date(newInvoice.invoiceDate).toISOString(),
+          dueDate: newInvoice.dueDate ? new Date(newInvoice.dueDate).toISOString() : undefined,
+          notes: newInvoice.notes,
+        })
+        console.log('CREATED FROM SERVER:', invoice)
+      }
 
       await loadData()
-
-      setShowCreateModal(false)
-      setNewInvoice({
-        clientId: '',
-        invoiceNumber: `INV-${Date.now()}`,
-        amount: 0,
-        date: new Date().toISOString().split('T')[0],
-        dueDate: '',
-        notes: '',
-      })
+      closeModal()
     } catch (error) {
-      console.error('Failed to create invoice:', error)
+      console.error('Failed to save invoice:', error)
     } finally {
       setSaving(false)
     }
@@ -119,6 +152,34 @@ export default function AdminInvoices() {
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Failed to download invoice:', error)
+    }
+  }
+
+  const handleEdit = (invoice: Invoice) => {
+    setNewInvoice({
+      clientId: invoice.clientId,
+      invoiceNumber: invoice.number,
+      amount: invoice.amount,
+      invoiceDate: invoice.invoiceDate ? invoice.invoiceDate.split('T')[0] : new Date().toISOString().split('T')[0],
+      dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : '',
+      notes: invoice.notes ?? '',
+    })
+    setEditingInvoiceId(invoice.id)
+    setShowCreateModal(true)
+  }
+
+  const deleteInvoice = async (id: string) => {
+    if (!confirm('Delete this invoice?')) return
+    const token = localStorage.getItem('token')
+    try {
+      const res = await fetch(`http://localhost:5146/api/invoices/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) { console.error('DELETE FAILED:', res.status); return }
+      await loadData()
+    } catch (error) {
+      console.error('Failed to delete invoice:', error)
     }
   }
 
@@ -231,7 +292,7 @@ export default function AdminInvoices() {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-sm text-slate-600">
-                        {formatDate(invoice.date)}
+                        {formatDate(invoice.invoiceDate)}
                       </td>
                       <td className="py-4 px-4 text-sm text-slate-600">
                         {formatDate(invoice.dueDate)}
@@ -254,13 +315,17 @@ export default function AdminInvoices() {
                         </select>
                       </td>
                       <td className="py-4 px-4">
-                        <button
-                          onClick={() => downloadInvoice(invoice.id)}
-                          className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 font-medium text-sm"
-                        >
-                          <Download className="w-4 h-4" />
-                          {t('admin.invoices.download')}
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button type="button" onClick={() => downloadInvoice(invoice.id)}>
+                            <Download className="w-4 h-4 text-blue-600" />
+                          </button>
+                          <button type="button" onClick={() => handleEdit(invoice)}>
+                            <Pencil className="w-4 h-4 text-green-600" />
+                          </button>
+                          <button type="button" onClick={() => deleteInvoice(invoice.id)}>
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -283,14 +348,14 @@ export default function AdminInvoices() {
           <div className="flex min-h-screen items-center justify-center p-4">
             <div
               className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-              onClick={() => setShowCreateModal(false)}
+              onClick={closeModal}
             ></div>
 
             <div className="relative bg-white rounded-xl shadow-xl max-w-4xl w-full p-6 z-10 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">{t('admin.invoices.createNew')}</h2>
+                <h2 className="text-2xl font-bold text-slate-900">{editingInvoiceId ? 'Edit Invoice' : t('admin.invoices.createNew')}</h2>
                 <button
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={closeModal}
                   className="text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   <X className="w-6 h-6" />
@@ -355,8 +420,8 @@ export default function AdminInvoices() {
                     <input
                       type="date"
                       required
-                      value={newInvoice.date}
-                      onChange={(e) => setNewInvoice({ ...newInvoice, date: e.target.value })}
+                      value={newInvoice.invoiceDate}
+                      onChange={(e) => setNewInvoice({ ...newInvoice, invoiceDate: e.target.value })}
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                     />
                   </div>
@@ -393,7 +458,7 @@ export default function AdminInvoices() {
                 <div className="flex gap-3 justify-end">
                   <button
                     type="button"
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={closeModal}
                     className="px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     {t('common.cancel')}
