@@ -21,7 +21,7 @@ export default function ClientInvoices() {
     } catch (error) {
       console.error('Failed to load invoices:', error)
     } finally {
-      setLoading(false)
+      setLoading(false) 
     }
   }
 

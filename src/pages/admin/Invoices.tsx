@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Container, PageHeader, Card, CardHeader, CardContent } from '@/components'
 import { invoicesService, clientsService } from '@/api'
-import type { Invoice, InvoiceLineItem } from '@/api'
+import type { Invoice } from '@/api'
 import type { Client } from '@/api'
 import { useTranslation } from 'react-i18next'
 import {
@@ -10,7 +10,6 @@ import {
   Search,
   Filter,
   X,
-  Trash2,
   Check,
 } from 'lucide-react'
 
@@ -24,13 +23,12 @@ export default function AdminInvoices() {
   const [saving, setSaving] = useState(false)
   const [newInvoice, setNewInvoice] = useState({
     clientId: '',
+    invoiceNumber: `INV-${Date.now()}`,
+    amount: 0,
     date: new Date().toISOString().split('T')[0],
     dueDate: '',
     notes: '',
   })
-  const [lineItems, setLineItems] = useState<Omit<InvoiceLineItem, 'id' | 'total'>[]>([
-    { description: '', quantity: 1, price: 0 },
-  ])
 
   useEffect(() => {
     loadData()
@@ -42,7 +40,9 @@ export default function AdminInvoices() {
         invoicesService.getInvoices(),
         clientsService.getClients(),
       ])
-      setInvoices(invoicesData)
+      setInvoices(
+        Array.from(new Map(invoicesData.map((invoice) => [invoice.id, invoice])).values())
+      )
       setClients(clientsData)
     } catch (error) {
       console.error('Failed to load data:', error)
@@ -51,58 +51,29 @@ export default function AdminInvoices() {
     }
   }
 
-  const addLineItem = () => {
-    setLineItems([...lineItems, { description: '', quantity: 1, price: 0 }])
-  }
-
-  const removeLineItem = (index: number) => {
-    setLineItems(lineItems.filter((_, i) => i !== index))
-  }
-
-  const updateLineItem = (index: number, field: keyof Omit<InvoiceLineItem, 'id' | 'total'>, value: string | number) => {
-    const updated = [...lineItems]
-    updated[index] = { ...updated[index], [field]: value }
-    setLineItems(updated)
-  }
-
-  const calculateTotal = () => {
-    return lineItems.reduce((sum, item) => sum + (item.quantity * item.price), 0)
-  }
-
   const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
     try {
-      const selectedClient = clients.find(c => c.id === newInvoice.clientId)
-      if (!selectedClient) return
-
-      const invoiceLineItems: InvoiceLineItem[] = lineItems.map((item, index) => ({
-        id: `line-${index + 1}`,
-        ...item,
-        total: item.quantity * item.price,
-      }))
-
       const invoice = await invoicesService.createInvoice({
         clientId: newInvoice.clientId,
-        clientName: selectedClient.name,
-        clientEmail: selectedClient.email,
-        date: newInvoice.date,
-        dueDate: newInvoice.dueDate,
-        amount: calculateTotal(),
-        status: 'pending',
-        lineItems: invoiceLineItems,
-        notes: newInvoice.notes,
+        invoiceNumber: newInvoice.invoiceNumber,
+        amount: newInvoice.amount,
       })
 
-      setInvoices([invoice, ...invoices])
+      console.log('CREATED FROM SERVER:', invoice)
+
+      await loadData()
+
       setShowCreateModal(false)
       setNewInvoice({
         clientId: '',
+        invoiceNumber: `INV-${Date.now()}`,
+        amount: 0,
         date: new Date().toISOString().split('T')[0],
         dueDate: '',
         notes: '',
       })
-      setLineItems([{ description: '', quantity: 1, price: 0 }])
     } catch (error) {
       console.error('Failed to create invoice:', error)
     } finally {
@@ -119,17 +90,33 @@ export default function AdminInvoices() {
     }
   }
 
-  const handleDownloadPDF = async (invoice: Invoice) => {
+  const downloadInvoice = async (id: string) => {
     try {
-      const blob = await invoicesService.downloadInvoice(invoice.id)
+      console.log('DOWNLOAD CLICKED:', id)
+
+      const token = localStorage.getItem('token')
+
+      const res = await fetch(`http://localhost:5146/api/invoices/${id}/pdf`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!res.ok) {
+        console.error('FAILED:', res.status)
+        return
+      }
+
+      const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)
+
       const a = document.createElement('a')
       a.href = url
-      a.download = `${invoice.number}.pdf`
-      document.body.appendChild(a)
+      a.download = `invoice-${id}.pdf`
       a.click()
+
       window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
     } catch (error) {
       console.error('Failed to download invoice:', error)
     }
@@ -268,7 +255,7 @@ export default function AdminInvoices() {
                       </td>
                       <td className="py-4 px-4">
                         <button
-                          onClick={() => handleDownloadPDF(invoice)}
+                          onClick={() => downloadInvoice(invoice.id)}
                           className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 font-medium text-sm"
                         >
                           <Download className="w-4 h-4" />
@@ -326,10 +313,38 @@ export default function AdminInvoices() {
                       <option value="">{t('admin.invoices.form.selectClient')}</option>
                       {clients.map((client) => (
                         <option key={client.id} value={client.id}>
-                          {client.name} - {client.email}
+                          {client.fullName}
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Invoice Number *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newInvoice.invoiceNumber}
+                      onChange={(e) => setNewInvoice({ ...newInvoice, invoiceNumber: e.target.value })}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Amount *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="0.01"
+                      value={newInvoice.amount}
+                      onChange={(e) => setNewInvoice({ ...newInvoice, amount: Number(e.target.value) })}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                    />
                   </div>
 
                   {/* Date */}
@@ -358,82 +373,6 @@ export default function AdminInvoices() {
                       onChange={(e) => setNewInvoice({ ...newInvoice, dueDate: e.target.value })}
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                     />
-                  </div>
-                </div>
-
-                {/* Line Items */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-slate-900">{t('admin.invoices.form.lineItems')}</h3>
-                    <button
-                      type="button"
-                      onClick={addLineItem}
-                      className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 font-medium text-sm"
-                    >
-                      <Plus className="w-4 h-4" />
-                      {t('admin.invoices.form.addItem')}
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {lineItems.map((item, index) => (
-                      <div key={index} className="grid grid-cols-12 gap-3 items-start">
-                        <div className="col-span-5">
-                          <input
-                            type="text"
-                            required
-                            placeholder={t('admin.invoices.form.description')}
-                            value={item.description}
-                            onChange={(e) => updateLineItem(index, 'description', e.target.value)}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <input
-                            type="number"
-                            required
-                            min="1"
-                            placeholder={t('admin.invoices.form.quantity')}
-                            value={item.quantity}
-                            onChange={(e) => updateLineItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm"
-                          />
-                        </div>
-                        <div className="col-span-3">
-                          <input
-                            type="number"
-                            required
-                            min="0"
-                            step="0.01"
-                            placeholder={t('admin.invoices.form.price')}
-                            value={item.price}
-                            onChange={(e) => updateLineItem(index, 'price', parseFloat(e.target.value) || 0)}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm"
-                          />
-                        </div>
-                        <div className="col-span-2 flex items-center justify-between">
-                          <span className="text-sm font-semibold text-slate-900">
-                            {formatCurrency(item.quantity * item.price)}
-                          </span>
-                          {lineItems.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeLineItem(index)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-slate-200 flex justify-end">
-                    <div className="text-right">
-                      <p className="text-sm text-slate-600 mb-1">{t('admin.invoices.form.total')}</p>
-                      <p className="text-2xl font-bold text-slate-900">{formatCurrency(calculateTotal())}</p>
-                    </div>
                   </div>
                 </div>
 

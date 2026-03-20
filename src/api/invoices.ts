@@ -21,6 +21,12 @@ export interface Invoice {
   notes?: string
 }
 
+export interface CreateInvoiceRequest {
+  clientId: string
+  invoiceNumber: string
+  amount: number
+}
+
 const mockInvoices: Invoice[] = [
   {
     id: '1',
@@ -66,11 +72,37 @@ const mockInvoices: Invoice[] = [
   },
 ]
 
-export const getInvoices = (): Promise<Invoice[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(mockInvoices)
-    }, 500)
+export const getInvoices = async (): Promise<Invoice[]> => {
+  const res = await fetch('http://localhost:5146/api/invoices', {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
+    },
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to load invoices')
+  }
+
+  const data = await res.json()
+
+  return (data as any[]).map((invoice) => {
+    const rawStatus = String(invoice.status ?? 'pending').toLowerCase()
+    const status: Invoice['status'] = rawStatus === 'paid' || rawStatus === 'overdue' ? rawStatus : 'pending'
+    const date = invoice.date ?? invoice.createdAt ?? new Date().toISOString()
+
+    return {
+      id: String(invoice.id ?? ''),
+      number: String(invoice.number ?? invoice.invoiceNumber ?? ''),
+      clientId: String(invoice.clientId ?? ''),
+      clientName: String(invoice.clientName ?? ''),
+      clientEmail: String(invoice.clientEmail ?? ''),
+      amount: Number(invoice.amount ?? 0),
+      date: String(date),
+      dueDate: String(invoice.dueDate ?? date),
+      status,
+      lineItems: Array.isArray(invoice.lineItems) ? invoice.lineItems : [],
+      notes: invoice.notes,
+    }
   })
 }
 
@@ -83,19 +115,19 @@ export const getInvoice = (id: string): Promise<Invoice | null> => {
   })
 }
 
-export const createInvoice = (invoice: Omit<Invoice, 'id' | 'number'>): Promise<Invoice> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const invoiceNumber = `INV-${new Date().getFullYear()}-${String(mockInvoices.length + 1).padStart(3, '0')}`
-      const newInvoice: Invoice = {
-        id: Math.random().toString(36).substr(2, 9),
-        number: invoiceNumber,
-        ...invoice,
-      }
-      mockInvoices.push(newInvoice)
-      resolve(newInvoice)
-    }, 800)
+export const createInvoice = async (data: CreateInvoiceRequest): Promise<Invoice> => {
+  const res = await fetch('http://localhost:5146/api/invoices', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
+    },
+    body: JSON.stringify(data),
   })
+
+  if (!res.ok) throw new Error('Failed to create invoice')
+
+  return await res.json()
 }
 
 export const updateInvoiceStatus = (id: string, status: 'paid' | 'pending' | 'overdue'): Promise<Invoice> => {
@@ -115,7 +147,7 @@ export const updateInvoiceStatus = (id: string, status: 'paid' | 'pending' | 'ov
 export const downloadInvoice = (id: string): Promise<Blob> => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(new Blob(['Invoice PDF content'], { type: 'application/pdf' }))
+      resolve(new Blob([`Invoice PDF content for ${id}`], { type: 'application/pdf' }))
     }, 500)
   })
 }
