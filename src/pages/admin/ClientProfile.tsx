@@ -22,8 +22,14 @@ interface Note {
   createdAt: string
 }
 
+interface Prescription {
+  id: string
+  date: string
+  doctorName: string
+}
+
 export default function ClientProfile() {
-  const { clientId } = useParams<{ clientId: string }>()
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
@@ -33,10 +39,20 @@ export default function ClientProfile() {
 
   const [client, setClient] = useState<Client | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
   const [loading, setLoading] = useState(true)
   const [editingClient, setEditingClient] = useState(false)
   const [savingClient, setSavingClient] = useState(false)
   const [newNote, setNewNote] = useState("")
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
+  const [savingPrescription, setSavingPrescription] = useState(false)
+  const [prescriptionForm, setPrescriptionForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    nationalId: '',
+    instructions: '',
+    doctorName: '',
+    signature: '',
+  })
 
   /* ================================
      LOAD DATA
@@ -45,29 +61,34 @@ export default function ClientProfile() {
   useEffect(() => {
     const loadData = async () => {
 
-      if (!clientId) {
+      if (!id) {
         setLoading(false)
         return
       }
 
       /* חשוב: אם זה /clients/new לא לקרוא ל-API */
-      if (clientId === "new") {
+      if (id === "new") {
         setLoading(false)
         return
       }
 
       try {
         const clientData = await apiClient.get<Client>(
-          `/api/clients/${clientId}`
+          `/api/clients/${id}`
         )
 
         setClient(clientData ?? null)
 
         const notesData = await apiClient.get<Note[]>(
-          `/api/notes?clientId=${clientId}`
+          `/api/notes?clientId=${id}`
+        )
+
+        const prescriptionsData = await apiClient.get<Prescription[]>(
+          `/api/prescriptions/client/${id}`
         )
 
         setNotes(Array.isArray(notesData) ? notesData : [])
+        setPrescriptions(Array.isArray(prescriptionsData) ? prescriptionsData : [])
 
       } catch (err) {
         console.error("Load client failed:", err)
@@ -77,7 +98,7 @@ export default function ClientProfile() {
     }
 
     loadData()
-  }, [clientId])
+  }, [id])
 
   const formatDate = (date?: string | null) =>
     date ? new Date(date).toLocaleString(i18n.language) : "-"
@@ -133,11 +154,11 @@ export default function ClientProfile() {
   ================================ */
 
   const addNote = async () => {
-    if (!newNote.trim() || !clientId || clientId === "new") return
+    if (!newNote.trim() || !id || id === "new") return
 
     try {
       const created = await apiClient.post<Note>(`/api/notes`, {
-        clientId,
+        clientId: id,
         content: newNote.trim(),
       })
 
@@ -151,6 +172,50 @@ export default function ClientProfile() {
     }
   }
 
+  const closePrescriptionModal = () => {
+    setShowPrescriptionModal(false)
+    setPrescriptionForm({
+      date: new Date().toISOString().split('T')[0],
+      nationalId: '',
+      instructions: '',
+      doctorName: '',
+      signature: '',
+    })
+  }
+
+  const savePrescription = async () => {
+    if (!client) return
+
+    setSavingPrescription(true)
+    try {
+      const extraNotes = [
+        prescriptionForm.nationalId ? `ת.ז: ${prescriptionForm.nationalId}` : null,
+        prescriptionForm.signature ? `חתימה: ${prescriptionForm.signature}` : null,
+      ].filter(Boolean).join(' | ')
+
+      await apiClient.post('/api/prescriptions', {
+        clientId: client.id,
+        date: prescriptionForm.date,
+        instructions: prescriptionForm.instructions,
+        doctorName: prescriptionForm.doctorName,
+        notes: extraNotes,
+      })
+
+      if (id) {
+        const prescriptionsData = await apiClient.get<Prescription[]>(
+          `/api/prescriptions/client/${id}`
+        )
+        setPrescriptions(Array.isArray(prescriptionsData) ? prescriptionsData : [])
+      }
+
+      closePrescriptionModal()
+    } catch (err) {
+      console.error('Save prescription failed:', err)
+    } finally {
+      setSavingPrescription(false)
+    }
+  }
+
   const updateNote = async (id: string, content: string) => {
     await apiClient.put(`/api/notes/${id}`, { content })
     setNotes(prev =>
@@ -161,6 +226,43 @@ export default function ClientProfile() {
   const deleteNote = async (id: string) => {
     await apiClient.del(`/api/notes/${id}`)
     setNotes(prev => prev.filter(n => n.id !== id))
+  }
+
+  const downloadPrescription = async (id: string) => {
+    const token = localStorage.getItem('token')
+
+    const res = await fetch(
+      `http://localhost:5146/api/prescriptions/${id}/pdf`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+
+    const blob = await res.blob()
+    const url = window.URL.createObjectURL(blob)
+    window.open(url)
+  }
+
+  const deletePrescription = async (id: string) => {
+    const token = localStorage.getItem('token')
+
+    const confirmed = confirm("למחוק מרשם?")
+    if (!confirmed) return
+
+    await fetch(
+      `http://localhost:5146/api/prescriptions/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
+
+    setPrescriptions(prev => prev.filter(p => p.id !== id))
+    alert("המרשם נמחק")
   }
 
   /* ================================
@@ -196,6 +298,13 @@ export default function ClientProfile() {
         </h1>
 
         <div className="flex gap-3">
+
+          <button
+            onClick={() => setShowPrescriptionModal(true)}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg"
+          >
+            כתוב מרשם
+          </button>
 
           <button
             onClick={() => navigate(-1)}
@@ -244,6 +353,12 @@ export default function ClientProfile() {
           value={client.phone}
           editing={editingClient}
           onChange={handleClientChange}
+          isRTL={isRTL}
+        />
+
+        <Display
+          label="Notes"
+          value={client.internalNote || (client as any)?.notes || "-"}
           isRTL={isRTL}
         />
 
@@ -367,6 +482,157 @@ export default function ClientProfile() {
 
         </div>
       </div>
+
+      <div className="bg-white rounded-2xl shadow-md p-8 space-y-4">
+        <h3 className="text-lg font-semibold text-slate-800">מרשמים</h3>
+
+        <table className="w-full border mt-4">
+          <thead>
+            <tr>
+              <th className="text-right p-2">תאריך</th>
+              <th className="text-right p-2">רופא</th>
+              <th className="text-right p-2">פעולות</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {prescriptions.map((p) => (
+              <tr key={p.id} className="border-t">
+                <td className="p-2 text-right">
+                  {new Date(p.date).toLocaleDateString()}
+                </td>
+
+                <td className="p-2 text-right">
+                  {p.doctorName}
+                </td>
+
+                <td className="p-2 text-right">
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={() => downloadPrescription(p.id)}
+                      className="text-blue-600"
+                    >
+                      PDF
+                    </button>
+                    <button
+                      onClick={() => deletePrescription(p.id)}
+                      className="text-red-600"
+                    >
+                      מחק
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {prescriptions.length === 0 && (
+          <div className="mt-4 text-gray-500">
+            אין מרשמים
+          </div>
+        )}
+      </div>
+
+      {showPrescriptionModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 space-y-4" dir="rtl">
+            <h3 className="text-xl font-bold">כתיבת מרשם</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm mb-1">תאריך</label>
+                <input
+                  type="date"
+                  value={prescriptionForm.date}
+                  onChange={(e) => setPrescriptionForm(prev => ({ ...prev, date: e.target.value }))}
+                  className="w-full border rounded-lg p-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">שם המטופל</label>
+                <input
+                  type="text"
+                  value={client.fullName}
+                  readOnly
+                  className="w-full border rounded-lg p-2 bg-slate-50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">ת.ז</label>
+                <input
+                  type="text"
+                  value={prescriptionForm.nationalId}
+                  onChange={(e) => setPrescriptionForm(prev => ({ ...prev, nationalId: e.target.value }))}
+                  className="w-full border rounded-lg p-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">טלפון</label>
+                <input
+                  type="text"
+                  value={client.phone || ''}
+                  readOnly
+                  className="w-full border rounded-lg p-2 bg-slate-50"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1">הוראות שימוש</label>
+              <textarea
+                rows={4}
+                value={prescriptionForm.instructions}
+                onChange={(e) => setPrescriptionForm(prev => ({ ...prev, instructions: e.target.value }))}
+                className="w-full border rounded-lg p-2"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm mb-1">שם הרופא</label>
+                <input
+                  type="text"
+                  value={prescriptionForm.doctorName}
+                  onChange={(e) => setPrescriptionForm(prev => ({ ...prev, doctorName: e.target.value }))}
+                  className="w-full border rounded-lg p-2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">חתימה</label>
+                <input
+                  type="text"
+                  placeholder="חתימת הרופא"
+                  value={prescriptionForm.signature}
+                  onChange={(e) => setPrescriptionForm(prev => ({ ...prev, signature: e.target.value }))}
+                  className="w-full border rounded-lg p-2"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={closePrescriptionModal}
+                className="px-4 py-2 rounded-lg bg-slate-200"
+                disabled={savingPrescription}
+              >
+                ביטול
+              </button>
+              <button
+                onClick={savePrescription}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+                disabled={savingPrescription || !prescriptionForm.instructions.trim() || !prescriptionForm.doctorName.trim()}
+              >
+                {savingPrescription ? 'שומר...' : 'שמירה'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -99,7 +99,7 @@ export const router = createBrowserRouter([
       },
 
       {
-        path: 'clients/:clientId',
+        path: 'clients/:id',
         element: (
           <PermissionBasedRoute requiredPermission="manage_clients">
             <AdminClientProfile />
@@ -209,7 +209,7 @@ export const router = createBrowserRouter([
       },
 
       {
-        path: 'clients/:clientId',
+        path: 'clients/:id',
         element: (
           <PermissionBasedRoute
             allowedRoles={['staff']}
