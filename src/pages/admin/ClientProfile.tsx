@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/AuthContext"
+import { useFeatures } from "@/contexts/FeatureContext"
 import * as apiClient from "@/api/apiClient"
 
 interface Client {
@@ -43,6 +44,7 @@ export default function ClientProfile() {
 
   const isAdmin = user?.role === "admin"
   const isRTL = i18n.language === "he" || i18n.language === "ar"
+  const { features } = useFeatures()
 
   const [client, setClient] = useState<Client | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
@@ -359,12 +361,14 @@ export default function ClientProfile() {
 
         <div className="flex gap-3">
 
+          {features?.prescriptionsEnabled !== false && (
           <button
             onClick={() => setShowPrescriptionModal(true)}
             className="px-4 py-2 bg-emerald-600 text-white rounded-lg"
           >
             כתוב מרשם
           </button>
+          )}
 
           <button
             onClick={() => navigate(-1)}

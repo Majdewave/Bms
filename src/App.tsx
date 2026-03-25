@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RouterProvider } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { FeatureProvider } from '@/contexts/FeatureContext';
 import { router } from '@/router';
 import '@/styles/index.css';
 
@@ -15,7 +16,9 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <FeatureProvider>
+        <RouterProvider router={router} />
+      </FeatureProvider>
     </AuthProvider>
   );
 }

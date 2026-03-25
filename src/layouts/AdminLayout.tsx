@@ -16,6 +16,7 @@ import {
   Menu,
   Settings,
   Shield,
+  Sliders,
   User,
   UserPlus,
   Users,
@@ -23,6 +24,8 @@ import {
 } from "lucide-react"
 
 import { useAuth, UserRole } from '@/contexts/AuthContext'
+import { useFeatures } from '@/contexts/FeatureContext'
+import type { Features } from '@/contexts/FeatureContext'
 import type { Permission } from '@/utils/permissions'
 import NotificationsDropdown from '@/components/NotificationsDropdown'
 import ClientaLogo from '@/components/Logo'
@@ -33,7 +36,8 @@ interface MenuItem {
   label: string
   path: string
   roles: UserRole[]
-    permission?: Permission
+  permission?: Permission
+  feature?: keyof Features
 }
 
 const allMenuItems: MenuItem[] = [
@@ -41,10 +45,11 @@ const allMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard', roles: ['admin'] },
   { icon: Users, label: 'All Clients', path: '/admin/clients', roles: ['admin'] },
   { icon: Calendar, label: 'All Appointments', path: '/admin/appointments', roles: ['admin'] },
-  { icon: FileText, label: 'All Invoices', path: '/admin/invoices', roles: ['admin'] },
-  { icon: BarChart3, label: 'Reports', path: '/admin/reports', roles: ['admin'] },
+  { icon: FileText, label: 'All Invoices', path: '/admin/invoices', roles: ['admin'], feature: 'invoicesEnabled' },
+  { icon: BarChart3, label: 'Reports', path: '/admin/reports', roles: ['admin'], feature: 'reportsEnabled' },
   { icon: UserPlus, label: 'Staff Management', path: '/admin/staff', roles: ['admin'] },
   { icon: Settings, label: 'Business Settings', path: '/admin/settings', roles: ['admin'] },
+  { icon: Sliders, label: 'Feature Toggles', path: '/admin/features', roles: ['admin'] },
 
   // Staff (permission based)
   { icon: LayoutDashboard, label: 'Dashboard', path: '/staff/dashboard', roles: ['staff'] },
@@ -58,6 +63,7 @@ export default function AdminLayout() {
   const navigate = useNavigate()
 
   const { user, logout, hasPermission } = useAuth()
+  const { features } = useFeatures()
 
   const { t } = useTranslation()
 
@@ -65,7 +71,11 @@ export default function AdminLayout() {
     if (!user) return []
 
     if (user.role === 'admin') {
-      return allMenuItems.filter((item) => item.roles.includes('admin'))
+      return allMenuItems.filter((item) => {
+        if (!item.roles.includes('admin')) return false
+        if (item.feature && features?.[item.feature] === false) return false
+        return true
+      })
     }
 
     return allMenuItems.filter((item) => {
@@ -76,7 +86,7 @@ export default function AdminLayout() {
 
       return false
     })
-  }, [user, hasPermission])
+  }, [user, hasPermission, features])
 
   const getMenuLabel = (label: string) => {
 
@@ -102,6 +112,9 @@ export default function AdminLayout() {
 
       case 'Business Settings':
         return t('nav.settings')
+
+      case 'Feature Toggles':
+        return t('nav.features', 'Feature Toggles')
 
       case 'My Appointments':
         return t('nav.appointments')

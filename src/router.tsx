@@ -23,6 +23,7 @@ import AdminInvoices from '@/pages/admin/Invoices'
 import AdminReports from '@/pages/admin/Reports'
 import AdminBusinessSettings from '@/pages/admin/BusinessSettings'
 import AdminStaff from '@/pages/admin/Staff'
+import AdminFeatures from '@/pages/admin/Features'
 
 /* ================= STAFF PAGES ================= */
 
@@ -158,6 +159,15 @@ export const router = createBrowserRouter([
           <PermissionBasedRoute requiredPermission="manage_staff">
             <AdminStaff />
           </PermissionBasedRoute>
+        ),
+      },
+
+      {
+        path: 'features',
+        element: (
+          <RoleBasedRoute allowedRoles={['admin']}>
+            <AdminFeatures />
+          </RoleBasedRoute>
         ),
       },
     ],
