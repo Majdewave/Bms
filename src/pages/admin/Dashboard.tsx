@@ -7,6 +7,8 @@
         return t('dashboard.activity.clientCreated');
       case 'staff_created':
         return t('dashboard.activity.staffCreated');
+      case 'staff_deleted':
+        return t('dashboard.activity.staffDeleted', 'Staff deleted');
       default:
         return type;
     }
@@ -21,7 +23,6 @@ import {
   Calendar,
   UserPlus,
   CheckCircle,
-  Clock,
 } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -31,7 +32,15 @@ export default function AdminDashboard() {
   const isRTL = dir === 'rtl'
   const [stats, setStats] = useState<any>(null)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [selectedActivity, setSelectedActivity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+
+  const activityConfig: Record<string, { icon: string; color: string }> = {
+    staff_created: { icon: '👤', color: 'text-green-600' },
+    staff_deleted: { icon: '🗑️', color: 'text-red-600' },
+    client_created: { icon: '👥', color: 'text-blue-600' },
+    appointment_created: { icon: '📅', color: 'text-purple-600' },
+  }
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -61,38 +70,25 @@ export default function AdminDashboard() {
     loadDashboardData()
   }, [])
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(amount)
-  }
-
   const getActivityIcon = (type: string) => {
+    const config = activityConfig[type]
+    if (config) {
+      return (
+        <span className={`w-5 h-5 inline-flex items-center justify-center ${config.color}`}>
+          {config.icon}
+        </span>
+      )
+    }
+
     switch (type) {
       case 'appointment_created':
-        return <Calendar className="w-5 h-5" title={t('admin.dashboard.activity.icon.appointment_created', 'Appointment Created')} aria-label={t('admin.dashboard.activity.icon.appointment_created', 'Appointment Created')} role="img" />;
+        return <Calendar className="w-5 h-5" />;
       case 'client_created':
-        return <UserPlus className="w-5 h-5 text-blue-600" title={t('admin.dashboard.activity.icon.client_created', 'Client Created')} aria-label={t('admin.dashboard.activity.icon.client_created', 'Client Created')} role="img" />;
+        return <UserPlus className="w-5 h-5 text-blue-600" />;
       case 'staff_created':
-        return <Users className="w-5 h-5 text-purple-600" title={t('admin.dashboard.activity.icon.staff_created', 'Staff Created')} aria-label={t('admin.dashboard.activity.icon.staff_created', 'Staff Created')} role="img" />;
+        return <Users className="w-5 h-5 text-purple-600" />;
       default:
-        return <Calendar className="w-5 h-5 text-slate-400" title={t('admin.dashboard.activity.icon.default', 'Activity')} aria-label={t('admin.dashboard.activity.icon.default', 'Activity')} role="img" />;
-    }
-  }
-
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case 'payment':
-        return 'bg-green-100 text-green-700'
-      case 'appointment':
-        return 'bg-blue-100 text-blue-700'
-      case 'client':
-        return 'bg-purple-100 text-purple-700'
-      case 'invoice':
-        return 'bg-amber-100 text-amber-700'
-      default:
-        return 'bg-slate-100 text-slate-700'
+        return <Calendar className="w-5 h-5 text-slate-400" />;
     }
   }
 
@@ -255,11 +251,6 @@ export default function AdminDashboard() {
               </thead>
               <tbody>
                 {recentActivity.map((activity, idx) => {
-                  let formattedStartTime = '';
-                  if (activity.startTime) {
-                    const start = new Date(activity.startTime);
-                    formattedStartTime = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  }
                   // Action column
                   const action = getActionLabel(activity.type, t);
                   // Entity column
@@ -270,19 +261,43 @@ export default function AdminDashboard() {
                     entity = activity.clientName || '';
                   } else if (activity.type === 'staff_created') {
                     entity = activity.staffName || '';
+                  } else if (activity.type === 'staff_deleted') {
+                    entity =
+                      activity.staffName ||
+                      activity.deletedStaffName ||
+                      activity.deletedUserName ||
+                      activity.targetName ||
+                      activity.entityName ||
+                      '';
+                  }
+                  else if (activity.type === 'client_deleted') {
+                  entity = activity.clientName || activity.entityName || '';
+                  }
+                  else if (activity.type === 'user_deleted') {
+                    entity = activity.staffName || activity.entityName || '';
                   }
                   // Performed By column
-                  const performedBy = activity.performedBy || '';
+                  const performedBy =
+                    activity.performedBy ||
+                    [activity.performedByName, activity.performedByEmail].filter(Boolean).join(' • ') ||
+                    [activity.actorName, activity.actorEmail].filter(Boolean).join(' • ') ||
+                    '';
                   // Time column
                   const time = formatRelativeTime(activity.timestamp);
+                  const activityTitle = activity.title || action;
+                  const config = activityConfig[activity.type] || {};
                   return (
-                    <tr key={`${activity.id}-${idx}`} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                    <tr
+                      key={`${activity.id}-${idx}`}
+                      onClick={() => setSelectedActivity({ ...activity, title: activityTitle, performedBy })}
+                      className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} cursor-pointer hover:bg-gray-100 transition transform`}
+                    >
                       {isRTL ? (
                         <>
                           <td className="px-4 py-2 text-right">
                             <div className="flex items-center gap-2 justify-start">
                               {getActivityIcon(activity.type)}
-                              <span className="font-semibold text-slate-900">{action}</span>
+                              <span className={config.color || 'text-slate-900'}>{config.icon ? `${activityTitle}` : activityTitle}</span>
                             </div>
                           </td>
                           <td className="px-4 py-2 text-right">{entity}</td>
@@ -294,7 +309,7 @@ export default function AdminDashboard() {
                           <td className="px-4 py-2 text-left">
                             <div className="flex items-center gap-2">
                               {getActivityIcon(activity.type)}
-                              <span className="font-semibold text-slate-900">{action}</span>
+                              <span className={config.color || 'text-slate-900'}>{config.icon ? `${config.icon} ${activityTitle}` : activityTitle}</span>
                             </div>
                           </td>
                           <td className="px-4 py-2 text-left">{entity}</td>
@@ -310,6 +325,56 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedActivity && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" dir={dir}>
+          <div className="bg-white rounded-xl p-6 w-[400px] shadow-lg">
+            <h2 className="text-lg font-bold mb-4">
+              {selectedActivity.title}
+            </h2>
+
+            <div className="space-y-2 text-sm">
+              <div>
+                <strong>סוג פעולה:</strong> {selectedActivity.type}
+              </div>
+
+              <div>
+                <strong>בוצע על ידי:</strong> {selectedActivity.performedBy}
+              </div>
+
+              {selectedActivity.staffName && (
+                <div>
+                  <strong>איש צוות:</strong> {selectedActivity.staffName}
+                </div>
+              )}
+
+              {selectedActivity.clientName && (
+                <div>
+                  <strong>לקוח:</strong> {selectedActivity.clientName}
+                </div>
+              )}
+
+              {selectedActivity.serviceName && (
+                <div>
+                  <strong>שירות:</strong> {selectedActivity.serviceName}
+                </div>
+              )}
+
+              <div>
+                <strong>תאריך:</strong>{' '}
+                {new Date(selectedActivity.timestamp).toLocaleString()}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSelectedActivity(null)}
+              className="mt-4 w-full bg-primary-600 text-white py-2 rounded"
+            >
+              סגור
+            </button>
+          </div>
+        </div>
+      )}
     </Container>
   )
 }

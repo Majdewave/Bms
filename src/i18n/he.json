@@ -16,7 +16,8 @@
         "performedBy": "בוצע על ידי",
         "appointmentCreated": "תור נוצר",
         "clientCreated": "לקוח נוצר",
-        "staffCreated": "איש צוות נוסף"
+        "staffCreated": "איש צוות נוסף",
+        "staffDeleted": "איש צוות נמחק"
       }
   },
   "app": {

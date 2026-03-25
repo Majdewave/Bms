@@ -16,7 +16,8 @@
       "performedBy": "تم بواسطة",
       "appointmentCreated": "تم إنشاء موعد",
       "clientCreated": "تم إنشاء عميل",
-      "staffCreated": "تمت إضافة موظف"
+      "staffCreated": "تمت إضافة موظف",
+      "staffDeleted": "تم حذف موظف"
     }
   },
   "app": {

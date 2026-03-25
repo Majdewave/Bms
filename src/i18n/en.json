@@ -16,7 +16,8 @@
       "performedBy": "Performed By",
       "appointmentCreated": "Appointment created",
       "clientCreated": "Client created",
-      "staffCreated": "Staff member added"
+      "staffCreated": "Staff member added",
+      "staffDeleted": "Staff member deleted"
     }
   },
   "app": {
