@@ -15,6 +15,12 @@ export const RoleBasedRoute = ({
 }: RoleBasedRouteProps) => {
   const { user, loading } = useAuth()
   const location = useLocation()
+  const currentPath = location.pathname
+
+  const shouldRedirectTo = (target: string) => {
+    const normalize = (path: string) => (path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path)
+    return normalize(currentPath) !== normalize(target)
+  }
 
   if (loading) {
     return (
@@ -25,10 +31,12 @@ export const RoleBasedRoute = ({
   }
 
   if (!user) {
+    if (!shouldRedirectTo('/')) return <>{children}</>
     return <Navigate to="/" state={{ from: location }} replace />
   }
 
   if (!allowedRoles.includes(user.role)) {
+    if (!shouldRedirectTo(redirectTo)) return <>{children}</>
     return <Navigate to={redirectTo} replace />
   }
 

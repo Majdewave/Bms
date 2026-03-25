@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
+import { ChevronDown } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFeatures } from "@/contexts/FeatureContext"
 import * as apiClient from "@/api/apiClient"
@@ -58,12 +59,21 @@ export default function ClientProfile() {
   const [savingPrescription, setSavingPrescription] = useState(false)
   const [drugs, setDrugs] = useState<string[]>([''])
   const [instructions, setInstructions] = useState("")
+  const [openSections, setOpenSections] = useState<string[]>([])
   const [prescriptionForm, setPrescriptionForm] = useState({
     date: new Date().toISOString().split('T')[0],
     nationalId: '',
     doctorName: '',
     signature: '',
   })
+
+  const toggleSection = (sectionId: string) => {
+    setOpenSections((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((id) => id !== sectionId)
+        : [...prev, sectionId]
+    )
+  }
 
   /* ================================
      LOAD DATA
@@ -393,6 +403,12 @@ export default function ClientProfile() {
 
       <div className="bg-white rounded-2xl shadow-md p-8 space-y-6">
 
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <h3 className="text-lg font-semibold text-slate-800">
+            {t("admin.clientProfile.title")}
+          </h3>
+        </div>
+
         <Field
           label={t("admin.clientProfile.fullName")}
           name="fullName"
@@ -511,60 +527,83 @@ export default function ClientProfile() {
 
       {/* NOTES */}
 
-      <div className="bg-white rounded-2xl shadow-md p-8 space-y-6">
-
-        <h3 className="text-lg font-semibold text-slate-800">
-          {t("admin.clientProfile.notesTitle")}
-        </h3>
-
-        <div className="space-y-3">
-
-          <textarea
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-            className={`w-full border rounded-lg p-3 ${
-              isRTL ? "text-right" : "text-left"
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection("notes")}
+          className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+        >
+          <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? "text-right" : "text-left"}`}>
+            {t("admin.clientProfile.notesTitle")}
+          </h3>
+          <ChevronDown
+            className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
+              openSections.includes("notes") ? "rotate-180" : "rotate-0"
             }`}
-            placeholder={t("admin.clients.notes.placeholder")}
           />
+        </button>
 
-          <div className="flex justify-end">
-            <button
-              onClick={addNote}
-              className="px-5 py-2 bg-blue-600 text-white rounded-lg"
-            >
-              {t("admin.clients.notes.add")}
-            </button>
-          </div>
+        {openSections.includes("notes") && (
+          <div className="px-6 pb-6 space-y-6">
+            <div className="space-y-3">
+              <textarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                className={`w-full border rounded-lg p-3 ${
+                  isRTL ? "text-right" : "text-left"
+                }`}
+                placeholder={t("admin.clients.notes.placeholder")}
+              />
 
-        </div>
-
-        <div className="space-y-4">
-
-          {notes.length === 0 && (
-            <div className="text-slate-400">
-              {t("admin.clientProfile.noNotes")}
+              <div className="flex justify-end">
+                <button
+                  onClick={addNote}
+                  className="px-5 py-2 bg-blue-600 text-white rounded-lg"
+                >
+                  {t("admin.clients.notes.add")}
+                </button>
+              </div>
             </div>
-          )}
 
-          {notes.map((note) => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              onUpdate={updateNote}
-              onDelete={deleteNote}
-              t={t}
-              language={i18n.language}
-              isRTL={isRTL}
-            />
-          ))}
+            <div className="space-y-4">
+              {notes.length === 0 && (
+                <div className="text-slate-400">
+                  {t("admin.clientProfile.noNotes")}
+                </div>
+              )}
 
-        </div>
+              {notes.map((note) => (
+                <NoteCard
+                  key={note.id}
+                  note={note}
+                  onUpdate={updateNote}
+                  onDelete={deleteNote}
+                  t={t}
+                  language={i18n.language}
+                  isRTL={isRTL}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-md p-8 space-y-4">
-        <h3 className="text-lg font-semibold text-slate-800">מרשמים</h3>
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection("prescriptions")}
+          className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+        >
+          <h3 className="text-lg font-semibold text-slate-800">מרשמים</h3>
+          <ChevronDown
+            className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
+              openSections.includes("prescriptions") ? "rotate-180" : "rotate-0"
+            }`}
+          />
+        </button>
 
+        {openSections.includes("prescriptions") && (
+          <div className="px-6 pb-6 space-y-4">
         <table className="w-full border mt-4">
           <thead>
             <tr>
@@ -622,6 +661,8 @@ export default function ClientProfile() {
         {prescriptions.length === 0 && (
           <div className="mt-4 text-gray-500">
             אין מרשמים
+          </div>
+        )}
           </div>
         )}
       </div>
