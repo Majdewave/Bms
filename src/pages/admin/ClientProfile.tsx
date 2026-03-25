@@ -9,6 +9,7 @@ interface Client {
   fullName: string
   email: string
   phone: string
+  idNumber?: string
   address?: string
   internalNote?: string
   lastVisit?: string | null
@@ -26,6 +27,12 @@ interface Prescription {
   id: string
   date: string
   doctorName: string
+  drugs?: string[]
+}
+
+interface Drug {
+  id: string
+  name: string
 }
 
 export default function ClientProfile() {
@@ -40,16 +47,18 @@ export default function ClientProfile() {
   const [client, setClient] = useState<Client | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
+  const [availableDrugs, setAvailableDrugs] = useState<Drug[]>([])
   const [loading, setLoading] = useState(true)
   const [editingClient, setEditingClient] = useState(false)
   const [savingClient, setSavingClient] = useState(false)
   const [newNote, setNewNote] = useState("")
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
   const [savingPrescription, setSavingPrescription] = useState(false)
+  const [drugs, setDrugs] = useState<string[]>([''])
+  const [instructions, setInstructions] = useState("")
   const [prescriptionForm, setPrescriptionForm] = useState({
     date: new Date().toISOString().split('T')[0],
     nationalId: '',
-    instructions: '',
     doctorName: '',
     signature: '',
   })
@@ -77,7 +86,14 @@ export default function ClientProfile() {
           `/api/clients/${id}`
         )
 
-        setClient(clientData ?? null)
+        setClient(
+          clientData
+            ? {
+                ...clientData,
+                idNumber: clientData.idNumber ?? "",
+              }
+            : null
+        )
 
         const notesData = await apiClient.get<Note[]>(
           `/api/notes?clientId=${id}`
@@ -88,7 +104,15 @@ export default function ClientProfile() {
         )
 
         setNotes(Array.isArray(notesData) ? notesData : [])
-        setPrescriptions(Array.isArray(prescriptionsData) ? prescriptionsData : [])
+        
+        // Remove duplicates from fetched prescriptions
+        const unique = Array.isArray(prescriptionsData)
+          ? prescriptionsData.filter(
+              (v, i, arr) => arr.findIndex(x => x.id === v.id) === i
+            )
+          : []
+        
+        setPrescriptions(unique)
 
       } catch (err) {
         console.error("Load client failed:", err)
@@ -99,6 +123,27 @@ export default function ClientProfile() {
 
     loadData()
   }, [id])
+
+  useEffect(() => {
+    apiClient.get<Drug[]>('/api/drugs')
+      .then((data) => setAvailableDrugs(Array.isArray(data) ? data : []))
+      .catch((err) => console.error('Load drugs failed:', err))
+  }, [])
+
+  const addDrug = () => {
+    setDrugs(prev => [...prev, ''])
+  }
+
+  const removeDrug = (index: number) => {
+    setDrugs(prev => {
+      if (prev.length === 1) return ['']
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
+  const updateDrug = (index: number, value: string) => {
+    setDrugs(prev => prev.map((drug, i) => (i === index ? value : drug)))
+  }
 
   const formatDate = (date?: string | null) =>
     date ? new Date(date).toLocaleString(i18n.language) : "-"
@@ -120,7 +165,10 @@ export default function ClientProfile() {
     setSavingClient(true)
 
     try {
-      await apiClient.put(`/api/clients/${client.id}`, client)
+      await apiClient.put(`/api/clients/${client.id}`, {
+        ...client,
+        idNumber: client.idNumber,
+      })
       setEditingClient(false)
     } catch (err) {
       console.error("Save failed", err)
@@ -174,10 +222,11 @@ export default function ClientProfile() {
 
   const closePrescriptionModal = () => {
     setShowPrescriptionModal(false)
+    setDrugs([''])
+    setInstructions("")
     setPrescriptionForm({
       date: new Date().toISOString().split('T')[0],
       nationalId: '',
-      instructions: '',
       doctorName: '',
       signature: '',
     })
@@ -188,6 +237,8 @@ export default function ClientProfile() {
 
     setSavingPrescription(true)
     try {
+      const filteredDrugs = drugs.filter(d => d.trim() !== '')
+
       const extraNotes = [
         prescriptionForm.nationalId ? `ת.ז: ${prescriptionForm.nationalId}` : null,
         prescriptionForm.signature ? `חתימה: ${prescriptionForm.signature}` : null,
@@ -196,7 +247,8 @@ export default function ClientProfile() {
       await apiClient.post('/api/prescriptions', {
         clientId: client.id,
         date: prescriptionForm.date,
-        instructions: prescriptionForm.instructions,
+        drugs: filteredDrugs,
+        instructions: instructions,
         doctorName: prescriptionForm.doctorName,
         notes: extraNotes,
       })
@@ -205,7 +257,15 @@ export default function ClientProfile() {
         const prescriptionsData = await apiClient.get<Prescription[]>(
           `/api/prescriptions/client/${id}`
         )
-        setPrescriptions(Array.isArray(prescriptionsData) ? prescriptionsData : [])
+        
+        // Remove duplicates from fetched data
+        const unique = Array.isArray(prescriptionsData)
+          ? prescriptionsData.filter(
+              (v, i, arr) => arr.findIndex(x => x.id === v.id) === i
+            )
+          : []
+        
+        setPrescriptions(unique)
       }
 
       closePrescriptionModal()
@@ -356,6 +416,21 @@ export default function ClientProfile() {
           isRTL={isRTL}
         />
 
+        <div>
+          <label className={`block text-sm text-slate-500 mb-2 ${isRTL ? "text-right" : "text-left"}`}>
+            תעודת זהות
+          </label>
+          <input
+            type="text"
+            value={client.idNumber || ''}
+            onChange={(e) => setClient({ ...client, idNumber: e.target.value })}
+            disabled={!editingClient}
+            className={`w-full border rounded-lg p-3 ${
+              isRTL ? "text-right" : "text-left"
+            } ${!editingClient ? "bg-slate-50 text-slate-500" : ""}`}
+          />
+        </div>
+
         <Display
           label="Notes"
           value={client.internalNote || (client as any)?.notes || "-"}
@@ -490,16 +565,29 @@ export default function ClientProfile() {
           <thead>
             <tr>
               <th className="text-right p-2">תאריך</th>
+              <th className="text-right p-2">תרופות</th>
               <th className="text-right p-2">רופא</th>
               <th className="text-right p-2">פעולות</th>
             </tr>
           </thead>
 
           <tbody>
-            {prescriptions.map((p) => (
-              <tr key={p.id} className="border-t">
+            {prescriptions.map((p, index) => (
+              <tr key={`${p.id}-${index}`} className="border-t">
                 <td className="p-2 text-right">
                   {new Date(p.date).toLocaleDateString()}
+                </td>
+
+                <td className="p-2 text-right">
+                  {p.drugs && p.drugs.length > 0 ? (
+                    <ul className="list-disc list-inside space-y-1">
+                      {p.drugs.map((drug, drugIndex) => (
+                        <li key={`${p.id}-drug-${drugIndex}`}>{drug}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    "-"
+                  )}
                 </td>
 
                 <td className="p-2 text-right">
@@ -582,12 +670,46 @@ export default function ClientProfile() {
             </div>
 
             <div>
-              <label className="block text-sm mb-1">הוראות שימוש</label>
+              <label className="block text-sm mb-1">תרופות</label>
+              <div className="space-y-2">
+                {drugs.map((drug, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={drug}
+                      onChange={(e) => updateDrug(index, e.target.value)}
+                      className="w-full border p-2 rounded"
+                      list="drug-options"
+                      placeholder="בחר או כתוב תרופה"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeDrug(index)}
+                      className="px-3 py-2 rounded bg-red-100 text-red-700"
+                    >
+                      X
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addDrug}
+                  className="px-3 py-2 rounded bg-slate-100 text-slate-700"
+                >
+                  +
+                </button>
+                <datalist id="drug-options">
+                  {availableDrugs.map((d) => (
+                    <option key={d.id} value={d.name} />
+                  ))}
+                </datalist>
+              </div>
+
+              <label className="mt-4 block text-sm mb-1">הוראות שימוש</label>
               <textarea
-                rows={4}
-                value={prescriptionForm.instructions}
-                onChange={(e) => setPrescriptionForm(prev => ({ ...prev, instructions: e.target.value }))}
-                className="w-full border rounded-lg p-2"
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                className="w-full border p-2 rounded h-24"
               />
             </div>
 
@@ -625,7 +747,7 @@ export default function ClientProfile() {
               <button
                 onClick={savePrescription}
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white"
-                disabled={savingPrescription || !prescriptionForm.instructions.trim() || !prescriptionForm.doctorName.trim()}
+                disabled={savingPrescription || !drugs.some(d => d.trim()) || !instructions.trim() || !prescriptionForm.doctorName.trim()}
               >
                 {savingPrescription ? 'שומר...' : 'שמירה'}
               </button>

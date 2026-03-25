@@ -41,7 +41,17 @@ export default function AdminDashboard() {
           dashboardService.getRecentActivity(),
         ])
         setStats(statsData)
-        setRecentActivity(activityData)
+        
+        // Remove duplicates from activity data
+        if (Array.isArray(activityData)) {
+          const unique = activityData.filter(
+            (v, i, arr) => arr.findIndex(x => x.id === v.id) === i
+          )
+          console.log('Recent Activity:', unique)  // Debug
+          setRecentActivity(unique)
+        } else {
+          setRecentActivity([])
+        }
       } catch (error) {
         console.error('Failed to load dashboard data:', error)
       } finally {
@@ -191,7 +201,7 @@ export default function AdminDashboard() {
                     const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     return (
                       <tr
-                        key={apt.id}
+                        key={`${apt.id}-${idx}`}
                         className={
                           `${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`
                         }
@@ -266,7 +276,7 @@ export default function AdminDashboard() {
                   // Time column
                   const time = formatRelativeTime(activity.timestamp);
                   return (
-                    <tr key={activity.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                    <tr key={`${activity.id}-${idx}`} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                       {isRTL ? (
                         <>
                           <td className="px-4 py-2 text-right">
