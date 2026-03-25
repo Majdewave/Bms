@@ -274,11 +274,15 @@ export default function AdminStaff() {
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-medium text-slate-900">{staffMember.fullName}</p>
-                        <p className="text-xs text-slate-500">
-                          {staffMember.role?.toLowerCase() === 'admin'
-                            ? 'אדמין'
-                            : `${staffMember.permissions.length} ${t('admin.staff.permissionsLabel')}`}
-                        </p>
+                          {staffMember.role?.toLowerCase() === 'admin' ? (
+                            <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">
+                              אדמין
+                            </span>
+                          ) : (
+                            <span className="text-sm text-slate-500">
+                              {staffMember.permissions.length} {t('admin.staff.permissionsLabel')}
+                            </span>
+                          )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-700">
