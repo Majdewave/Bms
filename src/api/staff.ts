@@ -1,9 +1,19 @@
 import { get, post, put, del } from './apiClient'
 
+export type StaffPermission =
+  | 'manage_clients'
+  | 'manage_appointments'
+  | 'manage_notes'
+  | 'manage_files'
+  | 'manage_staff'
+
+export type VisibleMenuItem = 'clients' | 'appointments'
+
 export interface StaffMember {
   id: string
   fullName: string
   email: string
+  role?: string
   roleLabel: string
   isActive: boolean
   permissions: string[]
@@ -13,6 +23,7 @@ export interface CreateStaffRequest {
   FullName: string
   Email: string
   Password: string
+  role?: string
   RoleLabel: string
   Permissions: string[]
   VisibleMenuItems?: string[]
@@ -20,6 +31,7 @@ export interface CreateStaffRequest {
 
 export interface UpdateStaffRequest {
   FullName: string
+  role?: string
   RoleLabel: string
   IsActive: boolean
   Permissions: string[]

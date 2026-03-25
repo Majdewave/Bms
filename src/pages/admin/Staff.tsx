@@ -28,6 +28,7 @@ export default function AdminStaff() {
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null)
   const [savingStaff, setSavingStaff] = useState(false)
   const [sendingLink, setSendingLink] = useState<string | null>(null)
+  const [role, setRole] = useState('Staff')
 
   // Form state
   const [formData, setFormData] = useState({
@@ -48,6 +49,12 @@ export default function AdminStaff() {
     }
     loadStaff()
   }, [hasPermission, navigate])
+
+  useEffect(() => {
+    if (role.toLowerCase() === 'admin') {
+      setFormData((prev) => ({ ...prev, Permissions: [] }))
+    }
+  }, [role])
 
   const loadStaff = async () => {
     setLoading(true)
@@ -73,11 +80,18 @@ export default function AdminStaff() {
 
     setSavingStaff(true)
     try {
+      const normalizedRole = role.toLowerCase() === 'admin' ? 'Admin' : 'Staff'
+      const payload = {
+        ...formData,
+        role: normalizedRole,
+        Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
+      }
+
       if (editingStaff) {
-        await staffService.updateStaffMember(editingStaff.id, formData)
+        await staffService.updateStaffMember(editingStaff.id, payload)
         await loadStaff()
       } else {
-        await staffService.createStaffMember(formData)
+        await staffService.createStaffMember(payload)
         await loadStaff()
       }
       closeModal()
@@ -126,6 +140,7 @@ export default function AdminStaff() {
 
   const openEditModal = (staffMember: StaffMember) => {
     setEditingStaff(staffMember)
+    setRole(staffMember.role || 'Staff')
     setFormData({
       FullName: staffMember.fullName || staffMember.name || '',
       Email: staffMember.email || '',
@@ -141,6 +156,7 @@ export default function AdminStaff() {
   const closeModal = () => {
     setShowModal(false)
     setEditingStaff(null)
+    setRole('Staff')
     setFormData({
       FullName: '',
       Email: '',
@@ -259,7 +275,9 @@ export default function AdminStaff() {
                       <div>
                         <p className="font-medium text-slate-900">{staffMember.fullName}</p>
                         <p className="text-xs text-slate-500">
-                          {staffMember.permissions.length} {t('admin.staff.permissionsLabel')}
+                          {staffMember.role?.toLowerCase() === 'admin'
+                            ? 'אדמין'
+                            : `${staffMember.permissions.length} ${t('admin.staff.permissionsLabel')}`}
                         </p>
                       </div>
                     </td>
@@ -404,9 +422,22 @@ export default function AdminStaff() {
                   />
                   <p className="text-xs text-slate-500 mt-1">{t('admin.staff.form.roleHint')}</p>
                 </div>
+
+                <div>
+                  <label className="block mb-2 font-medium">סוג משתמש</label>
+                  <select
+                    value={role.toLowerCase() === 'admin' ? 'Admin' : 'Staff'}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full border rounded p-2"
+                  >
+                    <option value="Staff">צוות</option>
+                    <option value="Admin">אדמין</option>
+                  </select>
+                </div>
               </div>
 
               {/* Permissions */}
+              {role.toLowerCase() !== 'admin' && (
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
                   {t('admin.staff.form.permissions')}
@@ -437,6 +468,7 @@ export default function AdminStaff() {
                   ))}
                 </div>
               </div>
+              )}
 
               {/* Menu Visibility */}
               <div className="space-y-4">

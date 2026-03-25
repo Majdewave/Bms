@@ -64,12 +64,11 @@ export default function AdminLayout() {
   const menuItems = useMemo(() => {
     if (!user) return []
 
+    if (user.role === 'admin') {
+      return allMenuItems.filter((item) => item.roles.includes('admin'))
+    }
+
     return allMenuItems.filter((item) => {
-
-      if (item.roles.includes('admin') && user.role === 'admin') {
-        return true
-      }
-
       if (item.roles.includes('staff') && user.role === 'staff') {
         if (!item.permission) return true
         return hasPermission(item.permission)

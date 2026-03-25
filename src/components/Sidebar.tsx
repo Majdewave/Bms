@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import type { Permission } from '@/utils/permissions'
 import {
   LayoutDashboard,
   Calendar,
@@ -12,7 +13,15 @@ import {
   X,
 } from 'lucide-react'
 
-const menuItems = [
+interface MenuItem {
+  icon: typeof LayoutDashboard
+  label: string
+  path: string
+  adminOnly?: boolean
+  permission?: Permission
+}
+
+const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: Calendar, label: 'Appointments', path: '/appointments' },
   { icon: FileText, label: 'Invoices', path: '/invoices' },
@@ -26,10 +35,14 @@ export default function Sidebar() {
   const location = useLocation()
   const { user, hasPermission } = useAuth()
 
-  // Filter menu items based on permissions
+  // Admin: show all menu items
+  // Others: show based on permission/adminOnly flags
   const visibleMenuItems = menuItems.filter((item) => {
-    if (!item.permission) return true;
-    return hasPermission(item.permission);
+    if (!user) return false
+    if (user.role?.toLowerCase() === 'admin') return true
+    if (item.adminOnly) return false
+    if (!item.permission) return true
+    return hasPermission(item.permission)
   })
 
   return (
