@@ -75,6 +75,15 @@ export default function ClientProfile() {
     )
   }
 
+  useEffect(() => {
+    if (!showPrescriptionModal || !client) return
+
+    setPrescriptionForm((prev) => ({
+      ...prev,
+      nationalId: client.idNumber ?? '',
+    }))
+  }, [showPrescriptionModal, client])
+
   /* ================================
      LOAD DATA
   ================================ */
@@ -301,20 +310,26 @@ export default function ClientProfile() {
   }
 
   const downloadPrescription = async (id: string) => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      alert('אין הרשאה להורדת הקובץ')
+      return
+    }
 
-    const res = await fetch(
-      `http://localhost:5146/api/prescriptions/${id}/pdf`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
-
-    const blob = await res.blob()
-    const url = window.URL.createObjectURL(blob)
-    window.open(url)
+    try {
+      const blob = await apiClient.getBlob(`/api/prescriptions/${id}/pdf`)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `prescription-${id}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to download prescription PDF:', error)
+      alert('שגיאה בהורדת קובץ המרשם')
+    }
   }
 
   const deletePrescription = async (id: string) => {
@@ -669,8 +684,8 @@ export default function ClientProfile() {
 
       {showPrescriptionModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 space-y-4" dir="rtl">
-            <h3 className="text-xl font-bold">כתיבת מרשם</h3>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto" dir="rtl">
+            <h3 className="text-xl font-bold sticky top-0 bg-white z-10 pb-2">כתיבת מרשם</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -781,7 +796,7 @@ export default function ClientProfile() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex justify-end gap-2 pt-2 sticky bottom-0 bg-white z-10">
               <button
                 onClick={closePrescriptionModal}
                 className="px-4 py-2 rounded-lg bg-slate-200"

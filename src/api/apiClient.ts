@@ -91,8 +91,49 @@ async function request<T>(
   }
 }
 
+async function requestBlob(
+  url: string,
+  options: RequestInit = {}
+): Promise<Blob> {
+  const authToken = localStorage.getItem('authToken')
+
+  let headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+  }
+
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`
+  }
+
+  const fetchOptions: RequestInit = {
+    ...options,
+    headers,
+    credentials: 'include',
+  }
+
+  const response = await fetch(`${BASE_URL}${url}`, fetchOptions)
+
+  if (response.status === 401) {
+    localStorage.removeItem('authToken')
+    window.location.href = '/'
+    throw new ApiError('Unauthorized', 401)
+  }
+
+  if (!response.ok) {
+    throw new ApiError(`Request failed with status ${response.status}`, response.status)
+  }
+
+  return await response.blob()
+}
+
 export async function get<T>(url: string): Promise<T> {
   return request<T>(url, {
+    method: 'GET',
+  })
+}
+
+export async function getBlob(url: string): Promise<Blob> {
+  return requestBlob(url, {
     method: 'GET',
   })
 }

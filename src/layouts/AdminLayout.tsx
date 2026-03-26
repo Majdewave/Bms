@@ -205,7 +205,7 @@ export default function AdminLayout() {
       <aside
         className={`${
           'w-64'
-        } bg-white border-r border-slate-200 flex flex-col`}
+        } bg-white border-r border-slate-200 flex flex-col h-screen min-h-0`}
       >
 
         <div className="p-6 border-b border-slate-200">
@@ -216,8 +216,9 @@ export default function AdminLayout() {
 
         </div>
 
-        <nav className="flex-1 px-3 py-6 space-y-1">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-6">
 
+          <div className="space-y-1">
           {menuItems.map((item) => {
 
             const Icon = item.icon
@@ -244,10 +245,11 @@ export default function AdminLayout() {
               </Link>
             )
           })}
+          </div>
         </nav>
 
         {/* Sidebar footer remains with only the logout button and user info card, no dropdown */}
-        <div className="flex-shrink-0 p-4 border-t border-slate-200 space-y-4">
+        <div className="flex-shrink-0 border-t border-slate-200 p-4 space-y-4 bg-white">
 
           <button
             onClick={handleLogout}
