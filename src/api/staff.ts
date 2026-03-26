@@ -17,6 +17,8 @@ export interface StaffMember {
   roleLabel: string
   isActive: boolean
   permissions: string[]
+  useStamp?: boolean
+  stampUrl?: string
 }
 
 export interface CreateStaffRequest {
@@ -27,12 +29,16 @@ export interface CreateStaffRequest {
   RoleLabel: string
   Permissions: string[]
   VisibleMenuItems?: string[]
+  UseStamp?: boolean
+  StampUrl?: string
 }
 
 export interface UpdateStaffRequest {
   FullName: string
   role?: string
   RoleLabel: string
+  UseStamp?: boolean
+  StampUrl?: string
   IsActive: boolean
   Permissions: string[]
 }
@@ -74,5 +80,16 @@ export const staffService = {
 
   async deleteStaffMember(id: string): Promise<void> {
     return del<void>(`/api/staff/${id}`)
+  },
+
+  async sendLoginLink(id: string): Promise<void> {
+    return post<void>(`/api/staff/${id}/send-login-link`, {})
+  },
+
+  async uploadStamp(id: string, file: File): Promise<{ stampUrl: string }> {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    return post<{ stampUrl: string }>(`/api/staff/${id}/stamp`, formData, true)
   },
 }

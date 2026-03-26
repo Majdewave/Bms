@@ -15,6 +15,8 @@ export interface AuthUser {
   role: UserRole
   businessId?: string
   avatar?: string
+  stampUrl?: string
+  useStamp?: boolean
 }
 
 export interface LoginResponse {

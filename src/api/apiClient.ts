@@ -1,4 +1,12 @@
-const BASE_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:5000'
+const BASE_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:5146'
+
+type RequestOptions = RequestInit & {
+  isFormData?: boolean
+}
+
+const isAuthRelatedEndpoint = (url: string): boolean => {
+  return url.startsWith('/api/auth') || url.startsWith('/api/account')
+}
 
 class ApiError extends Error {
   constructor(
@@ -13,16 +21,18 @@ class ApiError extends Error {
 
 async function request<T>(
   url: string,
-  options: RequestInit = {}
+  options: RequestOptions = {}
 ): Promise<T> {
   const authToken = localStorage.getItem('authToken')
+
+  const isFormDataRequest = options.isFormData === true || options.body instanceof FormData
 
   let headers: Record<string, string> = {
     'Content-Type': 'application/json; charset=utf-8',
     ...(options.headers as Record<string, string>),
   };
-  // Remove Content-Type if isFormData is true
-  if ((options as any).isFormData) {
+  // Remove Content-Type for FormData, browser will set multipart boundary
+  if (isFormDataRequest) {
     delete headers['Content-Type'];
   }
   if (authToken) {
@@ -44,10 +54,12 @@ async function request<T>(
 
   const response = await fetch(`${BASE_URL}${url}`, fetchOptions)
 
-  // Handle 401 Unauthorized - remove token
+  // Handle 401 Unauthorized only for auth-related endpoints
   if (response.status === 401) {
-    localStorage.removeItem('authToken')
-    window.location.href = '/'
+    if (isAuthRelatedEndpoint(url)) {
+      localStorage.removeItem('authToken')
+      window.location.href = '/'
+    }
     throw new ApiError('Unauthorized', 401)
   }
 
@@ -93,7 +105,7 @@ async function request<T>(
 
 async function requestBlob(
   url: string,
-  options: RequestInit = {}
+  options: RequestOptions = {}
 ): Promise<Blob> {
   const authToken = localStorage.getItem('authToken')
 
@@ -114,8 +126,10 @@ async function requestBlob(
   const response = await fetch(`${BASE_URL}${url}`, fetchOptions)
 
   if (response.status === 401) {
-    localStorage.removeItem('authToken')
-    window.location.href = '/'
+    if (isAuthRelatedEndpoint(url)) {
+      localStorage.removeItem('authToken')
+      window.location.href = '/'
+    }
     throw new ApiError('Unauthorized', 401)
   }
 
@@ -141,27 +155,33 @@ export async function getBlob(url: string): Promise<Blob> {
 export async function post<T>(url: string, body?: any, isFormData?: boolean): Promise<T> {
   console.log('[POST Request] URL:', url)
   console.log('[POST Request] Body (before stringify):', body)
+  const isFormDataRequest = isFormData === true || body instanceof FormData
   let requestBody: any = body;
-  if (!isFormData) {
+  if (!isFormDataRequest) {
     requestBody = JSON.stringify(body ?? {});
     console.log('[POST Request] Body (after stringify):', requestBody);
   }
   return request<T>(url, {
     method: 'POST',
     body: requestBody,
-    ...(isFormData ? { isFormData: true } : {})
+    ...(isFormDataRequest ? { isFormData: true } : {})
   });
 }
 
-export async function put<T>(url: string, body?: any): Promise<T> {
+export async function put<T>(url: string, body?: any, isFormData?: boolean): Promise<T> {
   console.log('[PUT Request] URL:', url)
   console.log('[PUT Request] Body (before stringify):', body)
-  const bodyString = JSON.stringify(body ?? {})
-  console.log('[PUT Request] Body (after stringify):', bodyString)
+  const isFormDataRequest = isFormData === true || body instanceof FormData
+  const requestBody = isFormDataRequest ? body : JSON.stringify(body ?? {})
+
+  if (!isFormDataRequest) {
+    console.log('[PUT Request] Body (after stringify):', requestBody)
+  }
   
   return request<T>(url, {
     method: 'PUT',
-    body: bodyString
+    body: requestBody,
+    ...(isFormDataRequest ? { isFormData: true } : {})
   })
 }
 

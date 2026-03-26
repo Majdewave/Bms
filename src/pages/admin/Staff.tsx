@@ -38,8 +38,14 @@ export default function AdminStaff() {
     RoleLabel: '',
     Permissions: [] as StaffPermission[],
     VisibleMenuItems: [] as VisibleMenuItem[],
-     IsActive: true
+    IsActive: true,
+    UseStamp: false,
+    StampUrl: '',
   })
+  
+  const [stampFile, setStampFile] = useState<File | null>(null)
+  const [stampPreview, setStampPreview] = useState<string>('')
+  const [uploadingStamp, setUploadingStamp] = useState(false)
 
   
   useEffect(() => {
@@ -81,8 +87,25 @@ export default function AdminStaff() {
     setSavingStaff(true)
     try {
       const normalizedRole = role.toLowerCase() === 'admin' ? 'Admin' : 'Staff'
+      
+      // Upload stamp if provided
+      let stampUrl = formData.StampUrl
+      if (stampFile && editingStaff?.id) {
+        setUploadingStamp(true)
+        try {
+          const uploadResult = await staffService.uploadStamp(editingStaff.id, stampFile)
+          stampUrl = uploadResult.stampUrl
+        } catch (error) {
+          console.error('Failed to upload stamp:', error)
+          alert(t('admin.staff.errors.stampUploadFailed') || 'Failed to upload stamp')
+        } finally {
+          setUploadingStamp(false)
+        }
+      }
+      
       const payload = {
         ...formData,
+        StampUrl: stampUrl,
         role: normalizedRole,
         Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
       }
@@ -148,8 +171,12 @@ export default function AdminStaff() {
       RoleLabel: staffMember.roleLabel || staffMember.role || '',
       Permissions: staffMember.permissions || [],
       VisibleMenuItems: staffMember.visibleMenuItems || [],
-        IsActive: staffMember.isActive ?? true
+      IsActive: staffMember.isActive ?? true,
+      UseStamp: staffMember.useStamp ?? false,
+      StampUrl: staffMember.stampUrl || '',
     })
+    setStampFile(null)
+    setStampPreview(staffMember.stampUrl || '')
     setShowModal(true)
   }
 
@@ -164,7 +191,12 @@ export default function AdminStaff() {
       RoleLabel: '',
       Permissions: [],
       VisibleMenuItems: [],
+      IsActive: true,
+      UseStamp: false,
+      StampUrl: '',
     })
+    setStampFile(null)
+    setStampPreview('')
   }
 
   const togglePermission = (permission: StaffPermission) => {
@@ -183,6 +215,22 @@ export default function AdminStaff() {
         ? prev.visibleMenuItems.filter(i => i !== item)
         : [...prev.visibleMenuItems, item],
     }))
+  }
+
+  const handleStampFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.type.startsWith('image/png')) {
+        alert('Please select a PNG image file')
+        return
+      }
+      setStampFile(file)
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setStampPreview(event.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const filteredStaff = (staff ?? []).filter(Boolean).filter(s =>
@@ -499,6 +547,55 @@ export default function AdminStaff() {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Stamp Settings */}
+              <div className="space-y-4 border-t border-slate-200 pt-6">
+                <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
+                  Stamp Settings
+                </h3>
+
+                <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.UseStamp}
+                    onChange={(e) => setFormData(prev => ({ ...prev, UseStamp: e.target.checked }))}
+                    className="w-4 h-4 text-primary-600 rounded border-slate-300 focus:ring-2 focus:ring-primary-500"
+                  />
+                  <span className="font-medium text-slate-900">
+                    Use stamp in documents
+                  </span>
+                </label>
+
+                {formData.UseStamp && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Upload Stamp (PNG only)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/png"
+                        onChange={handleStampFileChange}
+                        disabled={uploadingStamp}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Maximum 5MB, PNG format only
+                      </p>
+                    </div>
+
+                    {stampPreview && (
+                      <div className="flex items-center justify-center p-4 border border-slate-200 rounded-lg bg-slate-50">
+                        <img
+                          src={stampPreview}
+                          alt="Stamp preview"
+                          className="max-h-32 max-w-32 object-contain"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

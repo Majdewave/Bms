@@ -12,6 +12,8 @@ export interface AuthUser {
   businessId?: string
   avatar?: string
   permissions: string[]
+  stampUrl?: string
+  useStamp?: boolean
 }
 
 interface AuthContextType {
@@ -65,6 +67,8 @@ const normalizeUser = (user: any): AuthUser | null => {
   return {
     ...user,
     permissions: Array.isArray(user.permissions) ? user.permissions : [],
+    stampUrl: user.stampUrl ?? user.StampUrl,
+    useStamp: user.useStamp ?? user.UseStamp ?? false,
   }
 }
 

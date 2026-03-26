@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, FileText } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFeatures } from "@/contexts/FeatureContext"
 import * as apiClient from "@/api/apiClient"
@@ -37,6 +37,12 @@ interface Drug {
   name: string
 }
 
+interface CurrentStaff {
+  id: string
+  stampUrl?: string
+  useStamp?: boolean
+}
+
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -46,6 +52,12 @@ export default function ClientProfile() {
   const isAdmin = user?.role === "admin"
   const isRTL = i18n.language === "he" || i18n.language === "ar"
   const { features } = useFeatures()
+  const [currentStaff, setCurrentStaff] = useState<CurrentStaff | null>(null)
+  const stampSrc = currentStaff?.stampUrl
+    ? (currentStaff.stampUrl.startsWith('http')
+      ? currentStaff.stampUrl
+      : `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5146'}${currentStaff.stampUrl}`)
+    : null
 
   const [client, setClient] = useState<Client | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
@@ -59,6 +71,10 @@ export default function ClientProfile() {
   const [savingPrescription, setSavingPrescription] = useState(false)
   const [drugs, setDrugs] = useState<string[]>([''])
   const [instructions, setInstructions] = useState("")
+  const [errors, setErrors] = useState({
+    drugs: false,
+    instructions: false,
+  })
   const [openSections, setOpenSections] = useState<string[]>([])
   const [prescriptionForm, setPrescriptionForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -150,6 +166,25 @@ export default function ClientProfile() {
       .then((data) => setAvailableDrugs(Array.isArray(data) ? data : []))
       .catch((err) => console.error('Load drugs failed:', err))
   }, [])
+
+  useEffect(() => {
+    const loadCurrentStaff = async () => {
+      if (!user?.id) {
+        setCurrentStaff(null)
+        return
+      }
+
+      try {
+        const staffData = await apiClient.get<CurrentStaff>(`/api/staff/${user.id}`)
+        setCurrentStaff(staffData ?? null)
+      } catch (error) {
+        console.error('Load current staff failed:', error)
+        setCurrentStaff(null)
+      }
+    }
+
+    loadCurrentStaff()
+  }, [user?.id])
 
   const addDrug = () => {
     setDrugs(prev => [...prev, ''])
@@ -245,6 +280,10 @@ export default function ClientProfile() {
     setShowPrescriptionModal(false)
     setDrugs([''])
     setInstructions("")
+    setErrors({
+      drugs: false,
+      instructions: false,
+    })
     setPrescriptionForm({
       date: new Date().toISOString().split('T')[0],
       nationalId: '',
@@ -255,6 +294,18 @@ export default function ClientProfile() {
 
   const savePrescription = async () => {
     if (!client) return
+
+    // Validation: at least one of drugs or instructions must be filled
+    const hasDrugs = drugs.some(d => d.trim().length > 0)
+    const hasInstructions = instructions.trim().length > 0
+
+    if (!hasDrugs && !hasInstructions) {
+      setErrors({
+        drugs: true,
+        instructions: true,
+      })
+      return
+    }
 
     setSavingPrescription(true)
     try {
@@ -267,6 +318,7 @@ export default function ClientProfile() {
 
       await apiClient.post('/api/prescriptions', {
         clientId: client.id,
+        staffId: user?.id,
         date: prescriptionForm.date,
         drugs: filteredDrugs,
         instructions: instructions,
@@ -297,6 +349,28 @@ export default function ClientProfile() {
     }
   }
 
+  const handleDrugChange = (index: number, value: string) => {
+    updateDrug(index, value)
+    if (errors.drugs) {
+      const hasDrugs = drugs.some((d, i) => (i === index ? value.trim() : d.trim()).length > 0)
+      const hasInstructions = instructions.trim().length > 0
+      if (hasDrugs || hasInstructions) {
+        setErrors(prev => ({ ...prev, drugs: false }))
+      }
+    }
+  }
+
+  const handleInstructionsChange = (value: string) => {
+    setInstructions(value)
+    if (errors.instructions) {
+      const hasDrugs = drugs.some(d => d.trim().length > 0)
+      const hasInstructions = value.trim().length > 0
+      if (hasDrugs || hasInstructions) {
+        setErrors(prev => ({ ...prev, instructions: false }))
+      }
+    }
+  }
+
   const updateNote = async (id: string, content: string) => {
     await apiClient.put(`/api/notes/${id}`, { content })
     setNotes(prev =>
@@ -319,13 +393,16 @@ export default function ClientProfile() {
     try {
       const blob = await apiClient.getBlob(`/api/prescriptions/${id}/pdf`)
       const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `prescription-${id}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
+       window.open(url);
+       /* for download PDF
+      // const link = document.createElement('a')
+      // link.href = url
+      // link.download = `prescription-${id}.pdf`
+      // document.body.appendChild(link)
+      // link.click()
+      // link.remove()
+      // window.URL.revokeObjectURL(url)
+      */
     } catch (error) {
       console.error('Failed to download prescription PDF:', error)
       alert('שגיאה בהורדת קובץ המרשם')
@@ -389,9 +466,10 @@ export default function ClientProfile() {
           {features?.prescriptionsEnabled !== false && (
           <button
             onClick={() => setShowPrescriptionModal(true)}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl shadow-md hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg"
           >
-            כתוב מרשם
+            <FileText className="w-4 h-4" />
+            <span>כתוב מרשם</span>
           </button>
           )}
 
@@ -548,9 +626,14 @@ export default function ClientProfile() {
           onClick={() => toggleSection("notes")}
           className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
         >
-          <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? "text-right" : "text-left"}`}>
-            {t("admin.clientProfile.notesTitle")}
-          </h3>
+          <div className="flex items-center justify-between gap-3">
+            <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? "text-right" : "text-left"}`}>
+              {t("admin.clientProfile.notesTitle")}
+            </h3>
+            <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
+              {notes.length}
+            </span>
+          </div>
           <ChevronDown
             className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
               openSections.includes("notes") ? "rotate-180" : "rotate-0"
@@ -609,7 +692,14 @@ export default function ClientProfile() {
           onClick={() => toggleSection("prescriptions")}
           className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
         >
-          <h3 className="text-lg font-semibold text-slate-800">מרשמים</h3>
+          <div className="flex items-center justify-between gap-3">
+            <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? "text-right" : "text-left"}`}>
+              מרשמים
+            </h3>
+            <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+              {prescriptions.length}
+            </span>
+          </div>
           <ChevronDown
             className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
               openSections.includes("prescriptions") ? "rotate-180" : "rotate-0"
@@ -737,8 +827,8 @@ export default function ClientProfile() {
                     <input
                       type="text"
                       value={drug}
-                      onChange={(e) => updateDrug(index, e.target.value)}
-                      className="w-full border p-2 rounded"
+                      onChange={(e) => handleDrugChange(index, e.target.value)}
+                      className={`w-full border p-2 rounded ${errors.drugs ? 'border-red-500 border-2' : ''}`}
                       list="drug-options"
                       placeholder="בחר או כתוב תרופה"
                     />
@@ -768,14 +858,17 @@ export default function ClientProfile() {
               <label className="mt-4 block text-sm mb-1">הוראות שימוש</label>
               <textarea
                 value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                className="w-full border p-2 rounded h-24"
+                onChange={(e) => handleInstructionsChange(e.target.value)}
+                className={`w-full border p-2 rounded h-24 ${errors.instructions ? 'border-red-500 border-2' : ''}`}
               />
+              {(errors.drugs || errors.instructions) && (
+                <p className="text-red-500 text-sm mt-2">יש להזין לפחות תרופה אחת או הוראות שימוש</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm mb-1">שם הרופא</label>
+                <label className="block text-sm mb-1">שם הרופא *</label>
                 <input
                   type="text"
                   value={prescriptionForm.doctorName}
@@ -783,16 +876,16 @@ export default function ClientProfile() {
                   className="w-full border rounded-lg p-2"
                 />
               </div>
-
               <div>
-                <label className="block text-sm mb-1">חתימה</label>
-                <input
-                  type="text"
-                  placeholder="חתימת הרופא"
-                  value={prescriptionForm.signature}
-                  onChange={(e) => setPrescriptionForm(prev => ({ ...prev, signature: e.target.value }))}
-                  className="w-full border rounded-lg p-2"
-                />
+                {currentStaff?.useStamp && stampSrc && (
+                  <div className="mb-2 flex justify-end">
+                    <img
+                      src={stampSrc}
+                      alt="חותמת"
+                      className="h-16 object-contain border-b pb-1"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -807,7 +900,7 @@ export default function ClientProfile() {
               <button
                 onClick={savePrescription}
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white"
-                disabled={savingPrescription || !drugs.some(d => d.trim()) || !instructions.trim() || !prescriptionForm.doctorName.trim()}
+                disabled={savingPrescription || (!drugs.some(d => d.trim()) && !instructions.trim()) || !prescriptionForm.doctorName.trim()}
               >
                 {savingPrescription ? 'שומר...' : 'שמירה'}
               </button>
