@@ -39,6 +39,7 @@ interface Drug {
 
 interface CurrentStaff {
   id: string
+   fullName?: string
   stampUrl?: string
   useStamp?: boolean
 }
@@ -166,6 +167,24 @@ export default function ClientProfile() {
       .then((data) => setAvailableDrugs(Array.isArray(data) ? data : []))
       .catch((err) => console.error('Load drugs failed:', err))
   }, [])
+
+  useEffect(() => {
+  if (currentStaff?.fullName && !prescriptionForm.doctorName) {
+    setPrescriptionForm(prev => ({
+      ...prev,
+      doctorName: currentStaff.fullName!,
+    }))
+  }
+}, [currentStaff])
+
+  useEffect(() => {
+  if (currentStaff && !prescriptionForm.doctorName) {
+    setPrescriptionForm(prev => ({
+      ...prev,
+      doctorName: user?.name || "", // או currentStaff.fullName אם יש לך
+    }))
+  }
+}, [currentStaff])
 
   useEffect(() => {
     const loadCurrentStaff = async () => {
@@ -868,11 +887,16 @@ export default function ClientProfile() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm mb-1">שם הרופא *</label>
+                <label className="block text-sm mb-1">שם הרופא </label>
                 <input
                   type="text"
-                  value={prescriptionForm.doctorName}
-                  onChange={(e) => setPrescriptionForm(prev => ({ ...prev, doctorName: e.target.value }))}
+                  value={prescriptionForm.doctorName || currentStaff?.fullName || ""}
+                  onChange={(e) =>
+                    setPrescriptionForm(prev => ({
+                      ...prev,
+                      doctorName: e.target.value
+                    }))
+                  }
                   className="w-full border rounded-lg p-2"
                 />
               </div>

@@ -87,13 +87,57 @@ export default function AdminStaff() {
     setSavingStaff(true)
     try {
       const normalizedRole = role.toLowerCase() === 'admin' ? 'Admin' : 'Staff'
-      
-      // Upload stamp if provided
-      let stampUrl = formData.StampUrl
-      if (stampFile && editingStaff?.id) {
+
+      if (editingStaff) {
+        // UPDATE FLOW
+        let updatePayload = {
+          ...formData,
+          role: normalizedRole,
+          Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
+        }
+        // If uploading a new stamp, never send UseStamp: true with empty StampUrl
+        if (stampFile) {
+          updatePayload = {
+            ...updatePayload,
+            UseStamp: false,
+            StampUrl: null,
+          }
+        }
+        await staffService.updateStaffMember(editingStaff.id, updatePayload)
+
+        if (stampFile) {
+          setUploadingStamp(true)
+          try {
+            await staffService.uploadStamp(editingStaff.id, stampFile)
+          } catch (error) {
+            console.error('Failed to upload stamp:', error)
+            alert(t('admin.staff.errors.stampUploadFailed') || 'Failed to upload stamp')
+          } finally {
+            setUploadingStamp(false)
+          }
+        }
+        await loadStaff()
+        closeModal()
+        return
+      }
+
+      // CREATE FLOW
+      // Always create staff first, with UseStamp: false and no StampUrl
+      const createPayload = {
+        ...formData,
+        UseStamp: false,
+        StampUrl: '',
+        role: normalizedRole,
+        Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
+      }
+      const created = await staffService.createStaffMember(createPayload)
+      let staffId = created?.id
+      let stampUrl = ''
+
+      if (stampFile && staffId) {
         setUploadingStamp(true)
         try {
-          const uploadResult = await staffService.uploadStamp(editingStaff.id, stampFile)
+          const uploadResult = await staffService.uploadStamp(staffId, stampFile)
           stampUrl = uploadResult.stampUrl
         } catch (error) {
           console.error('Failed to upload stamp:', error)
@@ -102,21 +146,23 @@ export default function AdminStaff() {
           setUploadingStamp(false)
         }
       }
-      
-      const payload = {
-        ...formData,
-        StampUrl: stampUrl,
-        role: normalizedRole,
-        Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
+
+      // If stamp was uploaded, update UseStamp and StampUrl
+      if (staffId && stampUrl) {
+        try {
+          await staffService.updateStaffMember(staffId, {
+            ...formData,
+            UseStamp: true,
+            StampUrl: stampUrl,
+            role: normalizedRole,
+            Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
+          })
+        } catch (error) {
+          console.error('Failed to update staff with stamp:', error)
+        }
       }
 
-      if (editingStaff) {
-        await staffService.updateStaffMember(editingStaff.id, payload)
-        await loadStaff()
-      } else {
-        await staffService.createStaffMember(payload)
-        await loadStaff()
-      }
+      await loadStaff()
       closeModal()
     } catch (error) {
       console.error('Failed to save staff:', error)
