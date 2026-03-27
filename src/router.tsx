@@ -39,6 +39,18 @@ import ClientInvoices from '@/pages/client/Invoices'
 import ClientFiles from '@/pages/client/Files'
 import ClientProfile from '@/pages/client/Profile'
 
+import React from 'react'
+
+const ErrorFallback = () => (
+  <div style={{ padding: 32, textAlign: 'center', color: '#b91c1c' }}>
+    <h2>שגיאה בטעינת הדף</h2>
+    <p>ייתכן שהדף לא קיים או שישנה בעיה זמנית.</p>
+    <button onClick={() => window.location.reload()} style={{ marginTop: 16, padding: '8px 24px', background: '#f87171', color: 'white', border: 'none', borderRadius: 4 }}>
+      רענן דף
+    </button>
+  </div>
+)
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -290,4 +302,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-])
+], {
+  // fallback error element for all routes
+  errorElement: <ErrorFallback />,
+})
