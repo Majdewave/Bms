@@ -558,11 +558,28 @@ export default function ClientProfile() {
           />
         </div>
 
-        <Display
-          label="Notes"
-          value={client.internalNote || (client as any)?.notes || "-"}
-          isRTL={isRTL}
+    <div>
+      <label className="block text-sm text-slate-500 mb-2">
+        Notes
+      </label>
+
+      {editingClient ? (
+        <textarea
+          value={client.internalNote || ''}
+          onChange={(e) =>
+            setClient(prev => ({
+              ...prev!,
+              internalNote: e.target.value
+            }))
+          }
+          className="w-full border rounded-lg p-3"
         />
+      ) : (
+        <div className="text-slate-800">
+          {client.internalNote || "-"}
+        </div>
+      )}
+    </div>
 
         <Field
           label={t("admin.clientProfile.address")}

@@ -9,6 +9,7 @@ export default function CreateClientModal({ onClose, onCreated }) {
     email: '',
     phone: '',
     address: '',
+    idNumber: '',
     internalNote: '',
   })
   const [saving, setSaving] = useState(false)
@@ -39,6 +40,7 @@ export default function CreateClientModal({ onClose, onCreated }) {
         <h2 className="text-xl font-bold mb-4">{t('admin.clients.add')}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input name="fullName" value={form.fullName} onChange={handleChange} required placeholder={t('admin.clients.form.namePlaceholder')} className="input w-full" />
+          <input type="text" value={form.idNumber || ''} onChange={(e) => setForm(prev => ({ ...prev, idNumber: e.target.value }))  } className="w-full border rounded-lg p-2" placeholder={t('admin.clients.form.idNumberPlaceholder')} />
           <input name="email" value={form.email} onChange={handleChange} type="email" placeholder={t('admin.clients.form.emailPlaceholder')} className="input w-full" />
           <input name="phone" value={form.phone} onChange={handleChange} placeholder={t('admin.clients.form.phonePlaceholder')} className="input w-full" />
           <input name="address" value={form.address} onChange={handleChange} placeholder={t('admin.clients.form.addressPlaceholder')} className="input w-full" />
