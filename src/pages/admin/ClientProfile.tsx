@@ -598,7 +598,8 @@ export default function ClientProfile() {
 
         <Display
           label={t("admin.clientProfile.lastVisit")}
-          value={formatDate(client.lastVisit)}
+          value={client.lastVisit 
+          ? new Date(client.lastVisit).toLocaleDateString() : "-"}
           isRTL={isRTL}
         />
 

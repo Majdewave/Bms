@@ -378,7 +378,9 @@ export default function AdminInvoices() {
                       <option value="">{t('admin.invoices.form.selectClient')}</option>
                       {clients.map((client) => (
                         <option key={client.id} value={client.id}>
-                          {client.fullName}
+                            {client.fullName
+                            ? `${client.fullName} (${client.email || ''})`
+                          : client.email}
                         </option>
                       ))}
                     </select>

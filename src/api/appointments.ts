@@ -141,7 +141,7 @@ export const deleteAppointment = async (id: string): Promise<void> => {
 
 export interface AppointmentClient {
   id: string
-  name: string
+  fullName: string
   email: string
 }
 

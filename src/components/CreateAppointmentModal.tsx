@@ -165,7 +165,7 @@ export default function CreateAppointmentModal({
               <option value="">{t('appointments.form.selectClient')}</option>
               {clients.map(c => (
                 <option key={c.id} value={c.id}>
-                  {c.name || c.email}
+                 {(c as any).fullName || c.email}
                 </option>
               ))}
             </select>
