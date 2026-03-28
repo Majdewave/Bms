@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Pill,
   Settings,
   Shield,
   Sliders,
@@ -50,6 +51,7 @@ const allMenuItems: MenuItem[] = [
   { icon: UserPlus, label: 'Staff Management', path: '/admin/staff', roles: ['admin'] },
   { icon: Settings, label: 'Business Settings', path: '/admin/settings', roles: ['admin'] },
   { icon: Sliders, label: 'Feature Toggles', path: '/admin/features', roles: ['admin'] },
+  { icon: Pill, label: 'Drugs', path: '/admin/drugs', roles: ['admin'] },
 
   // Staff (permission based)
   { icon: LayoutDashboard, label: 'Dashboard', path: '/staff/dashboard', roles: ['staff'] },

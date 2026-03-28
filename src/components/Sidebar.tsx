@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+// import { useTenant } from '@/contexts/TenantContext'
 import type { Permission } from '@/utils/permissions'
 import {
   LayoutDashboard,
@@ -11,6 +12,7 @@ import {
   CreditCard,
   Menu,
   X,
+  Pill,
 } from 'lucide-react'
 
 interface MenuItem {
@@ -19,6 +21,7 @@ interface MenuItem {
   path: string
   adminOnly?: boolean
   permission?: Permission
+  feature?: string
 }
 
 const menuItems: MenuItem[] = [
@@ -28,6 +31,8 @@ const menuItems: MenuItem[] = [
   { icon: FolderOpen, label: 'Files', path: '/files' },
   { icon: User, label: 'Profile', path: '/profile' },
   { icon: CreditCard, label: 'ניהול מנוי', path: '/billing', adminOnly: true },
+  // Drugs menu item (admin only, feature toggle)
+  { icon: Pill, label: 'Drugs', path: '/drugs', adminOnly: true },
 ]
 
 export default function Sidebar() {
@@ -35,15 +40,29 @@ export default function Sidebar() {
   const location = useLocation()
   const { user, hasPermission } = useAuth()
 
-  // Admin: show all menu items
+  // Debug: Log user object
+  console.log('Sidebar user:', user)
+
+  // Admin: show all menu items (including Drugs)
   // Others: show based on permission/adminOnly flags
-  const visibleMenuItems = menuItems.filter((item) => {
-    if (!user) return false
-    if (user.role?.toLowerCase() === 'admin') return true
-    if (item.adminOnly) return false
-    if (!item.permission) return true
-    return hasPermission(item.permission)
-  })
+  // Fix admin role check and temporarily disable filtering for debug
+  let visibleMenuItems = menuItems
+  if (user) {
+    if (user.role && user.role.toLowerCase() === 'admin') {
+      visibleMenuItems = menuItems
+    } else {
+      visibleMenuItems = menuItems.filter((item) => {
+        if (item.adminOnly) return false
+        if (!item.permission) return true
+        return hasPermission(item.permission)
+      })
+    }
+  } else {
+    visibleMenuItems = []
+  }
+
+  // Debug: Log visibleMenuItems
+  console.log('Sidebar visibleMenuItems:', visibleMenuItems)
 
   return (
     <>

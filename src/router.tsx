@@ -1,3 +1,4 @@
+import AdminDrugs from '@/pages/admin/AdminDrugs'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -92,6 +93,15 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Navigate to="dashboard" replace /> },
+      
+      {
+        path: 'drugs',
+        element: (
+          <RoleBasedRoute allowedRoles={['admin']}>
+            <AdminDrugs />
+          </RoleBasedRoute>
+        ),
+      },
 
       {
         path: 'dashboard',
