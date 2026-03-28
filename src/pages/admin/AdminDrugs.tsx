@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Pill } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import * as apiClient from '@/api/apiClient'
 
 interface Drug {
@@ -17,6 +18,7 @@ const AdminDrugs: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const loadDrugs = async () => {
     setLoading(true);
@@ -80,14 +82,14 @@ const AdminDrugs: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           <Pill className="w-5 h-5 text-primary-600" />
-          <h1 className="text-xl font-bold text-primary-900">Drug Database</h1>
+          <h1 className="text-xl font-bold text-primary-900">{t('drugs.title')}</h1>
         </div>
-        <p className="text-sm text-slate-500 mt-1 ml-7 mb-3">Manage medications</p>
+        <p className="text-sm text-slate-500 mt-1 ml-7 mb-3">{t('drugs.subtitle')}</p>
         <button
           className="bg-primary-600 hover:bg-primary-700 text-white font-semibold flex items-center gap-2 px-4 py-2 rounded-lg shadow transition"
           onClick={() => openModal()}
         >
-          <Plus className="w-4 h-4" /> Add Drug
+          <Plus className="w-4 h-4" /> {t('drugs.add')}
         </button>
       </div>
 
@@ -99,7 +101,7 @@ const AdminDrugs: React.FC = () => {
         <input
           type="text"
           className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition placeholder-slate-400"
-          placeholder="Search drug by name or dosage..."
+          placeholder={t('drugs.searchPlaceholder')}
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -121,7 +123,7 @@ const AdminDrugs: React.FC = () => {
           ))
         ) : filteredDrugs.length === 0 ? (
           // Empty state
-          <div className="text-center text-slate-400 py-16 text-lg">No drugs found</div>
+          <div className="text-center text-slate-400 py-16 text-lg">{t('drugs.empty')}</div>
         ) : (
           filteredDrugs.map(drug => (
             <div
@@ -138,7 +140,7 @@ const AdminDrugs: React.FC = () => {
                 <button
                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
                   onClick={() => openModal(drug)}
-                  title="Edit"
+                  title={t('common.edit')}
                 >
                   <Pencil className="w-5 h-5" />
                 </button>
@@ -146,7 +148,7 @@ const AdminDrugs: React.FC = () => {
                   className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                   onClick={() => handleDelete(drug.id)}
                   disabled={deleteId === drug.id}
-                  title="Delete"
+                  title={t('common.delete')}
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
@@ -160,9 +162,9 @@ const AdminDrugs: React.FC = () => {
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
-            <h2 className="text-2xl font-bold mb-6 text-primary-800">{editingDrug ? 'Edit Drug' : 'Add Drug'}</h2>
+            <h2 className="text-2xl font-bold mb-6 text-primary-800">{editingDrug ? t('common.edit') : t('drugs.add')}</h2>
             <div className="mb-4">
-              <label className="block mb-1 font-medium">Name <span className="text-red-500">*</span></label>
+              <label className="block mb-1 font-medium">{t('drugs.name')} <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-400"
@@ -172,7 +174,7 @@ const AdminDrugs: React.FC = () => {
               />
             </div>
             <div className="mb-4">
-              <label className="block mb-1 font-medium">Dosage</label>
+              <label className="block mb-1 font-medium">{t('drugs.dosage')}</label>
               <input
                 type="text"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-400"
@@ -185,12 +187,12 @@ const AdminDrugs: React.FC = () => {
                 className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 bg-slate-50 hover:bg-slate-100 transition"
                 onClick={closeModal}
                 disabled={saving}
-              >Cancel</button>
+              >{t('common.cancel')}</button>
               <button
                 className="px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-semibold shadow-md transition"
                 onClick={handleSave}
                 disabled={saving || !form.name.trim()}
-              >{saving ? 'Saving...' : 'Save'}</button>
+              >{saving ? t('common.save') + '...' : t('common.save')}</button>
             </div>
           </div>
         </div>

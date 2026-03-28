@@ -5,6 +5,7 @@ import { ChevronDown, FileText } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFeatures } from "@/contexts/FeatureContext"
 import * as apiClient from "@/api/apiClient"
+import DrugAutocomplete from '@/components/DrugAutocomplete'
 
 interface Client {
   id: string
@@ -35,6 +36,8 @@ interface Prescription {
 interface Drug {
   id: string
   name: string
+  dosage?: string
+  display: string
 }
 
 interface CurrentStaff {
@@ -63,14 +66,15 @@ export default function ClientProfile() {
   const [client, setClient] = useState<Client | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
-  const [availableDrugs, setAvailableDrugs] = useState<Drug[]>([])
+  const [drugs, setDrugs] = useState([
+    { drugId: '', name: '', dosage: '', display: '' }
+  ])
   const [loading, setLoading] = useState(true)
   const [editingClient, setEditingClient] = useState(false)
   const [savingClient, setSavingClient] = useState(false)
   const [newNote, setNewNote] = useState("")
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
   const [savingPrescription, setSavingPrescription] = useState(false)
-  const [drugs, setDrugs] = useState<string[]>([''])
   const [instructions, setInstructions] = useState("")
   const [errors, setErrors] = useState({
     drugs: false,
@@ -163,12 +167,6 @@ export default function ClientProfile() {
   }, [id])
 
   useEffect(() => {
-    apiClient.get<Drug[]>('/api/drugs')
-      .then((data) => setAvailableDrugs(Array.isArray(data) ? data : []))
-      .catch((err) => console.error('Load drugs failed:', err))
-  }, [])
-
-  useEffect(() => {
   if (currentStaff?.fullName && !prescriptionForm.doctorName) {
     setPrescriptionForm(prev => ({
       ...prev,
@@ -206,18 +204,15 @@ export default function ClientProfile() {
   }, [user?.id])
 
   const addDrug = () => {
-    setDrugs(prev => [...prev, ''])
+    setDrugs(prev => [...prev, { drugId: '', name: '', dosage: '', display: '' }]);
   }
 
   const removeDrug = (index: number) => {
-    setDrugs(prev => {
-      if (prev.length === 1) return ['']
-      return prev.filter((_, i) => i !== index)
-    })
+    setDrugs(prev => prev.length === 1 ? [{ drugId: '', name: '', dosage: '', display: '' }] : prev.filter((_, i) => i !== index));
   }
 
-  const updateDrug = (index: number, value: string) => {
-    setDrugs(prev => prev.map((drug, i) => (i === index ? value : drug)))
+  const updateDrug = (index: number, drugObj: { drugId: string; name: string; dosage?: string; display: string }) => {
+    setDrugs(prev => prev.map((d, i) => (i === index ? drugObj : d)));
   }
 
   const formatDate = (date?: string | null) =>
@@ -297,7 +292,7 @@ export default function ClientProfile() {
 
   const closePrescriptionModal = () => {
     setShowPrescriptionModal(false)
-    setDrugs([''])
+   setDrugs([{ drugId: '', name: '', dosage: '', display: '' }])
     setInstructions("")
     setErrors({
       drugs: false,
@@ -315,7 +310,7 @@ export default function ClientProfile() {
     if (!client) return
 
     // Validation: at least one of drugs or instructions must be filled
-    const hasDrugs = drugs.some(d => d.trim().length > 0)
+    const hasDrugs = drugs.some(d => (d.display || '').trim().length > 0)
     const hasInstructions = instructions.trim().length > 0
 
     if (!hasDrugs && !hasInstructions) {
@@ -328,7 +323,7 @@ export default function ClientProfile() {
 
     setSavingPrescription(true)
     try {
-      const filteredDrugs = drugs.filter(d => d.trim() !== '')
+      const filteredDrugs = drugs.filter(d => (d.display || '').trim() !== '')
 
       const extraNotes = [
         prescriptionForm.nationalId ? `ת.ז: ${prescriptionForm.nationalId}` : null,
@@ -339,7 +334,7 @@ export default function ClientProfile() {
         clientId: client.id,
         staffId: user?.id,
         date: prescriptionForm.date,
-        drugs: filteredDrugs,
+        drugs: filteredDrugs.map(d => d.display),
         instructions: instructions,
         doctorName: prescriptionForm.doctorName,
         notes: extraNotes,
@@ -368,10 +363,10 @@ export default function ClientProfile() {
     }
   }
 
-  const handleDrugChange = (index: number, value: string) => {
+  const handleDrugChange = (index: number, value: any) => {
     updateDrug(index, value)
     if (errors.drugs) {
-      const hasDrugs = drugs.some((d, i) => (i === index ? value.trim() : d.trim()).length > 0)
+      const hasDrugs = drugs.some((d, i) => (i === index ? (value.display || '').trim() : (d.display || '').trim()).length > 0)
       const hasInstructions = instructions.trim().length > 0
       if (hasDrugs || hasInstructions) {
         setErrors(prev => ({ ...prev, drugs: false }))
@@ -382,7 +377,7 @@ export default function ClientProfile() {
   const handleInstructionsChange = (value: string) => {
     setInstructions(value)
     if (errors.instructions) {
-      const hasDrugs = drugs.some(d => d.trim().length > 0)
+      const hasDrugs = drugs.some(d => (d.display || '').trim().length > 0)
       const hasInstructions = value.trim().length > 0
       if (hasDrugs || hasInstructions) {
         setErrors(prev => ({ ...prev, instructions: false }))
@@ -749,7 +744,9 @@ export default function ClientProfile() {
                   {p.drugs && p.drugs.length > 0 ? (
                     <ul className="list-disc list-inside space-y-1">
                       {p.drugs.map((drug, drugIndex) => (
-                        <li key={`${p.id}-drug-${drugIndex}`}>{drug}</li>
+                        <li key={`${p.id}-drug-${drugIndex}`}>
+                        {typeof drug === 'string' ? drug : drug.display}
+                      </li>
                       ))}
                     </ul>
                   ) : (
@@ -843,13 +840,25 @@ export default function ClientProfile() {
               <div className="space-y-2">
                 {drugs.map((drug, index) => (
                   <div key={index} className="flex items-center gap-2">
+                    <DrugAutocomplete
+                      onSelect={(drugData) => {
+                        const display = `${drugData.name} ${drugData.dosage || ''}`.trim();
+                        updateDrug(index, {
+                          drugId: drugData.id,
+                          name: drugData.name,
+                          dosage: drugData.dosage,
+                          display
+                        });
+                      }}
+                      placeholder={t('drugs.searchPlaceholder')}
+                      className="w-full"
+                    />
                     <input
                       type="text"
-                      value={drug}
-                      onChange={(e) => handleDrugChange(index, e.target.value)}
-                      className={`w-full border p-2 rounded ${errors.drugs ? 'border-red-500 border-2' : ''}`}
-                      list="drug-options"
-                      placeholder="בחר או כתוב תרופה"
+                      value={drug.display}
+                      readOnly
+                      className={`w-full border p-2 rounded bg-gray-100 ${errors.drugs ? 'border-red-500 border-2' : ''}`}
+                      placeholder={t('drugs.searchPlaceholder')}
                     />
                     <button
                       type="button"
@@ -867,11 +876,6 @@ export default function ClientProfile() {
                 >
                   +
                 </button>
-                <datalist id="drug-options">
-                  {availableDrugs.map((d) => (
-                    <option key={d.id} value={d.name} />
-                  ))}
-                </datalist>
               </div>
 
               <label className="mt-4 block text-sm mb-1">הוראות שימוש</label>
@@ -924,7 +928,7 @@ export default function ClientProfile() {
               <button
                 onClick={savePrescription}
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white"
-                disabled={savingPrescription || (!drugs.some(d => d.trim()) && !instructions.trim()) || !prescriptionForm.doctorName.trim()}
+                disabled={savingPrescription || (!drugs.some(d => (d.display || '').trim()) && !instructions.trim()) || !prescriptionForm.doctorName.trim()}
               >
                 {savingPrescription ? 'שומר...' : 'שמירה'}
               </button>

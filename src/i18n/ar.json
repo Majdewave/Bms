@@ -1,4 +1,4 @@
-  {
+{
   "dashboard": {
     "totalClients": "إجمالي العملاء",
     "appointmentsToday": "المواعيد اليوم",
@@ -49,7 +49,9 @@
     "expand": "توسيع",
     "collapse": "طي",
     "dashboard": "لوحة التحكم",
-    "clients": "العملاء"
+    "clients": "العملاء",
+    "cancel": "إلغاء",
+    "save": "حفظ"
   },
   "notifications": {
     "title": "الإشعارات",
@@ -377,7 +379,7 @@
         "inactive": "غير نشط"
       },
       "viewProfile": "عرض الملف الشخصي",
-      "editClient": "تعديل معلومات العميل",
+      "editClient": " تعديل معلومات العميل",
       "memberSince": "عضو منذ {{date}}",
       "confirmDeleteNote": "هل أنت متأكد أنك تريد حذف هذه الملاحظة؟",
       "sections": {
@@ -629,5 +631,14 @@
       "confirmDelete": "هل أنت متأكد أنك تريد حذف عضو الفريق هذا؟",
       "loginLinkSent": "تم إرسال رابط تسجيل الدخول إلى {{email}}"
     }
+  },
+  "drugs": {
+    "title": "قاعدة بيانات الأدوية",
+    "subtitle": "إدارة الأدوية",
+    "add": "إضافة دواء",
+    "searchPlaceholder": "ابحث عن دواء بالاسم أو الجرعة...",
+    "empty": "لم يتم العثور على أدوية",
+    "name": "الاسم",
+    "dosage": "الجرعة"
   }
 }
