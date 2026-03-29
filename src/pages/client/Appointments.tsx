@@ -96,10 +96,13 @@ export default function ClientAppointments() {
     const getStatusBadge = (status: string) => {
       const styles = {
         scheduled: 'bg-blue-100 text-blue-700',
+        waiting: 'bg-yellow-100 text-yellow-700',
+        inprogress: 'bg-purple-100 text-purple-700',
         completed: 'bg-green-100 text-green-700',
-        cancelled: 'bg-gray-100 text-gray-700',
+        cancelled: 'bg-red-100 text-red-700',
+        noshow: 'bg-gray-100 text-gray-700',
       }
-      return styles[status as keyof typeof styles] || styles.scheduled
+      return styles[status?.toLowerCase() as keyof typeof styles] || styles.scheduled
     }
 
   return (

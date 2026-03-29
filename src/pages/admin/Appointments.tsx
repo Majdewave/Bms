@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Calendar, Clock, User, Plus, Search, Filter, Trash2, Edit } from 'lucide-react'
+import { Calendar, Clock, User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, XCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader, CreateAppointmentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
@@ -16,7 +16,37 @@ export default function AdminAppointments() {
   const [appointments, setAppointments] = useState<AppointmentRow[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'scheduled' | 'completed' | 'cancelled' | 'noshow'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'Scheduled' | 'Waiting' | 'InProgress' | 'Completed' | 'Cancelled' | 'NoShow'>('all')
+  // --- Queue Logic ---
+  const current = appointments.find(a => a.status === 'InProgress') || null;
+  const waitingList = appointments
+    .filter(a => a.status === 'Waiting')
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+  const next = waitingList[0] || null;
+  const waitingCount = waitingList.length;
+
+  // --- Status Actions ---
+  const updateStatus = async (id: string, status: string) => {
+    try {
+      // If setting to inprogress, auto-complete any other inprogress
+      if (status === 'InProgress') {
+        const currentInProgress = appointments.find(a => a.status === 'InProgress' && a.id !== id);
+        if (currentInProgress) {
+          await appointmentsService.updateAppointment(currentInProgress.id, { status: 'Completed' });
+        }
+      }
+      const appointment = appointments.find(a => a.id === id)
+        if (!appointment) return
+
+        await appointmentsService.updateAppointment(id, {
+          ...appointment,
+          status
+        })
+      loadData();
+    } catch (e) {
+      // Optionally show error
+    }
+  };
 
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRow | null>(null)
@@ -76,6 +106,36 @@ export default function AdminAppointments() {
   return (
     <div className="space-y-6">
 
+      {/* Queue Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
+          <div className="text-xs text-gray-500 mb-1">Current Patient</div>
+          {current ? (
+            <div className="flex items-center gap-2 font-semibold text-purple-700">
+              <CheckCircle className="w-5 h-5 text-purple-500" />
+              {current.clientName}
+            </div>
+          ) : (
+            <div className="text-gray-400">None</div>
+          )}
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
+          <div className="text-xs text-gray-500 mb-1">Next Patient</div>
+          {next ? (
+            <div className="flex items-center gap-2 font-semibold text-yellow-700">
+              <ArrowRight className="w-5 h-5 text-yellow-500" />
+              {next.clientName}
+            </div>
+          ) : (
+            <div className="text-gray-400">None</div>
+          )}
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
+          <div className="text-xs text-gray-500 mb-1">Waiting Count</div>
+          <div className="font-bold text-lg text-yellow-700">{waitingCount}</div>
+        </div>
+      </div>
+
       <PageHeader
         title={t('appointments.title')}
         description={t('appointments.subtitle')}
@@ -111,10 +171,10 @@ export default function AdminAppointments() {
             className="input"
           >
             <option value="all">{t('appointments.filters.all')}</option>
-            <option value="scheduled">{t('appointments.status.scheduled')}</option>
-            <option value="completed">{t('appointments.status.completed')}</option>
-            <option value="cancelled">{t('appointments.status.cancelled')}</option>
-            <option value="noshow">{t('appointments.status.noshow')}</option>
+            <option value="Scheduled">{t('appointments.status.scheduled')}</option>
+            <option value="Completed">{t('appointments.status.completed')}</option>
+            <option value="Cancelled">{t('appointments.status.cancelled')}</option>
+            <option value="NoShow">{t('appointments.status.noshow')}</option>
           </select>
         </div>
       </div>
@@ -139,8 +199,14 @@ export default function AdminAppointments() {
               </thead>
 
               <tbody>
-                {filteredAppointments.map(appointment => (
-                  <tr key={appointment.id} className="hover:bg-slate-50">
+                {filteredAppointments.map(appointment => {
+                  const isCurrent = appointment.status === 'InProgress';
+                  const isNext = next && appointment.id === next.id;
+                  return (
+                  <tr
+                    key={appointment.id}
+                    className={`hover:bg-slate-50 transition-all ${isCurrent ? 'border-2 border-purple-400 bg-purple-50' : isNext ? 'border border-yellow-300 bg-yellow-50' : ''}`}
+                  >
 
                     <td className="px-6 py-4 cursor-pointer" onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}>
                       <div className="flex items-center gap-3">
@@ -172,29 +238,68 @@ export default function AdminAppointments() {
                     <td className="px-6 py-4 text-center">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-semibold
-                          ${appointment.status === 'Scheduled'
-                            ? 'bg-blue-100 text-blue-700'
-                            : appointment.status === 'Completed'
-                            ? 'bg-green-100 text-green-700'
-                            : appointment.status === 'Cancelled'
-                            ? 'bg-red-100 text-red-700'
-                            : appointment.status === 'NoShow'
-                            ? 'bg-orange-100 text-orange-700'
-                            : 'bg-gray-100 text-gray-700'
-                          }`}
+                          ${appointment.status?.toLowerCase() === 'Scheduled' && 'bg-blue-100 text-blue-700'}
+                          ${appointment.status?.toLowerCase() === 'Waiting' && 'bg-yellow-100 text-yellow-700'}
+                          ${appointment.status?.toLowerCase() === 'InProgress' && 'bg-purple-100 text-purple-700'}
+                          ${appointment.status?.toLowerCase() === 'Completed' && 'bg-green-100 text-green-700'}
+                          ${appointment.status?.toLowerCase() === 'Cancelled' && 'bg-red-100 text-red-700'}
+                          ${appointment.status?.toLowerCase() === 'NoShow' && 'bg-gray-100 text-gray-700'}
+                        `}
                       >
-                        {t(`appointments.status.${appointment.status.toLowerCase()}`)}
+                        {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
                       </span>
                     </td>
 
                     <td className="px-6 py-4 text-end">
-                      <div className="flex items-center gap-3 justify-end">
+                      <div className="flex items-center gap-2 justify-end flex-wrap">
+                        {/* Quick Actions */}
+                        {appointment.status === 'Scheduled' && (
+                          <button
+                            className="btn-xs bg-yellow-100 text-yellow-800 border border-yellow-300 rounded px-2 py-1 mr-1"
+                            onClick={() => updateStatus(appointment.id, 'Waiting')}
+                          >
+                            Arrived
+                          </button>
+                        )}
+                        {appointment.status === 'Waiting' && (
+                          <button
+                            className="btn-xs bg-purple-100 text-purple-800 border border-purple-300 rounded px-2 py-1 mr-1"
+                            onClick={() => updateStatus(appointment.id, 'InProgress')}
+                          >
+                            Start טיפול
+                          </button>
+                        )}
+                        {appointment.status === 'InProgress' && (
+                          <button
+                            className="btn-xs bg-green-100 text-green-800 border border-green-300 rounded px-2 py-1 mr-1"
+                            onClick={() => updateStatus(appointment.id, 'Completed')}
+                          >
+                            Finish טיפול
+                          </button>
+                        )}
+                        {/* Always allow Cancel/No Show */}
+                        {appointment.status !== 'Cancelled' && (
+                          <button
+                            className="btn-xs bg-red-100 text-red-800 border border-red-300 rounded px-2 py-1 mr-1"
+                            onClick={() => updateStatus(appointment.id, 'Cancelled')}
+                          >
+                            Cancel
+                          </button>
+                        )}
+                        {appointment.status !== 'NoShow' && (
+                          <button
+                            className="btn-xs bg-gray-100 text-gray-800 border border-gray-300 rounded px-2 py-1 mr-1"
+                            onClick={() => updateStatus(appointment.id, 'NoShow')}
+                          >
+                            No Show
+                          </button>
+                        )}
+                        {/* Edit/Delete */}
                         <Edit
                           className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
                           onClick={() => setEditingAppointment(appointment)}
                           title={t('appointments.actions.edit')}
                         />
-
                         <Trash2
                           className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
                           onClick={() => handleDeleteAppointment(appointment.id)}
@@ -202,10 +307,10 @@ export default function AdminAppointments() {
                         />
                       </div>
                     </td>
-
                   </tr>
-                ))}
-              </tbody>
+                )
+              })}
+            </tbody>
 
             </table>
           </div>

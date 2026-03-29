@@ -1,5 +1,7 @@
 import { get, post, put, del } from './apiClient'
 
+import type { AppointmentStatus } from './appointments';
+
 export interface Appointment {
   id: string
   clientId: string
@@ -9,7 +11,7 @@ export interface Appointment {
   serviceId?: string | null
   staffId?: string | null
   staffName?: string | null
-  status: string
+  status: AppointmentStatus
 }
 
 export const appointmentsService = {

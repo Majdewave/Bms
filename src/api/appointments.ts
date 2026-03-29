@@ -1,5 +1,13 @@
 import { get, post, put, del } from './apiClient'
 
+export type AppointmentStatus =
+  | 'scheduled'
+  | 'waiting'
+  | 'inprogress'
+  | 'completed'
+  | 'cancelled'
+  | 'noshow';
+
 export interface Appointment {
   id: string
   clientId: string
@@ -7,7 +15,7 @@ export interface Appointment {
   clientEmail: string
   startTime: string
   endTime: string
-  status: string
+  status: AppointmentStatus
   notes?: string
   createdAt: string
   createdByUserId: string

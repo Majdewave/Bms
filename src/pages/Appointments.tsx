@@ -1,6 +1,7 @@
 import { Calendar, Plus, Search, Clock, CheckCircle, XCircle, User } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { appointmentsService } from '@/api'
+import { AppointmentStatus } from '@/constants/appointmentStatus'
 import type { Appointment } from '@/api/appointmentsService'
 
 type TabType = 'upcoming' | 'past'
@@ -52,14 +53,18 @@ export default function Appointments() {
   })
 
   const normalizeStatusKey = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'scheduled':
+    switch (status) {
+      case AppointmentStatus.Scheduled:
         return 'Scheduled'
-      case 'completed':
+      case AppointmentStatus.Waiting:
+        return 'Waiting'
+      case AppointmentStatus.InProgress:
+        return 'InProgress'
+      case AppointmentStatus.Completed:
         return 'Completed'
-      case 'cancelled':
+      case AppointmentStatus.Cancelled:
         return 'Cancelled'
-      case 'noshow':
+      case AppointmentStatus.NoShow:
         return 'NoShow'
       default:
         return status
@@ -67,14 +72,14 @@ export default function Appointments() {
   }
 
   const getStatusIcon = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'scheduled':
+    switch (status) {
+      case AppointmentStatus.Scheduled:
         return <Clock className="w-4 h-4 text-amber-600" />
-      case 'completed':
+      case AppointmentStatus.Completed:
         return <CheckCircle className="w-4 h-4 text-emerald-600" />
-      case 'cancelled':
+      case AppointmentStatus.Cancelled:
         return <XCircle className="w-4 h-4 text-red-600" />
-      case 'noshow':
+      case AppointmentStatus.NoShow:
         return <XCircle className="w-4 h-4 text-gray-600" />
       default:
         return null
@@ -82,17 +87,21 @@ export default function Appointments() {
   }
 
   const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'scheduled':
-        return 'bg-amber-100 text-amber-800'
-      case 'completed':
-        return 'bg-emerald-100 text-emerald-800'
-      case 'cancelled':
-        return 'bg-red-100 text-red-800'
-      case 'noshow':
-        return 'bg-gray-100 text-gray-800'
+    switch (status) {
+      case AppointmentStatus.Scheduled:
+        return 'bg-blue-100 text-blue-700'
+      case AppointmentStatus.Waiting:
+        return 'bg-yellow-100 text-yellow-700'
+      case AppointmentStatus.InProgress:
+        return 'bg-purple-100 text-purple-700'
+      case AppointmentStatus.Completed:
+        return 'bg-green-100 text-green-700'
+      case AppointmentStatus.Cancelled:
+        return 'bg-red-100 text-red-700'
+      case AppointmentStatus.NoShow:
+        return 'bg-gray-100 text-gray-700'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-700'
     }
   }
 

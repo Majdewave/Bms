@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import { PageHeader, CreateAppointmentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
 import { appointmentsService, Appointment } from '@/api'
+import { AppointmentStatus } from '@/constants/appointmentStatus'
 import { useTranslation } from 'react-i18next'
 
 type AppointmentRow = Appointment
@@ -29,7 +30,7 @@ export default function StaffAppointments() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] =
-    useState<'all' | 'scheduled' | 'completed' | 'cancelled'>('all')
+    useState<'all' | keyof typeof AppointmentStatus>('all')
 
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingAppointment, setEditingAppointment] =
@@ -95,7 +96,7 @@ export default function StaffAppointments() {
 
       const matchesStatus =
         statusFilter === 'all' ||
-        (apt?.status ?? '').toLowerCase() === statusFilter
+        apt?.status === AppointmentStatus[statusFilter as keyof typeof AppointmentStatus]
 
       return matchesSearch && matchesStatus
     })
@@ -172,16 +173,23 @@ export default function StaffAppointments() {
                 {t('appointments.filters.all')}
               </option>
 
-              <option value="scheduled">
+              <option value="Scheduled">
                 {t('appointments.status.scheduled')}
               </option>
-
-              <option value="completed">
+              <option value="Waiting">
+                {t('appointments.status.waiting')}
+              </option>
+              <option value="InProgress">
+                {t('appointments.status.inprogress')}
+              </option>
+              <option value="Completed">
                 {t('appointments.status.completed')}
               </option>
-
-              <option value="cancelled">
+              <option value="Cancelled">
                 {t('appointments.status.cancelled')}
+              </option>
+              <option value="NoShow">
+                {t('appointments.status.noshow')}
               </option>
             </select>
           </div>
@@ -259,17 +267,19 @@ export default function StaffAppointments() {
                       {appointment.staffName ?? '-'}
                     </td>
 
-                    <td className="px-6 py-4 text-end flex gap-2 justify-end">
-                      <Edit
-                        className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
-                        title={t('appointments.actions.edit')}
-                        onClick={() => setEditingAppointment(appointment)}
-                      />
-                      <Trash2
-                        className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
-                        title={t('appointments.actions.delete')}
-                        onClick={() => handleDelete(appointment.id)}
-                      />
+                    <td className="px-6 py-4 text-center">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold
+                          ${appointment.status === AppointmentStatus.Scheduled && 'bg-blue-100 text-blue-700'}
+                          ${appointment.status === AppointmentStatus.Waiting && 'bg-yellow-100 text-yellow-700'}
+                          ${appointment.status === AppointmentStatus.InProgress && 'bg-purple-100 text-purple-700'}
+                          ${appointment.status === AppointmentStatus.Completed && 'bg-green-100 text-green-700'}
+                          ${appointment.status === AppointmentStatus.Cancelled && 'bg-red-100 text-red-700'}
+                          ${appointment.status === AppointmentStatus.NoShow && 'bg-gray-100 text-gray-700'}
+                        `}
+                      >
+                        {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
+                      </span>
                     </td>
                   </tr>
                 ))}
