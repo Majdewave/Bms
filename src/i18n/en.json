@@ -641,6 +641,24 @@
     "name": "Name",
     "dosage": "Dosage"
   },
+  "features": {
+    "title": "Feature Toggles",
+    "subtitle": "Enable or disable system features",
+    "activeModules": "Active modules",
+    "description": "Changes take effect immediately for all users",
+
+    "reports": "Reports",
+    "reportsDesc": "Show the Reports page in the navigation menu",
+
+    "invoices": "Invoices",
+    "invoicesDesc": "Show the Invoices page in the navigation menu",
+
+    "prescriptions": "Prescriptions",
+    "prescriptionsDesc": "Show the prescription button in client profiles",
+
+    "drugs": "Drugs Database",
+    "drugsDesc": "Enable the drugs database and related features"
+  },
   "common": {
     "edit": "Edit",
     "delete": "Delete",

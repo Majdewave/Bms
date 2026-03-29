@@ -91,36 +91,27 @@ export default function AdminLayout() {
   }, [user, hasPermission, features])
 
   const getMenuLabel = (label: string) => {
-
     switch (label) {
-
       case 'Dashboard':
         return t('common.dashboard')
-
       case 'All Clients':
         return t('nav.allClients')
-
       case 'All Appointments':
         return t('nav.allAppointments')
-
       case 'All Invoices':
         return t('nav.allInvoices')
-
       case 'Reports':
-        return t('nav.reports')
-
+        return t('features.reports')
       case 'Staff Management':
         return t('nav.staff')
-
       case 'Business Settings':
         return t('nav.settings')
-
       case 'Feature Toggles':
-        return t('nav.features', 'Feature Toggles')
-
+        return t('features.title')
+      case 'Drugs':
+        return t('features.drugs')
       case 'My Appointments':
         return t('nav.appointments')
-
       default:
         return label
     }

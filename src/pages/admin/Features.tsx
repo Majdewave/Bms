@@ -122,10 +122,10 @@ export default function AdminFeatures() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-slate-800">
-            {isRTL ? 'הגדרות תכונות' : t('nav.features', 'Feature Toggles')}
+            {t('features.title')}
           </h1>
           <p className="text-slate-500 text-sm mt-0.5">
-            {isRTL ? 'הפעל או בטל תכונות מערכת' : 'Enable or disable system features'}
+            {t('features.subtitle')}
           </p>
         </div>
       </div>
@@ -133,57 +133,39 @@ export default function AdminFeatures() {
       {/* Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-xl">
         <h2 className="text-base font-semibold text-slate-700 mb-2">
-          {isRTL ? 'מודולים פעילים' : 'Active modules'}
+          {t('features.activeModules')}
         </h2>
         <p className="text-sm text-slate-400 mb-4">
-          {isRTL
-            ? 'שינויים יכנסו לתוקף מיד לכל המשתמשים'
-            : 'Changes take effect immediately for all users'}
+          {t('features.description')}
         </p>
 
         <ToggleRow
-          label={isRTL ? 'דוחות' : 'Reports'}
-          description={
-            isRTL
-              ? 'הצג את עמוד הדוחות בתפריט הניווט'
-              : 'Show the Reports page in the navigation menu'
-          }
+          label={t('features.reports')}
+          description={t('features.reportsDesc')}
           checked={settings.reportsEnabled}
           onChange={(val) => handleToggle('reportsEnabled', val)}
           disabled={saving}
         />
 
         <ToggleRow
-          label={isRTL ? 'חשבוניות' : 'Invoices'}
-          description={
-            isRTL
-              ? 'הצג את עמוד החשבוניות בתפריט הניווט'
-              : 'Show the Invoices page in the navigation menu'
-          }
+          label={t('features.invoices')}
+          description={t('features.invoicesDesc')}
           checked={settings.invoicesEnabled}
           onChange={(val) => handleToggle('invoicesEnabled', val)}
           disabled={saving}
         />
 
         <ToggleRow
-          label={isRTL ? 'מרשמים' : 'Prescriptions'}
-          description={
-            isRTL
-              ? 'הצג את אפשרות כתיבת מרשם בפרופיל הלקוח'
-              : 'Show the prescription button in client profiles'
-          }
+          label={t('features.prescriptions')}
+          description={t('features.prescriptionsDesc')}
           checked={settings.prescriptionsEnabled}
           onChange={(val) => handleToggle('prescriptionsEnabled', val)}
           disabled={saving}
         />
 
         <ToggleRow
-          label={isRTL ? 'מאגר תרופות' : 'Drugs Database'}
-          description={
-            isRTL
-              ? 'הצג את מאגר התרופות במערכת'
-              : 'Enable the drugs database and related features'
-          }
+          label={t('features.drugs')}
+          description={t('features.drugsDesc')}
           checked={settings.drugsEnabled}
           onChange={(val) => handleToggle('drugsEnabled', val)}
           disabled={saving}
