@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-// import { useTenant } from '@/contexts/TenantContext'
+import { useFeatures } from '@/contexts/FeatureContext'
 import type { Permission } from '@/utils/permissions'
+import type { Features } from '@/contexts/FeatureContext'
 import {
   LayoutDashboard,
   Calendar,
@@ -21,7 +22,7 @@ interface MenuItem {
   path: string
   adminOnly?: boolean
   permission?: Permission
-  feature?: string
+  feature?: keyof Features
 }
 
 const menuItems: MenuItem[] = [
@@ -31,38 +32,47 @@ const menuItems: MenuItem[] = [
   { icon: FolderOpen, label: 'Files', path: '/files' },
   { icon: User, label: 'Profile', path: '/profile' },
   { icon: CreditCard, label: 'ניהול מנוי', path: '/billing', adminOnly: true },
-  // Drugs menu item (admin only, feature toggle)
-  { icon: Pill, label: 'Drugs', path: '/drugs', adminOnly: true },
+
+  // ✅ Drugs with feature toggle
+  {
+    icon: Pill,
+    label: 'Drugs',
+    path: '/admin/drugs',
+    adminOnly: true,
+    feature: 'drugsEnabled',
+  },
 ]
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true)
   const location = useLocation()
   const { user, hasPermission } = useAuth()
+  const { features } = useFeatures() // ✅ חשוב מאוד
 
-  // Debug: Log user object
-  console.log('Sidebar user:', user)
+  // ✅ סינון נכון של התפריט
+  const visibleMenuItems = menuItems.filter((item) => {
+    // אם אין user → לא להציג כלום
+    if (!user) return false
 
-  // Admin: show all menu items (including Drugs)
-  // Others: show based on permission/adminOnly flags
-  // Fix admin role check and temporarily disable filtering for debug
-  let visibleMenuItems = menuItems
-  if (user) {
-    if (user.role && user.role.toLowerCase() === 'admin') {
-      visibleMenuItems = menuItems
-    } else {
-      visibleMenuItems = menuItems.filter((item) => {
-        if (item.adminOnly) return false
-        if (!item.permission) return true
-        return hasPermission(item.permission)
-      })
+    // adminOnly
+    if (item.adminOnly && user.role?.toLowerCase() !== 'admin') {
+      return false
     }
-  } else {
-    visibleMenuItems = []
-  }
 
-  // Debug: Log visibleMenuItems
-  console.log('Sidebar visibleMenuItems:', visibleMenuItems)
+    // feature toggle
+    if (item.feature && features?.[item.feature] === false) {
+      return false
+    }
+
+    // permissions
+    if (item.permission && !hasPermission(item.permission)) {
+      return false
+    }
+
+    return true
+  })
+
+
 
   return (
     <>
@@ -70,7 +80,6 @@ export default function Sidebar() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded-lg shadow"
-        aria-label="Toggle menu"
       >
         {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
@@ -108,7 +117,6 @@ export default function Sidebar() {
                       ? 'bg-primary-600 text-white'
                       : 'text-secondary-300 hover:bg-secondary-700 hover:text-white'
                   }`}
-                  aria-current={isActive ? 'page' : undefined}
                 >
                   <Icon className="w-5 h-5" />
                   <span>{item.label}</span>
@@ -122,7 +130,7 @@ export default function Sidebar() {
         <div className="p-4 border-t border-secondary-700">
           <div className="text-xs text-secondary-400">
             <p className="font-semibold">Signed in as</p>
-            <p className="text-secondary-300 mt-1">john@example.com</p>
+            <p className="text-secondary-300 mt-1">{user?.email}</p>
           </div>
         </div>
       </aside>

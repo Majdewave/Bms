@@ -7,6 +7,7 @@ export interface Features {
   reportsEnabled: boolean
   invoicesEnabled: boolean
   prescriptionsEnabled: boolean
+  drugsEnabled: boolean
 }
 
 interface FeatureContextType {
@@ -18,6 +19,7 @@ const defaultFeatures: Features = {
   reportsEnabled: true,
   invoicesEnabled: true,
   prescriptionsEnabled: true,
+  drugsEnabled: false,
 }
 
 const FeatureContext = createContext<FeatureContextType>({
@@ -32,10 +34,10 @@ const areFeaturesEqual = (a: Features | null, b: Features) => {
   return (
     a.reportsEnabled === b.reportsEnabled &&
     a.invoicesEnabled === b.invoicesEnabled &&
-    a.prescriptionsEnabled === b.prescriptionsEnabled
+    a.prescriptionsEnabled === b.prescriptionsEnabled &&
+    a.drugsEnabled === b.drugsEnabled
   )
 }
-
 export function FeatureProvider({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
   const [features, setFeatures] = useState<Features | null>(null)
@@ -50,11 +52,18 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const data = await apiClient.get<Features>('/api/features')
-        setFeatures((prev) => (areFeaturesEqual(prev, data) ? prev : data))
+     const data = await apiClient.get<Features>('/api/features')
+
+      const safeData: Features = {
+        reportsEnabled: data.reportsEnabled ?? true,
+        invoicesEnabled: data.invoicesEnabled ?? true,
+        prescriptionsEnabled: data.prescriptionsEnabled ?? true,
+        drugsEnabled: data.drugsEnabled ?? false,
+      }
+
+      setFeatures((prev) => (areFeaturesEqual(prev, safeData) ? prev : safeData))
       } catch (error) {
         const status = error instanceof apiClient.ApiError ? error.status : undefined
-
         if (status === 401) {
           setFeatures((prev) => (areFeaturesEqual(prev, defaultFeatures) ? prev : defaultFeatures))
           loadedForUserIdRef.current = user.id

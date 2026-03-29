@@ -51,9 +51,9 @@ const allMenuItems: MenuItem[] = [
   { icon: UserPlus, label: 'Staff Management', path: '/admin/staff', roles: ['admin'] },
   { icon: Settings, label: 'Business Settings', path: '/admin/settings', roles: ['admin'] },
   { icon: Sliders, label: 'Feature Toggles', path: '/admin/features', roles: ['admin'] },
-  { icon: Pill, label: 'Drugs', path: '/admin/drugs', roles: ['admin'] },
-
-  // Staff (permission based)
+{  icon: Pill,  label: 'Drugs',  path: '/admin/drugs',  roles: ['admin'],  feature: 'drugsEnabled',},
+ 
+// Staff (permission based)
   { icon: LayoutDashboard, label: 'Dashboard', path: '/staff/dashboard', roles: ['staff'] },
   { icon: Calendar, label: 'My Appointments', path: '/staff/appointments', roles: ['staff'], permission: 'manage_appointments' },
   { icon: Users, label: 'Manage Clients', path: '/admin/clients', roles: ['staff'], permission: 'manage_clients' },
@@ -75,7 +75,7 @@ export default function AdminLayout() {
     if (user.role === 'admin') {
       return allMenuItems.filter((item) => {
         if (!item.roles.includes('admin')) return false
-        if (item.feature && features?.[item.feature] === false) return false
+        if (item.feature && !features?.[item.feature]) return false
         return true
       })
     }

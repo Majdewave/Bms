@@ -9,6 +9,7 @@ const defaultFeatures: Features = {
   reportsEnabled: true,
   invoicesEnabled: true,
   prescriptionsEnabled: true,
+  drugsEnabled: false,
 }
 
 interface ToggleRowProps {
@@ -60,23 +61,37 @@ export default function AdminFeatures() {
   useEffect(() => {
     apiClient
       .get<Features>('/api/features')
-      .then(setSettings)
+      .then((data) =>
+        setSettings({
+          reportsEnabled: data.reportsEnabled ?? true,
+          invoicesEnabled: data.invoicesEnabled ?? true,
+          prescriptionsEnabled: data.prescriptionsEnabled ?? true,
+          drugsEnabled: data.drugsEnabled ?? false,
+        })
+      )
       .catch(() => {})
   }, [])
 
   const handleToggle = async (key: keyof Features, value: boolean) => {
-    const updated = { ...settings, [key]: value }
+    const updated: Features = {
+      reportsEnabled: key === 'reportsEnabled' ? value : settings.reportsEnabled,
+      invoicesEnabled: key === 'invoicesEnabled' ? value : settings.invoicesEnabled,
+      prescriptionsEnabled:
+        key === 'prescriptionsEnabled' ? value : settings.prescriptionsEnabled,
+      drugsEnabled: key === 'drugsEnabled' ? value : settings.drugsEnabled,
+    }
+
     setSettings(updated)
     setSaving(true)
 
     try {
       await apiClient.put('/api/features', updated)
       reload()
+
       setToastError(false)
       setToastMessage(isRTL ? 'ההגדרות נשמרו בהצלחה' : 'Settings saved successfully')
     } catch {
-      // revert on error
-      setSettings(settings)
+      setSettings(settings) // rollback
       setToastError(true)
       setToastMessage(isRTL ? 'שגיאה בשמירת ההגדרות' : 'Failed to save settings')
     } finally {
@@ -159,6 +174,18 @@ export default function AdminFeatures() {
           }
           checked={settings.prescriptionsEnabled}
           onChange={(val) => handleToggle('prescriptionsEnabled', val)}
+          disabled={saving}
+        />
+
+        <ToggleRow
+          label={isRTL ? 'מאגר תרופות' : 'Drugs Database'}
+          description={
+            isRTL
+              ? 'הצג את מאגר התרופות במערכת'
+              : 'Enable the drugs database and related features'
+          }
+          checked={settings.drugsEnabled}
+          onChange={(val) => handleToggle('drugsEnabled', val)}
           disabled={saving}
         />
       </div>
