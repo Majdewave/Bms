@@ -146,7 +146,9 @@
       "client": "Client",
       "appointment": "Appointment",
       "datetime": "Date & Time",
-      "staff": "Staff"
+      "staff": "Staff",
+      "status": "Status",
+      "service": "Service"
     },
     "actions": {
       "edit": "Edit",
@@ -663,6 +665,8 @@
     "edit": "Edit",
     "delete": "Delete",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "actions": "Actions",
+    "status": "Status"
   }
 }

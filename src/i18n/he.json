@@ -146,7 +146,9 @@
       "client": "לקוח",
       "appointment": "פגישה",
       "datetime": "תאריך ושעה",
-      "staff": "צוות"
+      "staff": "צוות",
+      "status": "סטטוס",
+      "actions": "פעולות"
     },
     "actions": {
       "edit": "ערוך",
