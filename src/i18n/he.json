@@ -127,6 +127,13 @@
     "ar": "ערבית"
   },
   "appointments": {
+    "actions": {
+      "arrived": "הגיע",
+      "start": "התחל טיפול",
+      "complete": "סיום",
+      "cancel": "ביטול",
+      "noshow": "לא הגיע"
+    },
     "title": "פגישות",
     "new": "פגישה חדשה",
     "subtitle": "נהל את כל הפגישות של הלקוחות",
@@ -153,7 +160,12 @@
     "actions": {
       "edit": "ערוך",
       "cancel": "בטל",
-      "delete": "מחק"
+      "delete": "מחק",
+      "waiting": "ממתין",
+      "noshow": "לא הופיע",
+      "arrived": "הגיע",
+      "start": "התחל טיפול", 
+      "complete": "הושלם"
     },
     "form": {
       "client": "לקוח",
@@ -175,7 +187,9 @@
         "scheduled": "מתוזמן",
         "completed": "הושלם",
         "cancelled": "בוטל",
-        "noshow": "לא הופיע"
+        "noshow": "לא הופיע",
+        "inprogress": "בטיפול",
+        "waiting": "ממתין"
       },
     "services": {
       "consulting": "ייעוץ",

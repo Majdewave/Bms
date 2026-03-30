@@ -126,6 +126,13 @@
     "ar": "Arabic"
   },
   "appointments": {
+    "actions": {
+      "arrived": "Arrived",
+      "start": "Start Treatment",
+      "complete": "Complete",
+      "cancel": "Cancel",
+      "noshow": "No Show"
+    },
     "title": "Appointments",
     "new": "New Appointment",
     "subtitle": "Manage all client appointments",
@@ -153,7 +160,12 @@
     "actions": {
       "edit": "Edit",
       "cancel": "Cancel",
-      "delete": "Delete"
+      "delete": "Delete",
+      "waiting": "Waiting",
+      "noshow": "No Show",
+      "arrived": "Arrived",
+      "start": "Start Treatment", 
+      "complete": "Complete"
     },
     "form": {
       "client": "Client",
@@ -175,7 +187,9 @@
         "scheduled": "Scheduled",
         "completed": "Completed",
         "cancelled": "Cancelled",
-        "noshow": "No Show"
+        "noshow": "No Show",
+        "inprogress": "In Progress",
+         "waiting": "Waiting"
       },
     "services": {
       "consulting": "Consulting",

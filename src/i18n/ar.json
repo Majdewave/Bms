@@ -129,6 +129,13 @@
     "ar": "العربية"
   },
   "appointments": {
+    "actions": {
+      "arrived": "وصل",
+      "start": "ابدأ العلاج",
+      "complete": "تم",
+      "cancel": "إلغاء",
+      "noshow": "لم يحضر"
+    },
     "title": "المواعيد",
     "new": "موعد جديد",
     "subtitle": "إدارة جميع مواعيد العملاء",
@@ -154,7 +161,12 @@
     "actions": {
       "edit": "تعديل",
       "cancel": "إلغاء",
-      "delete": "حذف"
+      "delete": "حذف",
+      "waiting": "في الانتظار",
+      "noshow": "لم يحضر",
+      "arrived": "وصل",
+      "start": "ابدأ العلاج", 
+      "complete": "تم"
     },
     "form": {
       "client": "العميل",
@@ -176,7 +188,9 @@
       "Scheduled": "مجدول",
       "Completed": "مكتمل",
       "Cancelled": "ملغى",
-      "noshow": "لم يحضر"
+      "NoShow": "لم يحضر",
+      "InProgress": "قيد العلاج",
+      "waiting": "في الانتظار"
     },
     "services": {
       "consulting": "استشارات",

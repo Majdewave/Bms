@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { PageHeader, CreateAppointmentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
 import { appointmentsService, Appointment } from '@/api'
+import ActionButton from '@/components/ActionButton'
 import { useTranslation } from 'react-i18next'
 
 type AppointmentRow = Appointment
@@ -254,45 +255,35 @@ export default function AdminAppointments() {
                       <div className="flex items-center gap-2 justify-end flex-wrap">
                         {/* Quick Actions */}
                         {appointment.status === 'Scheduled' && (
-                          <button
-                            className="btn-xs bg-yellow-100 text-yellow-800 border border-yellow-300 rounded px-2 py-1 mr-1"
+                          <ActionButton
+                            type="arrived"
                             onClick={() => updateStatus(appointment.id, 'Waiting')}
-                          >
-                            Arrived
-                          </button>
+                          />
                         )}
                         {appointment.status === 'Waiting' && (
-                          <button
-                            className="btn-xs bg-purple-100 text-purple-800 border border-purple-300 rounded px-2 py-1 mr-1"
+                          <ActionButton
+                            type="start"
                             onClick={() => updateStatus(appointment.id, 'InProgress')}
-                          >
-                            Start טיפול
-                          </button>
+                          />
                         )}
                         {appointment.status === 'InProgress' && (
-                          <button
-                            className="btn-xs bg-green-100 text-green-800 border border-green-300 rounded px-2 py-1 mr-1"
+                          <ActionButton
+                            type="complete"
                             onClick={() => updateStatus(appointment.id, 'Completed')}
-                          >
-                            Finish טיפול
-                          </button>
+                          />
                         )}
                         {/* Always allow Cancel/No Show */}
                         {appointment.status !== 'Cancelled' && (
-                          <button
-                            className="btn-xs bg-red-100 text-red-800 border border-red-300 rounded px-2 py-1 mr-1"
+                          <ActionButton
+                            type="cancel"
                             onClick={() => updateStatus(appointment.id, 'Cancelled')}
-                          >
-                            Cancel
-                          </button>
+                          />
                         )}
                         {appointment.status !== 'NoShow' && (
-                          <button
-                            className="btn-xs bg-gray-100 text-gray-800 border border-gray-300 rounded px-2 py-1 mr-1"
+                          <ActionButton
+                            type="noshow"
                             onClick={() => updateStatus(appointment.id, 'NoShow')}
-                          >
-                            No Show
-                          </button>
+                          />
                         )}
                         {/* Edit/Delete */}
                         <Edit
