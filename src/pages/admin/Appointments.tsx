@@ -3,6 +3,7 @@ import { Calendar, Clock, User, Plus, Search, Filter, Trash2, Edit, ArrowRight, 
 import { useNavigate } from 'react-router-dom'
 import { PageHeader, CreateAppointmentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
+import { connection } from '@/lib/signalr'
 import { appointmentsService, Appointment } from '@/api'
 import ActionButton from '@/components/ActionButton'
 import { useTranslation } from 'react-i18next'
@@ -61,6 +62,42 @@ export default function AdminAppointments() {
     }
     loadData()
   }, [hasPermission, navigate])
+
+  // --- SignalR Real-time Updates ---
+  useEffect(() => {
+    if (!user?.businessId) return;
+
+    let isMounted = true;
+
+    const startConnection = async () => {
+      if (connection.state === 'Disconnected') {
+        try {
+          await connection.start();
+        } catch (err) {
+          // Optionally handle connection error
+        }
+      }
+      try {
+        await connection.invoke('JoinTenant', user.businessId);
+      } catch (err) {
+        // Optionally handle join group error
+      }
+    };
+
+    startConnection();
+
+    const handleAppointmentUpdated = () => {
+      if (isMounted) loadData();
+    };
+    connection.on('AppointmentUpdated', handleAppointmentUpdated);
+
+    return () => {
+      isMounted = false;
+      connection.off('AppointmentUpdated', handleAppointmentUpdated);
+    };
+    // Only re-run if businessId changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.businessId]);
 
   const loadData = async () => {
     setLoading(true)
