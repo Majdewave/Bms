@@ -235,17 +235,36 @@ const markNotDocumented = async (appointment: Appointment) => {
 
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-slate-400" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="input"
-          >
-            <option value="all">{t('appointments.filters.all')}</option>
-            <option value="Scheduled">{t('appointments.status.scheduled')}</option>
-            <option value="Completed">{t('appointments.status.completed')}</option>
-            <option value="Cancelled">{t('appointments.status.cancelled')}</option>
-            <option value="NoShow">{t('appointments.status.noshow')}</option>
-          </select>
+         <select
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as any)
+              }
+              className="input"
+            >
+              <option value="all">
+                {t('appointments.filters.all')}
+              </option>
+
+              <option value="Scheduled">
+                {t('appointments.status.scheduled')}
+              </option>
+              <option value="Waiting">
+                {t('appointments.status.waiting')}
+              </option>
+              <option value="InProgress">
+                {t('appointments.status.inprogress')}
+              </option>
+              <option value="Completed">
+                {t('appointments.status.completed')}
+              </option>
+              <option value="Cancelled">
+                {t('appointments.status.cancelled')}
+              </option>
+              <option value="NoShow">
+                {t('appointments.status.noshow')}
+              </option>
+            </select>
         </div>
       </div>
 
