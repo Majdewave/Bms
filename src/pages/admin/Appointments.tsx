@@ -158,7 +158,7 @@ const markNotDocumented = async (appointment: Appointment) => {
         a.clientName.toLowerCase().includes(searchQuery.toLowerCase())
 
       const matchesStatus =
-        statusFilter === 'all' || a.status.toLowerCase() === statusFilter
+        statusFilter === 'all' || a.status.toLowerCase() === statusFilter.toLowerCase()
 
       return matchesSearch && matchesStatus
     })

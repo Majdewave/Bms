@@ -104,6 +104,8 @@ export default function AdminLayout() {
         return t('features.reports')
       case 'Staff Management':
         return t('nav.staff')
+      case 'Manage Clients':
+        return t('staff.clients.viewTitle')
       case 'Business Settings':
         return t('nav.settings')
       case 'Feature Toggles':
