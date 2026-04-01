@@ -1,6 +1,18 @@
 import { get, post, put, del } from './apiClient'
-
 import type { AppointmentStatus } from './appointments';
+
+
+const normalizeStatus = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'scheduled': return 'Scheduled'
+    case 'waiting': return 'Waiting'
+    case 'inprogress': return 'InProgress'
+    case 'completed': return 'Completed'
+    case 'cancelled': return 'Cancelled'
+    case 'noshow': return 'NoShow'
+    default: return status
+  }
+}
 
 export interface Appointment {
   id: string
@@ -12,6 +24,7 @@ export interface Appointment {
   staffId?: string | null
   staffName?: string | null
   status: AppointmentStatus
+  isDocumented: boolean
 }
 
 export const appointmentsService = {
@@ -22,6 +35,19 @@ export const appointmentsService = {
     }
     return { forbidden: false, data: result };
   },
+
+  markNotDocumented: async (appointment: Appointment) => {
+  return await put(`/api/appointments/${appointment.id}`, {
+    startTime: appointment.startTime,
+    endTime: appointment.endTime,
+    status: normalizeStatus(appointment.status),
+    notes: appointment.notes ?? null,
+    staffId: appointment.staffId ?? null,
+    serviceId: appointment.serviceId ?? null,
+    isDocumented: false
+  })
+},
+
 
   async createAppointment(payload: {
     clientId: string

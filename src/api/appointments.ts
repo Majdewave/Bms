@@ -19,6 +19,7 @@ export interface Appointment {
   notes?: string
   createdAt: string
   createdByUserId: string
+  isDocumented: boolean
 }
 
 // Keep mock data for backwards compatibility (will be removed from components)
@@ -134,6 +135,7 @@ export const updateAppointment = async (
     endTime: string
     status: string
     notes?: string
+    isDocumented?: boolean 
   }>
 ): Promise<Appointment> => {
   return put<Appointment>(`/api/appointments/${id}`, appointment)

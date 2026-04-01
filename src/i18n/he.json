@@ -162,7 +162,7 @@
       "cancel": "בטל",
       "delete": "מחק",
       "waiting": "ממתין",
-      "noshow": "לא הופיע",
+      "noshow": "לא הגיע",
       "arrived": "הגיע",
       "start": "התחל טיפול", 
       "complete": "הושלם"
@@ -187,7 +187,7 @@
         "scheduled": "מתוזמן",
         "completed": "הושלם",
         "cancelled": "בוטל",
-        "noshow": "לא הופיע",
+        "noshow": "לא הגיע",
         "inprogress": "בטיפול",
         "waiting": "ממתין"
       },

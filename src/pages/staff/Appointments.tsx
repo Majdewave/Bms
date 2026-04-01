@@ -10,11 +10,11 @@ import {
   Trash2,
   Edit,
 } from 'lucide-react'
-
+import ActionButton from '@/components/ActionButton'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader, CreateAppointmentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
-import { appointmentsService, Appointment } from '@/api'
+import { appointmentsService, type Appointment } from '@/api/appointmentsService'
 import { AppointmentStatus } from '@/constants/appointmentStatus'
 import { useTranslation } from 'react-i18next'
 
@@ -37,7 +37,6 @@ export default function StaffAppointments() {
     useState<AppointmentRow | null>(null)
 
   // Removed dropdown state
-
   useEffect(() => {
     // Prevent redirect before user is loaded
     if (hasPermission === undefined) return;
@@ -52,14 +51,14 @@ export default function StaffAppointments() {
     setLoading(true)
 
     try {
-      const data = await appointmentsService.getAppointments()
+      const result = await appointmentsService.getAppointments()
 
-      if (!data) {
+      if (!result || !result.data) {
         setAppointments([])
         return
       }
 
-      setAppointments(data)
+      setAppointments(result.data)
     } catch (error) {
       console.error('Failed loading appointments:', error)
       setAppointments([])
@@ -67,6 +66,31 @@ export default function StaffAppointments() {
       setLoading(false)
     }
   }
+
+const updateStatus = async (id: string, status: string) => {
+  try {
+    const appointment = appointments.find(a => a.id === id)
+    if (!appointment) return
+
+    await appointmentsService.updateAppointment(id, {
+      ...appointment,
+      status
+    })
+   console.log("appointment: ", appointment)
+    await loadAppointments()
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const markNotDocumented = async (appointment: Appointment) => {
+  try {
+    await appointmentsService.markNotDocumented(appointment)
+    await loadAppointments()
+  } catch (error) {
+    console.error(error)
+  }
+}
 
   const handleDelete = async (id?: string) => {
     if (!id) return
@@ -225,12 +249,16 @@ export default function StaffAppointments() {
               </thead>
 
               <tbody>
-                {filteredAppointments.map((appointment) => (
-                  <tr
-                    key={appointment.id}
-                    className="hover:bg-slate-50 relative"
-                  >
-                    <td className="px-6 py-4">
+               {filteredAppointments.map((appointment) => {
+                  const isNotDocumented = appointment.isDocumented === false
+                  return (
+                      <tr
+                        key={appointment.id}
+                        className={`hover:bg-slate-50 relative 
+                          ${isNotDocumented ? 'bg-red-50' : ''}
+                        `}
+                      >
+                      <td className="px-6 py-4">
                       <div
                         className="flex items-center gap-3 cursor-pointer hover:bg-blue-50 rounded p-1"
                         onClick={() => {
@@ -241,7 +269,7 @@ export default function StaffAppointments() {
                       >
                         <User className="w-5 h-5 text-primary" />
                         <div>
-                          <div className="font-medium hover:underline">
+                          <div className={`font-medium hover:underline ${isNotDocumented ? 'text-red-600' : ''}`}>
                             {appointment.clientName ?? '-'}
                           </div>
                           <div className="text-xs text-slate-500">
@@ -268,21 +296,88 @@ export default function StaffAppointments() {
                     </td>
 
                     <td className="px-6 py-4 text-center">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold
-                          ${appointment.status === AppointmentStatus.Scheduled && 'bg-blue-100 text-blue-700'}
-                          ${appointment.status === AppointmentStatus.Waiting && 'bg-yellow-100 text-yellow-700'}
-                          ${appointment.status === AppointmentStatus.InProgress && 'bg-purple-100 text-purple-700'}
-                          ${appointment.status === AppointmentStatus.Completed && 'bg-green-100 text-green-700'}
-                          ${appointment.status === AppointmentStatus.Cancelled && 'bg-red-100 text-red-700'}
-                          ${appointment.status === AppointmentStatus.NoShow && 'bg-gray-100 text-gray-700'}
-                        `}
-                      >
-                        {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
-                      </span>
+                      <div className="flex items-center justify-center gap-2 flex-wrap">
+                        
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold
+                            ${appointment.status === AppointmentStatus.Scheduled && 'bg-blue-100 text-blue-700'}
+                            ${appointment.status === AppointmentStatus.Waiting && 'bg-yellow-100 text-yellow-700'}
+                            ${appointment.status === AppointmentStatus.InProgress && 'bg-purple-100 text-purple-700'}
+                            ${appointment.status === AppointmentStatus.Completed && 'bg-green-100 text-green-700'}
+                            ${appointment.status === AppointmentStatus.Cancelled && 'bg-red-100 text-red-700'}
+                            ${appointment.status === AppointmentStatus.NoShow && 'bg-gray-100 text-gray-700'}
+                          `}
+                        >
+                          {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
+                        </span>
+
+                        {isNotDocumented && (
+                          <span className="px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                            לא מתועד
+                          </span>
+                        )}
+
+                      </div>
                     </td>
+                        <td className="px-6 py-4 text-end">
+                        <div className="flex items-center gap-2 justify-end flex-wrap">
+                          {/* Quick Actions */}
+                          {appointment.status === 'Scheduled' && (
+                            <ActionButton
+                              type="arrived"
+                              onClick={() => updateStatus(appointment.id, 'Waiting')}
+                            />
+                          )}
+                          {appointment.status === 'Waiting' && (
+                            <ActionButton
+                              type="start"
+                              onClick={() => updateStatus(appointment.id, 'InProgress')}
+                            />
+                          )}
+                          {appointment.status === 'InProgress' && (
+                            <ActionButton
+                              type="complete"
+                              onClick={() => updateStatus(appointment.id, 'Completed')}
+                            />
+                          )}
+                          {/* Always allow Cancel/No Show */}
+                          {appointment.status?.toLowerCase() !== 'cancelled' && appointment.status?.toLowerCase() !== 'completed' && (
+                            <ActionButton
+                              type="cancel"
+                              onClick={() => updateStatus(appointment.id, 'Cancelled')}
+                            />
+                          )}
+                         {appointment.status?.toLowerCase() !== 'noshow' && appointment.status?.toLowerCase() !== 'completed' &&(
+                            <ActionButton
+                              type="noshow"
+                              onClick={() => updateStatus(appointment.id, 'NoShow')}
+                            />
+                          )}
+
+                          
+                        {appointment.status?.toLowerCase() === 'completed' && appointment.isDocumented !== false && (
+                            <ActionButton
+                              type="notDocumented"
+                              onClick={() => markNotDocumented(appointment)}
+                            />
+                          )}
+
+
+                          {/* Edit/Delete */}
+                          <Edit
+                            className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
+                            onClick={() => setEditingAppointment(appointment)}
+                            title={t('appointments.actions.edit')}
+                          />
+                          <Trash2
+                            className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
+                            onClick={() => handleDelete(appointment.id)}
+                            title={t('appointments.actions.delete')}
+                          />
+                        </div>
+                      </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>

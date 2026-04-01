@@ -2,7 +2,7 @@ import { Check, X, UserCheck, Play } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 type Props = {
-  type: 'arrived' | 'start' | 'complete' | 'cancel' | 'noshow'
+  type: 'arrived' | 'start' | 'complete' | 'cancel' | 'noshow' | 'notDocumented'
   onClick: () => void
 }
 
@@ -32,6 +32,11 @@ export default function ActionButton({ type, onClick }: Props) {
     },
     noshow: {
       label: t('appointments.actions.noshow'),
+      icon: <X size={16} />,
+      className: 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+    },
+    notDocumented: {
+      label: 'לא מתועד',
       icon: <X size={16} />,
       className: 'bg-gray-100 text-gray-600 hover:bg-gray-200',
     },
