@@ -2,16 +2,20 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Building2, Upload, CheckCircle, X } from 'lucide-react'
 import { Container, PageHeader } from '@/components/Layout'
+import { Card, CardContent } from '@/components'
 import { getBusinessSettings, updateBusinessSettings, uploadTenantLogo } from '@/api/businessSettings'
 import ServicesSection from './ServicesSection'
 import { useAuth } from '@/contexts/AuthContext'
 import * as apiClient from '@/api/apiClient'
+import { get, put, post } from '@/api/apiClient'
 
 interface TenantContactSettings {
   name?: string
   phone?: string | null
   whatsApp?: string | null
   logoUrl?: string | null
+  autoDeleteNotDocumentedAfterDays?: number | null
+  enableAutoDeleteNotDocumented?: boolean | null
 }
 
 export default function BusinessSettings() {
@@ -30,6 +34,9 @@ export default function BusinessSettings() {
   })
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [pageLoading, setPageLoading] = useState(false)
+  const [autoDeleteDays, setAutoDeleteDays] = useState(1)
+  const [enabled, setEnabled] = useState(true)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
@@ -42,8 +49,22 @@ export default function BusinessSettings() {
     loadSettings()
   }, [])
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await get<TenantContactSettings>('/api/tenant/me')
+        setAutoDeleteDays(res.autoDeleteNotDocumentedAfterDays ?? 1)
+        setEnabled(res.enableAutoDeleteNotDocumented ?? true)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    load()
+  }, [])
+
   const loadSettings = async () => {
-    setLoading(true)
+    setPageLoading(true)
     try {
       const [settings, tenant] = await Promise.all([
         getBusinessSettings(),
@@ -63,6 +84,23 @@ export default function BusinessSettings() {
     } catch (error) {
       console.error('Failed to load settings:', error)
       showToastNotification(t('admin.settings.saveError'))
+    } finally {
+      setPageLoading(false)
+    }
+  }
+
+  const save = async () => {
+    try {
+      setLoading(true)
+
+      await put('/api/tenant/auto-delete-setting', {
+        days: autoDeleteDays,
+        enabled,
+      })
+
+      alert('Saved successfully')
+    } catch (e) {
+      console.error(e)
     } finally {
       setLoading(false)
     }
@@ -136,7 +174,7 @@ export default function BusinessSettings() {
     }
   }
 
-  if (loading) {
+  if (pageLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -286,6 +324,64 @@ export default function BusinessSettings() {
           </div>
 
           <ServicesSection isAdmin={isAdmin} />
+
+          <Card>
+            <CardContent>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">
+                  Auto Delete Non-Documented Clients
+                </h3>
+
+                <p className="text-sm text-slate-500">
+                  Clients marked as "not documented" will be deleted automatically after the selected number of days.
+                </p>
+
+                <label className="flex items-center justify-between gap-3 border border-slate-200 rounded-lg p-3">
+                  <span className="text-sm font-medium text-slate-700">Enable auto delete</span>
+                  <input
+                    type="checkbox"
+                    checked={enabled}
+                    onChange={(e) => setEnabled(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                </label>
+
+                <div>
+                  <label className="text-sm font-medium">Days before deletion</label>
+
+                  <input
+                    type="number"
+                    min={0}
+                    value={autoDeleteDays}
+                    onChange={(e) => setAutoDeleteDays(Number(e.target.value))}
+                    className="mt-2 w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={save}
+                    disabled={loading}
+                    className="bg-primary-600 text-white px-4 py-2 rounded-lg"
+                  >
+                    {loading ? 'Saving...' : 'Save'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await post('/api/tenant/run-cleanup')
+                      alert('Cleanup completed')
+                    }}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg"
+                  >
+                    Run Cleanup Now
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="flex justify-end">
             <button
