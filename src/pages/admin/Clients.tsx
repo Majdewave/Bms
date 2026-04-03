@@ -18,6 +18,7 @@ export default function Clients() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showNotDocumentedOnly, setShowNotDocumentedOnly] = useState(false)
 
   const canView =
     hasPermission?.('view_clients') ||
@@ -48,7 +49,11 @@ export default function Clients() {
 
   const safeClients = Array.isArray(clients) ? clients : []
 
+  const notDocumentedCount = safeClients.filter(c => c.isNotDocumented).length
+
   const filteredClients = safeClients.filter((client) => {
+    if (showNotDocumentedOnly && !client.isNotDocumented) return false
+
     if (!searchQuery) return true
 
     const q = searchQuery.toLowerCase()
@@ -135,6 +140,23 @@ export default function Clients() {
 
         <CardContent>
 
+          <div className="mb-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold text-red-600">
+                Not documented clients: {notDocumentedCount}
+              </div>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showNotDocumentedOnly}
+                  onChange={(e) => setShowNotDocumentedOnly(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm font-medium">Show only not documented</span>
+              </label>
+            </div>
+          </div>
+
           <div className="flex gap-4 mb-6">
             <div className="flex-1 relative">
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -214,7 +236,9 @@ export default function Clients() {
                     return (
                       <tr
                         key={clientId}
-                        className="hover:bg-slate-50 cursor-pointer"
+                        className={`border-b cursor-pointer ${
+                          client.isNotDocumented ? 'bg-red-50 text-red-600' : 'hover:bg-slate-50'
+                        }`}
                         onClick={() => clientId && navigate(`/admin/clients/${clientId}`)}
                       >
                         <td className="py-4 px-4">

@@ -37,7 +37,6 @@ export default function BusinessSettings() {
   const [pageLoading, setPageLoading] = useState(false)
   const [autoDeleteDays, setAutoDeleteDays] = useState(1)
   const [enabled, setEnabled] = useState(true)
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [showToast, setShowToast] = useState(false)
@@ -86,23 +85,6 @@ export default function BusinessSettings() {
       showToastNotification(t('admin.settings.saveError'))
     } finally {
       setPageLoading(false)
-    }
-  }
-
-  const save = async () => {
-    try {
-      setLoading(true)
-
-      await put('/api/tenant/auto-delete-setting', {
-        days: autoDeleteDays,
-        enabled,
-      })
-
-      alert('Saved successfully')
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -163,6 +145,11 @@ export default function BusinessSettings() {
       await apiClient.put('/api/tenant/me', {
         phone: formData.phone,
         whatsApp: formData.whatsApp,
+      })
+
+      await put('/api/tenant/auto-delete-setting', {
+        days: autoDeleteDays,
+        enabled: enabled,
       })
 
       showToastNotification(t('admin.settings.saveSuccess'))
@@ -328,9 +315,16 @@ export default function BusinessSettings() {
           <Card>
             <CardContent>
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">
-                  Auto Delete Non-Documented Clients
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">
+                    Auto Delete Non-Documented Clients
+                  </h3>
+                  {!enabled && (
+                    <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">
+                      OFF
+                    </span>
+                  )}
+                </div>
 
                 <p className="text-sm text-slate-500">
                   Clients marked as "not documented" will be deleted automatically after the selected number of days.
@@ -346,38 +340,38 @@ export default function BusinessSettings() {
                   />
                 </label>
 
-                <div>
-                  <label className="text-sm font-medium">Days before deletion</label>
+                {!enabled && (
+                  <div className="mt-2 text-sm text-red-600 font-medium">
+                    Auto delete is OFF
+                  </div>
+                )}
 
-                  <input
-                    type="number"
-                    min={0}
-                    value={autoDeleteDays}
-                    onChange={(e) => setAutoDeleteDays(Number(e.target.value))}
-                    className="mt-2 w-full border rounded-lg px-3 py-2"
-                  />
-                </div>
+                <div className={`${!enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <div>
+                    <label className="text-sm font-medium">Days before deletion</label>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={save}
-                    disabled={loading}
-                    className="bg-primary-600 text-white px-4 py-2 rounded-lg"
-                  >
-                    {loading ? 'Saving...' : 'Save'}
-                  </button>
+                    <input
+                      type="number"
+                      min={0}
+                      value={autoDeleteDays}
+                      onChange={(e) => setAutoDeleteDays(Number(e.target.value))}
+                      disabled={!enabled}
+                      className="mt-2 w-full border rounded-lg px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    />
+                  </div>
 
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await post('/api/tenant/run-cleanup')
-                      alert('Cleanup completed')
-                    }}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg"
-                  >
-                    Run Cleanup Now
-                  </button>
+                  <div className="flex items-center gap-3 mt-4">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await post('/api/tenant/run-cleanup')
+                        alert('Cleanup completed')
+                      }}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg"
+                    >
+                      Run Cleanup Now
+                    </button>
+                  </div>
                 </div>
               </div>
             </CardContent>

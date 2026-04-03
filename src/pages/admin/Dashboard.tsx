@@ -23,6 +23,7 @@ import {
   Calendar,
   UserPlus,
   CheckCircle,
+  AlertCircle,
 } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -167,6 +168,22 @@ export default function AdminDashboard() {
               </div>
               <div className="p-3 rounded-lg bg-purple-50 text-purple-600">
                 <Users className="w-6 h-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm text-slate-500 font-medium">לא מתועדים</p>
+                <p className="text-3xl font-bold text-slate-900 mt-2">
+                  {stats?.upcomingAppointmentsList ? stats.upcomingAppointmentsList.filter((a: any) => !a.isDocumented).length : 0}
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-red-50 text-red-600">
+                <AlertCircle className="w-6 h-6" />
               </div>
             </div>
           </CardContent>
