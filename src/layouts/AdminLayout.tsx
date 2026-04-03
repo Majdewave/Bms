@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { ComponentType } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -26,15 +26,11 @@ import {
 
 import { useAuth, UserRole } from '@/contexts/AuthContext'
 import { useFeatures } from '@/contexts/FeatureContext'
+import { useTenant } from '@/contexts/TenantContext'
 import type { Features } from '@/contexts/FeatureContext'
 import type { Permission } from '@/utils/permissions'
 import NotificationsDropdown from '@/components/NotificationsDropdown'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
-import { get } from '@/api/apiClient'
-
-interface TenantBranding {
-  logoUrl?: string | null
-}
 
 interface MenuItem {
   icon: ComponentType<{ className?: string }>
@@ -70,22 +66,9 @@ export default function AdminLayout() {
 
   const { user, logout, hasPermission } = useAuth()
   const { features } = useFeatures()
+  const { tenant } = useTenant()
 
   const { t } = useTranslation()
-  const [tenant, setTenant] = useState<TenantBranding | null>(null)
-
-  useEffect(() => {
-    const loadTenant = async () => {
-      try {
-        const tenantData = await get<TenantBranding>('/api/tenant/me')
-        setTenant(tenantData)
-      } catch (error) {
-        console.error('Failed to load tenant branding:', error)
-      }
-    }
-
-    loadTenant()
-  }, [])
 
   const menuItems = useMemo(() => {
     if (!user) return []
@@ -232,7 +215,7 @@ export default function AdminLayout() {
               {/* BUSINESS LOGO */}
               {businessLogo ? (
                 <img
-                  src={businessLogo}
+                  src={businessLogo ? `${businessLogo}?v=${Date.now()}` : undefined}
                   alt="Business Logo"
                   className="h-16 object-contain BusinessLogoImg"
                   style={{ height: 'auto', maxHeight: '140px' }}

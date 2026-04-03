@@ -26,8 +26,18 @@
   "currentPatient": "المريض الحالي",
   "none": "لا يوجد",
   "showOnlyNotDocumented": "عرض غير الموثقين فقط",
-  "notDocumentedClients": "العملاء غير الموثقين: {{count}}",
-  "app": {
+  "notDocumentedClients": "العملاء غير الموثقين: {{count}}",  "settings": {
+    "deleteLogo": "حذف الشعار",
+    "uploadLogo": "رفع شعار جديد",
+    "noLogo": "لا يوجد شعار",
+    "autoDeleteTitle": "حذف العملاء غير الموثقين تلقائياً",
+    "enableAutoDelete": "تفعيل الحذف التلقائي",
+    "autoDeleteOff": "الحذف التلقائي معطل",
+    "daysBeforeDeletion": "أيام قبل الحذف",
+    "runCleanup": "تشغيل التنظيف الآن",
+    "cleanupCompleted": "اكتمل التنظيف",
+    "autoDeleteDescription": "سيتم حذف العملاء الموسومين بـ \"غير موثقين\" تلقائياً بعد عدد الأيام المحدد."
+  },  "app": {
     "name": "Clienta",
     "tagline": "منصة إدارة الأعمال المعتمدة على العملاء",
     "clientHub": "مركز العملاء",
@@ -52,6 +62,7 @@
     "phone": "الهاتف",
     "address": "العنوان",
     "signOut": "تسجيل الخروج",
+    "off": "إيقاف",
     "notifications": "الإشعارات",
     "expand": "توسيع",
     "collapse": "طي",

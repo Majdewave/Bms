@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { servicesService, BusinessService } from "../../api/servicesService";
+import { Pencil, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   isAdmin: boolean;
 }
 
 export default function ServicesSection({ isAdmin }: Props) {
+  const { t } = useTranslation();
   const [services, setServices] = useState<BusinessService[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -198,35 +201,37 @@ export default function ServicesSection({ isAdmin }: Props) {
                   {isAdmin && (
                     <td className="py-2">
                       {editingId === service.id ? (
-                        <>
+                        <div className="flex items-center gap-3 justify-end">
                           <button
                             onClick={() => handleEditSave(service.id)}
-                            className="px-3 py-1 bg-green-600 text-white rounded mr-2"
+                            className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white hover:bg-green-700 transition font-medium shadow-sm"
                           >
-                            Save
+                            {t('common.save')}
                           </button>
                           <button
                             onClick={() => setEditingId(null)}
-                            className="px-3 py-1 bg-gray-400 text-white rounded"
+                            className="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
                           >
-                            Cancel
+                            {t('common.cancel')}
                           </button>
-                        </>
+                        </div>
                       ) : (
-                        <>
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleEdit(service)}
-                            className="px-3 py-1 bg-blue-600 text-white rounded mr-2"
+                            className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
+                            title="Edit"
                           >
-                            Edit
+                            <Pencil className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(service.id)}
-                            className="px-3 py-1 bg-red-600 text-white rounded"
+                            className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
+                            title="Delete"
                           >
-                            Delete
+                            <Trash2 className="w-4 h-4" />
                           </button>
-                        </>
+                        </div>
                       )}
                     </td>
                   )}

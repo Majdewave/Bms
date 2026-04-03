@@ -27,6 +27,18 @@
   "none": "None",
   "showOnlyNotDocumented": "Show only not documented",
   "notDocumentedClients": "Not documented clients: {{count}}",
+  "settings": {
+    "deleteLogo": "Delete logo",
+    "uploadLogo": "Upload new logo",
+    "noLogo": "No logo",
+    "autoDeleteTitle": "Auto Delete Non-Documented Clients",
+    "enableAutoDelete": "Enable auto delete",
+    "autoDeleteOff": "Auto delete is OFF",
+    "daysBeforeDeletion": "Days before deletion",
+    "runCleanup": "Run Cleanup Now",
+    "cleanupCompleted": "Cleanup completed",
+    "autoDeleteDescription": "Clients marked as \"not documented\" will be deleted automatically after the selected number of days."
+  },
   "app": {
     "name": "Clienta",
     "tagline": "Client Management Made Simple",
@@ -47,6 +59,9 @@
     "saving": "Saving...",
     "sending": "Sending...",
     "loading": "Loading...",
+    "uploading": "Uploading...",
+    "deleting": "Deleting...",
+    "off": "OFF",
     "noResults": "No results found",
     "email": "Email",
     "phone": "Phone",

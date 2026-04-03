@@ -26,8 +26,18 @@
   "currentPatient": "המטופל הנוכחי",
   "none": "אין",
   "showOnlyNotDocumented": "הצג רק לא מתועדים",
-  "notDocumentedClients": "לקוחות לא מתועדים: {{count}}",
-  "app": {
+  "notDocumentedClients": "לקוחות לא מתועדים: {{count}}",  "settings": {
+    "deleteLogo": "מחק לוגו",
+    "uploadLogo": "העלה לוגו חדש",
+    "noLogo": "אין לוגו",
+    "autoDeleteTitle": "מחק לקוחות לא מתועדים באופן אוטומטי",
+    "enableAutoDelete": "הפוך את המחיקה האוטומטית",
+    "autoDeleteOff": "מחיקה אוטומטית כבויה",
+    "daysBeforeDeletion": "ימים לפני מחיקה",
+    "runCleanup": "הפעל ניקיון עכשיו",
+    "cleanupCompleted": "הניקיון הושלם",
+    "autoDeleteDescription": "לקוחות המסומנים כ\"לא מתועדים\" יימחקו באופן אוטומטי לאחר מספר הימים שנבחר."
+  },  "app": {
     "name": "Clienta",
     "tagline": "Client Management Made Simple",
     "clientHub": "Client Hub",
@@ -48,6 +58,7 @@
     "sending": "שולח...",
     "loading": "טוען...",
     "noResults": "לא נמצאו תוצאות",
+    "off": "כבוי",
     "email": "אימייל",
     "phone": "טלפון",
     "address": "כתובת",

@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import {
   Plus,
   Search,
-  Edit,
+  Pencil,
   Ban,
   Trash2,
   Mail,
@@ -399,10 +399,10 @@ export default function AdminStaff() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openEditModal(staffMember)}
-                          className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                          className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
                           title={t('admin.staff.actions.edit')}
                         >
-                          <Edit className="w-4 h-4" />
+                          <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleToggleStatus(staffMember)}
@@ -429,7 +429,7 @@ export default function AdminStaff() {
                         </button>
                         <button
                           onClick={() => handleDelete(staffMember.id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
                           title={t('admin.staff.actions.delete')}
                         >
                           <Trash2 className="w-4 h-4" />

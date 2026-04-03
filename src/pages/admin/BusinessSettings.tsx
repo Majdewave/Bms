@@ -6,8 +6,9 @@ import { Card, CardContent } from '@/components'
 import { getBusinessSettings, updateBusinessSettings, uploadTenantLogo } from '@/api/businessSettings'
 import ServicesSection from './ServicesSection'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTenant } from '@/contexts/TenantContext'
 import * as apiClient from '@/api/apiClient'
-import { get, put, post } from '@/api/apiClient'
+import { get, put, post, del } from '@/api/apiClient'
 
 interface TenantContactSettings {
   name?: string
@@ -21,6 +22,7 @@ interface TenantContactSettings {
 export default function BusinessSettings() {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
+  const { setTenant } = useTenant()
   const isAdmin = user?.role === 'admin'
   const isRTL = i18n.language === 'he' || i18n.language === 'ar'
   const [formData, setFormData] = useState<{
@@ -34,15 +36,26 @@ export default function BusinessSettings() {
   })
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [logoVersion, setLogoVersion] = useState<number>(Date.now())
   const [pageLoading, setPageLoading] = useState(false)
   const [autoDeleteDays, setAutoDeleteDays] = useState(1)
   const [enabled, setEnabled] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [deletingLogo, setDeletingLogo] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
   const API_BASE = (import.meta as any).env.VITE_API_URL
+
+  const getAbsoluteLogoUrl = (url: string) =>
+    url.startsWith('http') ? url : `${API_BASE}${url}`
+
+  const getCacheBustedLogoUrl = (url: string) => {
+    const baseUrl = getAbsoluteLogoUrl(url)
+    const separator = baseUrl.includes('?') ? '&' : '?'
+    return `${baseUrl}${separator}v=${logoVersion}`
+  }
 
   useEffect(() => {
     loadSettings()
@@ -79,6 +92,26 @@ export default function BusinessSettings() {
       if (settings.logoUrl) {
         setLogoUrl(settings.logoUrl)
         setLogoPreview(settings.logoUrl)
+        setLogoVersion(Date.now())
+        setTenant((prev) => ({
+          ...prev,
+          name: settings.name,
+          phone: tenant?.phone ?? '',
+          whatsApp: tenant?.whatsApp ?? '',
+          logoUrl: settings.logoUrl,
+          autoDeleteNotDocumentedAfterDays: tenant?.autoDeleteNotDocumentedAfterDays ?? 1,
+          enableAutoDeleteNotDocumented: tenant?.enableAutoDeleteNotDocumented ?? true,
+        }))
+      } else {
+        setTenant((prev) => ({
+          ...prev,
+          name: settings.name,
+          phone: tenant?.phone ?? '',
+          whatsApp: tenant?.whatsApp ?? '',
+          logoUrl: null,
+          autoDeleteNotDocumentedAfterDays: tenant?.autoDeleteNotDocumentedAfterDays ?? 1,
+          enableAutoDeleteNotDocumented: tenant?.enableAutoDeleteNotDocumented ?? true,
+        }))
       }
     } catch (error) {
       console.error('Failed to load settings:', error)
@@ -97,8 +130,10 @@ export default function BusinessSettings() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml']
+    if (!allowedTypes.includes(file.type)) {
       showToastNotification(t('admin.settings.invalidImageType'))
+      e.target.value = ''
       return
     }
 
@@ -109,20 +144,48 @@ export default function BusinessSettings() {
 
     setUploadingLogo(true)
     try {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-
       const result = await uploadTenantLogo(file)
-      setLogoUrl(result.logoUrl)
+      const nextLogoUrl = result.logoUrl ?? logoUrl
+      if (nextLogoUrl) {
+        setLogoUrl(nextLogoUrl)
+        setLogoPreview(nextLogoUrl)
+        const nextVersion = Date.now()
+        const cacheBustedLogoUrl = `${nextLogoUrl}${nextLogoUrl.includes('?') ? '&' : '?'}v=${nextVersion}`
+        setLogoVersion(nextVersion)
+        setTenant((prev) => ({
+          ...prev,
+          logoUrl: cacheBustedLogoUrl,
+        }))
+      }
       showToastNotification(t('admin.settings.saveSuccess'))
     } catch (error) {
       console.error('Failed to upload logo:', error)
       showToastNotification(t('admin.settings.saveError'))
     } finally {
       setUploadingLogo(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleLogoDelete = async () => {
+    if (!logoUrl) return
+
+    setDeletingLogo(true)
+    try {
+      await del('/api/tenant/logo')
+      setLogoUrl(null)
+      setLogoPreview(null)
+      setLogoVersion(Date.now())
+      setTenant((prev) => ({
+        ...prev,
+        logoUrl: null,
+      }))
+      showToastNotification(t('admin.settings.saveSuccess'))
+    } catch (error) {
+      console.error('Failed to delete logo:', error)
+      showToastNotification(t('admin.settings.saveError'))
+    } finally {
+      setDeletingLogo(false)
     }
   }
 
@@ -261,46 +324,47 @@ export default function BusinessSettings() {
                 </div>
               </label>
 
-              {logoPreview && (
-                <div className="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="flex items-center justify-center bg-white rounded-lg p-6 border border-slate-200">
-                    <img
-                      src={`${API_BASE}${logoPreview}`}
-                      alt="Business logo"
-                      className="max-h-32 max-w-full object-contain"
-                    />
+              <div className="flex flex-col items-center gap-3">
+                {logoPreview ? (
+                  <div className="w-full p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="flex items-center justify-center bg-white rounded-lg p-6 border border-slate-200">
+                      <img
+                        src={getCacheBustedLogoUrl(logoPreview)}
+                        alt="Business logo"
+                        className="h-32 max-w-full object-contain"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-gray-400 text-sm">{t('settings.noLogo')}</div>
+                )}
 
-              <div className="relative">
-                <input
-                  type="file"
-                  id="logo"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  disabled={uploadingLogo}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
-                />
-                <div className="flex items-center justify-center px-6 py-8 border-2 border-dashed border-slate-300 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer disabled:opacity-50">
-                  <div className="text-center">
-                    {uploadingLogo ? (
-                      <>
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-3"></div>
-                        <p className="text-sm text-slate-600 font-medium">{t('common.uploading')}</p>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-8 h-8 text-slate-400 mx-auto mb-3" />
-                        <p className="text-sm text-slate-600 font-medium mb-1">
-                          {t('admin.settings.uploadLogo')}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {t('admin.settings.logoRequirements')}
-                        </p>
-                      </>
-                    )}
-                  </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleLogoDelete}
+                    disabled={deletingLogo || uploadingLogo || !logoPreview}
+                    className="px-3 py-1 text-sm bg-red-100 text-red-600 rounded-md hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingLogo ? t('common.deleting') : t('settings.deleteLogo')}
+                  </button>
+
+                  <label
+                    htmlFor="logo-upload"
+                    className={`px-3 py-1 text-sm bg-indigo-600 text-white rounded-md cursor-pointer hover:bg-indigo-700 ${
+                      uploadingLogo || deletingLogo ? 'opacity-50 pointer-events-none' : ''
+                    }`}
+                  >
+                    {uploadingLogo ? t('common.uploading') : t('settings.uploadLogo')}
+                    <input
+                      type="file"
+                      id="logo-upload"
+                      accept="image/png,image/jpeg,image/jpg,image/svg+xml,.png,.jpg,.jpeg,.svg"
+                      onChange={handleLogoUpload}
+                      disabled={uploadingLogo || deletingLogo}
+                      hidden
+                    />
+                  </label>
                 </div>
               </div>
 
@@ -317,21 +381,21 @@ export default function BusinessSettings() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-semibold">
-                    Auto Delete Non-Documented Clients
+                    {t('settings.autoDeleteTitle')}
                   </h3>
                   {!enabled && (
                     <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">
-                      OFF
+                      {t('common.off')}
                     </span>
                   )}
                 </div>
 
                 <p className="text-sm text-slate-500">
-                  Clients marked as "not documented" will be deleted automatically after the selected number of days.
+                  {t('settings.autoDeleteDescription')}
                 </p>
 
                 <label className="flex items-center justify-between gap-3 border border-slate-200 rounded-lg p-3">
-                  <span className="text-sm font-medium text-slate-700">Enable auto delete</span>
+                  <span className="text-sm font-medium text-slate-700">{t('settings.enableAutoDelete')}</span>
                   <input
                     type="checkbox"
                     checked={enabled}
@@ -342,13 +406,13 @@ export default function BusinessSettings() {
 
                 {!enabled && (
                   <div className="mt-2 text-sm text-red-600 font-medium">
-                    Auto delete is OFF
+                    {t('settings.autoDeleteOff')}
                   </div>
                 )}
 
                 <div className={`${!enabled ? 'opacity-50 pointer-events-none' : ''}`}>
                   <div>
-                    <label className="text-sm font-medium">Days before deletion</label>
+                    <label className="text-sm font-medium">{t('settings.daysBeforeDeletion')}</label>
 
                     <input
                       type="number"
@@ -365,11 +429,11 @@ export default function BusinessSettings() {
                       type="button"
                       onClick={async () => {
                         await post('/api/tenant/run-cleanup')
-                        alert('Cleanup completed')
+                        alert(t('settings.cleanupCompleted'))
                       }}
                       className="bg-red-600 text-white px-4 py-2 rounded-lg"
                     >
-                      Run Cleanup Now
+                      {t('settings.runCleanup')}
                     </button>
                   </div>
                 </div>
@@ -380,9 +444,9 @@ export default function BusinessSettings() {
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={saving || uploadingLogo}
+              disabled={saving || uploadingLogo || deletingLogo}
               className={`px-8 py-3 rounded-lg font-medium transition-all ${
-                saving || uploadingLogo
+                saving || uploadingLogo || deletingLogo
                   ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
                   : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white shadow-md hover:shadow-lg'
               }`}

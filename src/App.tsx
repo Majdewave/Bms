@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { RouterProvider } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { FeatureProvider } from '@/contexts/FeatureContext';
+import { TenantProvider } from '@/contexts/TenantContext';
 import { router } from '@/router';
 import '@/styles/index.css';
 
@@ -16,9 +17,11 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <FeatureProvider>
-        <RouterProvider router={router} />
-      </FeatureProvider>
+      <TenantProvider>
+        <FeatureProvider>
+          <RouterProvider router={router} />
+        </FeatureProvider>
+      </TenantProvider>
     </AuthProvider>
   );
 }
