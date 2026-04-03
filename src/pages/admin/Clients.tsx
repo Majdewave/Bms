@@ -143,7 +143,7 @@ export default function Clients() {
           <div className="mb-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-red-600">
-                Not documented clients: {notDocumentedCount}
+                {t('notDocumentedClients', { count: notDocumentedCount })}
               </div>
               <label className="flex items-center gap-2">
                 <input
@@ -152,7 +152,7 @@ export default function Clients() {
                   onChange={(e) => setShowNotDocumentedOnly(e.target.checked)}
                   className="h-4 w-4"
                 />
-                <span className="text-sm font-medium">Show only not documented</span>
+                <span className="text-sm font-medium">{t('showOnlyNotDocumented')}</span>
               </label>
             </div>
           </div>

@@ -3,6 +3,7 @@
     "totalClients": "סה״כ לקוחות",
     "appointmentsToday": "תורים היום",
     "completedToday": "תורים שהושלמו היום",
+    "notDocumentedClients": "לקוחות לא מתועדים",
     "upcomingAppointments": "תורים קרובים",
     "status": "סטטוס",
     "staff": "צוות",
@@ -20,6 +21,12 @@
         "staffDeleted": "איש צוות נמחק"
       }
   },
+  "waitingCount": "מספר ממתינים",
+  "nextPatient": "המטופל הבא",
+  "currentPatient": "המטופל הנוכחי",
+  "none": "אין",
+  "showOnlyNotDocumented": "הצג רק לא מתועדים",
+  "notDocumentedClients": "לקוחות לא מתועדים: {{count}}",
   "app": {
     "name": "Clienta",
     "tagline": "Client Management Made Simple",
@@ -354,7 +361,7 @@
       "add": "הוסף לקוח",
       "addButton": "הוסף לקוח",
       "addNew": "הוסף לקוח חדש",
-      "directoryTitle": "ספריית לקוחות",
+      "directoryTitle": "נהל לקוחות",
       "searchPlaceholder": "חפש לפי שם או דוא\"ל...",
       "filter": "סנן",
       "view": "צפה",

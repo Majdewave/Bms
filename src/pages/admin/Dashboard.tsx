@@ -16,7 +16,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { dashboardService } from '@/api'
-import { Container, PageHeader, Grid, Card, CardHeader, CardContent } from '@/components'
+import { Container, PageHeader, Card, CardHeader, CardContent } from '@/components'
 import { useTranslation } from 'react-i18next'
 import {
   Users,
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
       />
 
       {/* Stats Grid */}
-      <Grid cols={3} gap="md" className="mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card className="hover:shadow-lg transition-shadow">
           <CardContent>
             <div className="flex items-start justify-between">
@@ -177,7 +177,7 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm text-slate-500 font-medium">לא מתועדים</p>
+                <p className="text-sm text-slate-500 font-medium">{t('dashboard.notDocumentedClients')}</p>
                 <p className="text-3xl font-bold text-slate-900 mt-2">
                   {stats?.upcomingAppointmentsList ? stats.upcomingAppointmentsList.filter((a: any) => !a.isDocumented).length : 0}
                 </p>
@@ -188,7 +188,7 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
-      </Grid>
+      </div>
 
       {/* Upcoming Appointments Section */}
       <Card className="mb-8">

@@ -3,6 +3,7 @@
     "totalClients": "Total Clients",
     "appointmentsToday": "Appointments Today",
     "completedToday": "Completed Appointments Today",
+    "notDocumentedClients": "Not documented clients",
     "upcomingAppointments": "Upcoming Appointments",
     "status": "Status",
     "staff": "Staff",
@@ -20,6 +21,12 @@
       "staffDeleted": "Staff member deleted"
     }
   },
+  "waitingCount": "Waiting Count",
+  "nextPatient": "Next Patient",
+  "currentPatient": "Current Patient",
+  "none": "None",
+  "showOnlyNotDocumented": "Show only not documented",
+  "notDocumentedClients": "Not documented clients: {{count}}",
   "app": {
     "name": "Clienta",
     "tagline": "Client Management Made Simple",

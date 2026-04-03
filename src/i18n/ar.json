@@ -3,6 +3,7 @@
     "totalClients": "إجمالي العملاء",
     "appointmentsToday": "المواعيد اليوم",
     "completedToday": "المواعيد المكتملة اليوم",
+    "notDocumentedClients": "العملاء غير الموثقين",
     "upcomingAppointments": "المواعيد القادمة",
     "status": "الحالة",
     "staff": "الموظف",
@@ -20,6 +21,12 @@
       "staffDeleted": "تم حذف موظف"
     }
   },
+  "waitingCount": "عدد المنتظرين",
+  "nextPatient": "المريض التالي",
+  "currentPatient": "المريض الحالي",
+  "none": "لا يوجد",
+  "showOnlyNotDocumented": "عرض غير الموثقين فقط",
+  "notDocumentedClients": "العملاء غير الموثقين: {{count}}",
   "app": {
     "name": "Clienta",
     "tagline": "منصة إدارة الأعمال المعتمدة على العملاء",

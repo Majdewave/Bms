@@ -179,29 +179,29 @@ const markNotDocumented = async (appointment: Appointment) => {
       {/* Queue Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
-          <div className="text-xs text-gray-500 mb-1">Current Patient</div>
+          <div className="text-xs text-gray-500 mb-1">{t('currentPatient')}</div>
           {current ? (
             <div className="flex items-center gap-2 font-semibold text-purple-700">
               <CheckCircle className="w-5 h-5 text-purple-500" />
               {current.clientName}
             </div>
           ) : (
-            <div className="text-gray-400">None</div>
+            <div className="text-gray-400">{t('none')}</div>
           )}
         </div>
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
-          <div className="text-xs text-gray-500 mb-1">Next Patient</div>
+          <div className="text-xs text-gray-500 mb-1">{t('nextPatient')}</div>
           {next ? (
             <div className="flex items-center gap-2 font-semibold text-yellow-700">
               <ArrowRight className="w-5 h-5 text-yellow-500" />
               {next.clientName}
             </div>
           ) : (
-            <div className="text-gray-400">None</div>
+            <div className="text-gray-400">{t('none')}</div>
           )}
         </div>
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
-          <div className="text-xs text-gray-500 mb-1">Waiting Count</div>
+          <div className="text-xs text-gray-500 mb-1">{t('waitingCount')}</div>
           <div className="font-bold text-lg text-yellow-700">{waitingCount}</div>
         </div>
       </div>

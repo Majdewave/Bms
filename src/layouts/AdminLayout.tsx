@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ComponentType } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -29,8 +29,12 @@ import { useFeatures } from '@/contexts/FeatureContext'
 import type { Features } from '@/contexts/FeatureContext'
 import type { Permission } from '@/utils/permissions'
 import NotificationsDropdown from '@/components/NotificationsDropdown'
-import ClientaLogo from '@/components/Logo'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { get } from '@/api/apiClient'
+
+interface TenantBranding {
+  logoUrl?: string | null
+}
 
 interface MenuItem {
   icon: ComponentType<{ className?: string }>
@@ -68,6 +72,20 @@ export default function AdminLayout() {
   const { features } = useFeatures()
 
   const { t } = useTranslation()
+  const [tenant, setTenant] = useState<TenantBranding | null>(null)
+
+  useEffect(() => {
+    const loadTenant = async () => {
+      try {
+        const tenantData = await get<TenantBranding>('/api/tenant/me')
+        setTenant(tenantData)
+      } catch (error) {
+        console.error('Failed to load tenant branding:', error)
+      }
+    }
+
+    loadTenant()
+  }, [])
 
   const menuItems = useMemo(() => {
     if (!user) return []
@@ -190,6 +208,11 @@ export default function AdminLayout() {
   }
 
   const breadcrumbs = buildBreadcrumbs()
+  const businessLogo = tenant?.logoUrl
+    ? (tenant.logoUrl.startsWith('http')
+      ? tenant.logoUrl
+      : `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5146'}${tenant.logoUrl}`)
+    : null
 
   return (
 
@@ -203,12 +226,33 @@ export default function AdminLayout() {
         } bg-white border-r border-slate-200 flex flex-col h-screen min-h-0`}
       >
 
-        <div className="p-6 border-b border-slate-200">
+        <div className="p-6 border-b border-slate-200 sideBarTopBlock" style={{ padding: 0 }}>
+          <Link to={homePath} className="block BusinessLogoLink" style={{ padding: 0 }}>
+            <div className="flex flex-col items-center py-4 gap-3 BusinessLogoContainer" style={{ padding: 0 }}>
+              {/* BUSINESS LOGO */}
+              {businessLogo ? (
+                <img
+                  src={businessLogo}
+                  alt="Business Logo"
+                  className="h-16 object-contain BusinessLogoImg"
+                  style={{ height: 'auto', maxHeight: '140px' }}
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                />
+              ) : (
+                <div className="w-16 h-16 bg-primary-500 rounded-lg flex items-center justify-center text-white font-bold">
+                  {user?.name?.charAt(0)}
+                </div>
+              )}
 
-          <Link to={homePath}>
-            <ClientaLogo variant="full" />
+              {/* CLIENTA LOGO */}
+              <img
+                src="/clienta-logo.svg"
+                alt="Clienta"
+                className="h-6 opacity-80"
+                onError={(e) => (e.currentTarget.style.display = 'none')}
+              />
+            </div>
           </Link>
-
         </div>
 
         <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-6">
@@ -311,6 +355,9 @@ export default function AdminLayout() {
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <NotificationsDropdown />
+            <div className="ClientaBrand">
+            <span className='ClientaIcon'>C</span><span>Powered by</span><span className='ClientaText'>CLIENTA</span>
+            </div>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition ml-2"

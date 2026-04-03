@@ -163,3 +163,29 @@ body {
   overflow-x: auto;
   padding-bottom: 50px;
 }
+
+.ClientaBrand {
+  float: right;
+  display: inline;
+  font-size: 13px;
+  color: #858585;
+}
+.ClientaBrand span{
+  padding-left:2px;
+  padding-right:2px;
+}
+
+.ClientaIcon {
+    border: 1px solid #473cd2;
+    padding: 3px 10px !important;
+    background-color: #473cd2;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #fff;
+    margin-right: 2px;
+    margin-left: 2px;
+}
+
+.ClientaText {
+    color: #222222;
+}
