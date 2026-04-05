@@ -3,25 +3,17 @@ import type { ComponentType } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
-  ArrowLeft,
   BarChart3,
   Calendar,
-  ChevronDown,
   ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   FileText,
   LayoutDashboard,
   LogOut,
-  Menu,
   Pill,
   Settings,
-  Shield,
   Sliders,
-  User,
   UserPlus,
   Users,
-  X,
 } from "lucide-react"
 
 import { useAuth, UserRole } from '@/contexts/AuthContext'
@@ -49,9 +41,9 @@ const allMenuItems: MenuItem[] = [
   { icon: FileText, label: 'All Invoices', path: '/admin/invoices', roles: ['admin'], feature: 'invoicesEnabled' },
   { icon: BarChart3, label: 'Reports', path: '/admin/reports', roles: ['admin'], feature: 'reportsEnabled' },
   { icon: UserPlus, label: 'Staff Management', path: '/admin/staff', roles: ['admin'] },
+  { icon: Pill, label: 'Drugs', path: '/admin/drugs', roles: ['admin'], feature: 'drugsEnabled' },
   { icon: Settings, label: 'Business Settings', path: '/admin/settings', roles: ['admin'] },
   { icon: Sliders, label: 'Feature Toggles', path: '/admin/features', roles: ['admin'] },
-{  icon: Pill,  label: 'Drugs',  path: '/admin/drugs',  roles: ['admin'],  feature: 'drugsEnabled',},
  
 // Staff (permission based)
   { icon: LayoutDashboard, label: 'Dashboard', path: '/staff/dashboard', roles: ['staff'] },
@@ -347,7 +339,7 @@ export default function AdminLayout() {
               style={{ fontSize: '18px' }}
             >
               <LogOut className="w-4 h-4" />
-              Logout
+              {t('header.logout')}
             </button>
           </div>
         </header>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, FileCheck2, Eraser } from 'lucide-react'
 import { consentsApi, type ConsentTemplate } from '@/api/consents'
 
@@ -27,6 +28,7 @@ export default function SignConsentModal({
   onClose,
   onSigned,
 }: Props) {
+  const { t, i18n } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [signing, setSigning] = useState(false)
   const [template, setTemplate] = useState<ConsentTemplate | null>(null)
@@ -35,6 +37,9 @@ export default function SignConsentModal({
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawingRef = useRef(false)
+  const isHebrew = i18n.language?.startsWith('he')
+  const dir = isHebrew ? 'rtl' : 'ltr'
+  const currentDate = new Date().toLocaleDateString(i18n.language || undefined)
 
 
   useEffect(() => {
@@ -59,7 +64,7 @@ export default function SignConsentModal({
         }
       })
       .catch((error) => {
-        console.error('Failed to load template:', error)
+        console.error(error)
         if (isActive) {
           setTemplate(null)
         }
@@ -76,13 +81,21 @@ export default function SignConsentModal({
   }, [isOpen, serviceId])
 
   const renderedHtml = useMemo(() => {
-    if (!template?.content) return ''
+    const dynamicText = t('consent.dynamicText', {
+      date: currentDate,
+      clientName,
+      serviceName: serviceName || '-',
+    })
+
+    if (!template?.content) return `<p>${dynamicText}</p>`
+
     return fillTemplate(template.content, {
       clientName,
       serviceName: serviceName || '',
-      date: new Date().toLocaleDateString(),
+      date: currentDate,
+      dynamicText,
     })
-  }, [template, clientName, serviceName])
+  }, [template, clientName, serviceName, currentDate, t])
 
   useEffect(() => {
     setEditableContent(renderedHtml)
@@ -153,17 +166,17 @@ export default function SignConsentModal({
     const signature = getSignatureBase64()
 
     if (!template?.id) {
-      alert('No consent template found for this service')
+      alert(t('consent.noTemplate'))
       return
     }
 
     if (!editableContent.trim()) {
-      alert('Rendered consent content is empty')
+      alert(t('consent.emptyContent'))
       return
     }
 
     if (!signature) {
-      alert('Signature is required')
+      alert(t('consent.signatureRequired'))
       return
     }
 
@@ -180,8 +193,8 @@ export default function SignConsentModal({
       onSigned?.()
       onClose()
     } catch (error) {
-      console.error('Failed to sign consent:', error)
-      alert('Failed to sign consent')
+      console.error(error)
+      alert(t('consent.signFailed'))
     } finally {
       setSigning(false)
     }
@@ -190,11 +203,11 @@ export default function SignConsentModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" dir={dir}>
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">Sign Consent</h3>
+            <h3 className="text-lg font-semibold text-slate-900">{t('consent.title')}</h3>
             <p className="text-sm text-slate-500">{clientName} • {serviceName || '-'}</p>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-700">
@@ -205,10 +218,10 @@ export default function SignConsentModal({
         <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 max-h-[72vh] overflow-y-auto">
           <div className="border border-slate-200 rounded-xl bg-slate-50 p-5 min-h-[420px]">
             {loading ? (
-              <div className="text-slate-500 text-sm">Loading template...</div>
+              <div className="text-slate-500 text-sm">{t('common.loading')}</div>
             ) : !template ? (
               <div className="text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
-                No consent template is configured for this service.
+                {t('consent.noTemplate')}
               </div>
             ) : (
               <>
@@ -222,7 +235,7 @@ export default function SignConsentModal({
                         : 'bg-white text-slate-700 border-slate-300'
                     }`}
                   >
-                    Edit
+                    {t('consent.edit')}
                   </button>
                   <button
                     type="button"
@@ -233,7 +246,7 @@ export default function SignConsentModal({
                         : 'bg-white text-slate-700 border-slate-300'
                     }`}
                   >
-                    Preview
+                    {t('consent.preview')}
                   </button>
                 </div>
 
@@ -252,14 +265,14 @@ export default function SignConsentModal({
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium text-slate-800">Client Signature</h4>
+              <h4 className="font-medium text-slate-800">{t('consent.clientSignature')}</h4>
               <button
                 type="button"
                 onClick={clearSignature}
                 className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
               >
                 <Eraser className="w-3 h-3" />
-                Clear
+                {t('consent.clear')}
               </button>
             </div>
             <canvas
@@ -272,7 +285,8 @@ export default function SignConsentModal({
               onMouseLeave={endDraw}
               className="w-full h-[220px] border border-dashed border-slate-300 rounded-xl bg-white touch-none"
             />
-            <p className="text-xs text-slate-500">Sign inside the box, then click “Sign Consent”.</p>
+            <p className="text-xs text-slate-500">{t('consent.signInstruction')}</p>
+            <p className="text-xs text-slate-600">{t('consent.confirmText')}</p>
           </div>
         </div>
 
@@ -282,7 +296,7 @@ export default function SignConsentModal({
             className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700"
             disabled={signing}
           >
-            Cancel
+            {t('consent.cancelButton')}
           </button>
           <button
             onClick={handleSign}
@@ -290,7 +304,7 @@ export default function SignConsentModal({
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
           >
             <FileCheck2 className="w-4 h-4" />
-            {signing ? 'Signing...' : 'Sign Consent'}
+            {signing ? t('consent.signing') : t('consent.signButton')}
           </button>
         </div>
       </div>

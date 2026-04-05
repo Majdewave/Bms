@@ -8,6 +8,7 @@ export interface Features {
   invoicesEnabled: boolean
   prescriptionsEnabled: boolean
   drugsEnabled: boolean
+  beforeAfterPhotosEnabled: boolean
 }
 
 interface FeatureContextType {
@@ -20,6 +21,7 @@ const defaultFeatures: Features = {
   invoicesEnabled: true,
   prescriptionsEnabled: true,
   drugsEnabled: false,
+  beforeAfterPhotosEnabled: false,
 }
 
 const FeatureContext = createContext<FeatureContextType>({
@@ -35,7 +37,8 @@ const areFeaturesEqual = (a: Features | null, b: Features) => {
     a.reportsEnabled === b.reportsEnabled &&
     a.invoicesEnabled === b.invoicesEnabled &&
     a.prescriptionsEnabled === b.prescriptionsEnabled &&
-    a.drugsEnabled === b.drugsEnabled
+    a.drugsEnabled === b.drugsEnabled &&
+    a.beforeAfterPhotosEnabled === b.beforeAfterPhotosEnabled
   )
 }
 export function FeatureProvider({ children }: { children: ReactNode }) {
@@ -59,6 +62,7 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
         invoicesEnabled: data.invoicesEnabled ?? true,
         prescriptionsEnabled: data.prescriptionsEnabled ?? true,
         drugsEnabled: data.drugsEnabled ?? false,
+        beforeAfterPhotosEnabled: data.beforeAfterPhotosEnabled ?? false,
       }
 
       setFeatures((prev) => (areFeaturesEqual(prev, safeData) ? prev : safeData))

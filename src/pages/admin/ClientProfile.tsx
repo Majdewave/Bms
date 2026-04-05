@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, FileText } from "lucide-react"
+import { ChevronDown, FileCheck, FileText, Image as ImageIcon, MessageSquare, Pill, User } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFeatures } from "@/contexts/FeatureContext"
 import * as apiClient from "@/api/apiClient"
 import DrugAutocomplete from '@/components/DrugAutocomplete'
+import ClientBeforeAfterPhotos from '@/components/ClientBeforeAfterPhotos'
 import { consentsApi, type SignedConsent } from '@/api/consents'
 
 interface Client {
@@ -65,6 +66,7 @@ export default function ClientProfile() {
   const [client, setClient] = useState<Client | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
+  const [photosCount, setPhotosCount] = useState(0)
   const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
   const [selectedConsent, setSelectedConsent] = useState<ConsentViewRecord | null>(null)
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false)
@@ -231,6 +233,11 @@ export default function ClientProfile() {
 
   const formatDate = (date?: string | null) =>
     date ? new Date(date).toLocaleString(i18n.language) : "-"
+
+  const getCounterClass = (count: number) =>
+    `text-xs px-2 py-0.5 rounded-full ${
+      count > 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-500'
+    }`
 
   /* ================================
      EDIT CLIENT
@@ -565,9 +572,12 @@ export default function ClientProfile() {
       <div className="bg-white rounded-2xl shadow-md p-8 space-y-6">
 
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <h3 className="text-lg font-semibold text-slate-800">
-            {t("admin.clientProfile.title")}
-          </h3>
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-indigo-400" />
+            <h3 className="text-lg font-semibold text-slate-800">
+              {t("admin.clientProfile.title")}
+            </h3>
+          </div>
         </div>
 
         <Field
@@ -712,11 +722,12 @@ export default function ClientProfile() {
           onClick={() => toggleSection("notes")}
           className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
         >
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-blue-400" />
             <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? "text-right" : "text-left"}`}>
               {t("admin.clientProfile.notesTitle")}
             </h3>
-            <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">
+            <span className={getCounterClass(notes.length)}>
               {notes.length}
             </span>
           </div>
@@ -778,11 +789,12 @@ export default function ClientProfile() {
           onClick={() => toggleSection("prescriptions")}
           className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
         >
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Pill className="w-4 h-4 text-green-400" />
             <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? "text-right" : "text-left"}`}>
               מרשמים
             </h3>
-            <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+            <span className={getCounterClass(prescriptions.length)}>
               {prescriptions.length}
             </span>
           </div>
@@ -866,11 +878,12 @@ export default function ClientProfile() {
           onClick={() => toggleSection("consents")}
           className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
         >
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <FileCheck className="w-4 h-4 text-purple-400" />
             <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? "text-right" : "text-left"}`}>
               {t('consents')}
             </h3>
-            <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+            <span className={getCounterClass(signedConsents.length)}>
               {signedConsents.length}
             </span>
           </div>
@@ -928,6 +941,37 @@ export default function ClientProfile() {
           </div>
         )}
       </div>
+
+      {features?.beforeAfterPhotosEnabled === true && (
+        <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+          <button
+            type="button"
+            onClick={() => toggleSection('beforeAfterPhotos')}
+            className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+          >
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-pink-400" />
+              <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? 'text-right' : 'text-left'}`}>
+                {t('clientPhotos.title')}
+              </h3>
+              <span className={getCounterClass(photosCount)}>
+                {photosCount}
+              </span>
+            </div>
+            <ChevronDown
+              className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
+                openSections.includes('beforeAfterPhotos') ? 'rotate-180' : 'rotate-0'
+              }`}
+            />
+          </button>
+
+          {openSections.includes('beforeAfterPhotos') && (
+            <div className="px-6 pb-6">
+              <ClientBeforeAfterPhotos clientId={client.id} onCountChange={setPhotosCount} />
+            </div>
+          )}
+        </div>
+      )}
 
       {showPrescriptionModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

@@ -21,7 +21,7 @@
         "staffDeleted": "איש צוות נמחק"
       }
   },
-  "waitingCount": "ממתין בתור: {{count}}",
+  "waitingCount": "ממתין בתור:",
   "nextPatient": "המטופל הבא",
   "currentPatient": "המטופל הנוכחי",
   "none": "אין",
@@ -45,7 +45,23 @@
     "clientHub": "Client Hub",
     "operations": "Operations"
   },
-  "consent": "הסכמה",
+  "consent": {
+    "title": "מסמך הסכמה",
+    "clientSignature": "חתימת לקוח",
+    "preview": "תצוגה מקדימה",
+    "edit": "עריכה",
+    "signInstruction": "חתום בתוך המסגרת ואז לחץ על אישור",
+    "confirmText": "אני מאשר/ת שהבנתי את ההליך ואת ההשלכות האפשריות",
+    "signButton": "אישור חתימה",
+    "cancelButton": "ביטול",
+    "dynamicText": "בתאריך {{date}}, {{clientName}} מאשר/ת לקבל את השירות {{serviceName}} ומצהיר/ה שהבין/ה את ההליך ואת ההשלכות האפשריות.",
+    "clear": "נקה",
+    "noTemplate": "לא הוגדרה תבנית הסכמה עבור שירות זה.",
+    "emptyContent": "תוכן ההסכמה ריק.",
+    "signatureRequired": "נדרשת חתימה.",
+    "signing": "חותם...",
+    "signFailed": "חתימת ההסכמה נכשלה."
+  },
   "consents": "הסכמות",
   "signed_on": "נחתם בתאריך",
   "view": "צפייה",
@@ -155,6 +171,33 @@
     "en": "אנגלית",
     "he": "עברית",
     "ar": "ערבית"
+  },
+  "header": {
+    "logout": "התנתקות"
+  },
+  "clientPhotos": {
+    "title": "תמונות לפני ואחרי",
+    "before": "לפני",
+    "after": "אחרי",
+    "uploadBefore": "העלה תמונת לפני",
+    "uploadAfter": "העלה תמונת אחרי",
+    "uploadPlaceholder": "העלה תמונה",
+    "addPhotos": "+ הוסף תמונות",
+    "addPhotosCta": "הוסף תמונות",
+    "uploadDate": "תאריך העלאה",
+    "save": "שמור",
+    "empty": "אין תמונות עדיין",
+    "delete": "מחק",
+    "deleteBefore": "מחק תמונת לפני",
+    "deleteAfter": "מחק תמונת אחרי",
+    "deleteAll": "מחק את שתי התמונות",
+    "confirmDeleteAll": "האם למחוק את שתי התמונות?",
+    "errors": {
+      "loadFailed": "שגיאה בטעינת התמונות",
+      "uploadFailed": "שגיאה בהעלאת התמונות",
+      "deleteFailed": "שגיאה במחיקת תמונה",
+      "deleteAllFailed": "שגיאה במחיקת התמונות"
+    }
   },
   "appointments": {
     "title": "פגישות",
@@ -692,6 +735,9 @@
     "prescriptionsDesc": "הצג את אפשרות כתיבת מרשם בפרופיל הלקוח",
 
     "drugs": "מאגר תרופות",
-    "drugsDesc": "הצג את מאגר התרופות במערכת"
+    "drugsDesc": "הצג את מאגר התרופות במערכת",
+
+    "beforeAfterPhotos": "תמונות לפני/אחרי",
+    "beforeAfterPhotosDesc": "הצג העלאת תמונות לפני ואחרי בפרופיל הלקוח"
   }
 }

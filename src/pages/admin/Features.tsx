@@ -10,6 +10,7 @@ const defaultFeatures: Features = {
   invoicesEnabled: true,
   prescriptionsEnabled: true,
   drugsEnabled: false,
+  beforeAfterPhotosEnabled: false,
 }
 
 interface ToggleRowProps {
@@ -67,6 +68,7 @@ export default function AdminFeatures() {
           invoicesEnabled: data.invoicesEnabled ?? true,
           prescriptionsEnabled: data.prescriptionsEnabled ?? true,
           drugsEnabled: data.drugsEnabled ?? false,
+          beforeAfterPhotosEnabled: data.beforeAfterPhotosEnabled ?? false,
         })
       )
       .catch(() => {})
@@ -79,6 +81,8 @@ export default function AdminFeatures() {
       prescriptionsEnabled:
         key === 'prescriptionsEnabled' ? value : settings.prescriptionsEnabled,
       drugsEnabled: key === 'drugsEnabled' ? value : settings.drugsEnabled,
+      beforeAfterPhotosEnabled:
+        key === 'beforeAfterPhotosEnabled' ? value : settings.beforeAfterPhotosEnabled,
     }
 
     setSettings(updated)
@@ -168,6 +172,14 @@ export default function AdminFeatures() {
           description={t('features.drugsDesc')}
           checked={settings.drugsEnabled}
           onChange={(val) => handleToggle('drugsEnabled', val)}
+          disabled={saving}
+        />
+
+        <ToggleRow
+          label={t('features.beforeAfterPhotos')}
+          description={t('features.beforeAfterPhotosDesc')}
+          checked={settings.beforeAfterPhotosEnabled}
+          onChange={(val) => handleToggle('beforeAfterPhotosEnabled', val)}
           disabled={saving}
         />
       </div>

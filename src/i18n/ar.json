@@ -43,7 +43,23 @@
     "clientHub": "مركز العملاء",
     "operations": "العمليات"
   },
-    "consent": "الموافقة",
+    "consent": {
+      "title": "نموذج الموافقة",
+      "clientSignature": "توقيع العميل",
+      "preview": "معاينة",
+      "edit": "تعديل",
+      "signInstruction": "وقّع داخل الإطار ثم اضغط تأكيد التوقيع",
+      "confirmText": "أؤكد أنني فهمت الإجراء والنتائج المحتملة",
+      "signButton": "تأكيد التوقيع",
+      "cancelButton": "إلغاء",
+      "dynamicText": "في تاريخ {{date}}، يوافق {{clientName}} على تلقي خدمة {{serviceName}} ويقر بفهم الإجراء والنتائج المحتملة.",
+      "clear": "مسح",
+      "noTemplate": "لا يوجد نموذج موافقة مُعد لهذه الخدمة.",
+      "emptyContent": "محتوى الموافقة فارغ.",
+      "signatureRequired": "التوقيع مطلوب.",
+      "signing": "جارٍ التوقيع...",
+      "signFailed": "فشل توقيع الموافقة."
+    },
     "consents": "الموافقات",
     "signed_on": "تم التوقيع بتاريخ",
     "view": "عرض",
@@ -120,7 +136,7 @@
       "title": "مرحبًا, {{name}}",
       "subtitle": "جدول المواعيد والمهام اليومية الخاصة بك",
       "stats": {
-        "todayAppointments": "פגישות היום",
+        "todayAppointments": "مواعيد اليوم",
         "pendingTasks": "المهام المعلقة",
         "completedToday": "تم الإنجاز اليوم",
         "assignedClients": "إجمالي العملاء"
@@ -155,6 +171,33 @@
     "en": "الإنجليزية",
     "he": "العبرية",
     "ar": "العربية"
+  },
+   "header": {
+    "logout": "تسجيل الخروج"
+  },
+  "clientPhotos": {
+    "title": "صور قبل وبعد",
+    "before": "قبل",
+    "after": "بعد",
+    "uploadBefore": "تحميل صورة قبل",
+    "uploadAfter": "تحميل صورة بعد",
+    "uploadPlaceholder": "تحميل صورة",
+    "addPhotos": "+ إضافة صور",
+    "addPhotosCta": "إضافة الصور",
+    "uploadDate": "تاريخ التحميل",
+    "save": "حفظ",
+    "empty": "لا توجد صور بعد",
+    "delete": "حذف",
+    "deleteBefore": "حذف صورة قبل",
+    "deleteAfter": "حذف صورة بعد",
+    "deleteAll": "حذف الصورتين",
+    "confirmDeleteAll": "هل أنت متأكد من حذف الصورتين؟",
+    "errors": {
+      "loadFailed": "فشل تحميل الصور",
+      "uploadFailed": "فشل رفع الصور",
+      "deleteFailed": "فشل حذف الصورة",
+      "deleteAllFailed": "فشل حذف الصور"
+    }
   },
   "appointments": {
     "actions": {

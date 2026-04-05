@@ -45,7 +45,23 @@
     "clientHub": "Client Hub",
     "operations": "Operations"
   },
-  "consent": "Consent",
+  "consent": {
+    "title": "Consent Form",
+    "clientSignature": "Client Signature",
+    "preview": "Preview",
+    "edit": "Edit",
+    "signInstruction": "Sign inside the box, then click Sign Consent",
+    "confirmText": "I confirm I understand the procedure and possible outcomes",
+    "signButton": "Sign Consent",
+    "cancelButton": "Cancel",
+    "dynamicText": "On {{date}}, {{clientName}} consents to receive {{serviceName}} and acknowledges understanding of the procedure and possible outcomes.",
+    "clear": "Clear",
+    "noTemplate": "No consent template is configured for this service.",
+    "emptyContent": "Consent content is empty.",
+    "signatureRequired": "Signature is required.",
+    "signing": "Signing...",
+    "signFailed": "Failed to sign consent."
+  },
   "consents": "Consents",
   "signed_on": "Signed on",
   "view": "View",
@@ -156,6 +172,33 @@
     "en": "English",
     "he": "Hebrew",
     "ar": "Arabic"
+  },
+  "header": {
+    "logout": "Logout"
+  },
+  "clientPhotos": {
+    "title": "Before & After Photos",
+    "before": "Before",
+    "after": "After",
+    "uploadBefore": "Upload Before",
+    "uploadAfter": "Upload After",
+    "uploadPlaceholder": "Upload image",
+    "addPhotos": "+ Add Photos",
+    "addPhotosCta": "Add Photos",
+    "uploadDate": "Upload date",
+    "save": "Save",
+    "empty": "No photos yet",
+    "delete": "Delete",
+    "deleteBefore": "Delete before image",
+    "deleteAfter": "Delete after image",
+    "deleteAll": "Delete both images",
+    "confirmDeleteAll": "Are you sure you want to delete both images?",
+    "errors": {
+      "loadFailed": "Failed to load photos",
+      "uploadFailed": "Failed to upload photos",
+      "deleteFailed": "Failed to delete image",
+      "deleteAllFailed": "Failed to delete images"
+    }
   },
   "appointments": {
     "actions": {
@@ -705,7 +748,10 @@
     "prescriptionsDesc": "Show the prescription button in client profiles",
 
     "drugs": "Drugs Database",
-    "drugsDesc": "Enable the drugs database and related features"
+    "drugsDesc": "Enable the drugs database and related features",
+
+    "beforeAfterPhotos": "Before/After Photos",
+    "beforeAfterPhotosDesc": "Show before and after photo uploads in the client profile"
   },
   "common": {
     "edit": "Edit",

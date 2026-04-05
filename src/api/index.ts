@@ -7,6 +7,7 @@ import * as filesApi from './files'
 import * as profileApi from './profile'
 import * as clientsApi from './clients'
 import * as staffApi from './staff'
+import * as clientPhotosApi from './clientPhotosService'
 
 // Export service objects
 export const authService = authApi
@@ -17,6 +18,7 @@ export const filesService = filesApi
 export const profileService = profileApi
 export const clientsService = clientsApi
 export const staffService = staffApi
+export const clientPhotosService = clientPhotosApi
 
 // Export types
 export type { LoginRequest, LoginResponse, AuthUser } from './auth'

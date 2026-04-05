@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
 import {
-  Calendar,
-  Clock,
   User,
   Plus,
   Search,
@@ -175,6 +173,22 @@ const markNotDocumented = async (appointment: Appointment) => {
     })
   }
 
+  const getStatusBadgeClass = (status?: string) => {
+    switch ((status || '').toLowerCase()) {
+      case 'completed':
+        return 'bg-green-100 text-green-700'
+      case 'cancelled':
+      case 'noshow':
+        return 'bg-red-100 text-red-700'
+      case 'scheduled':
+      case 'waiting':
+      case 'inprogress':
+        return 'bg-yellow-100 text-yellow-700'
+      default:
+        return 'bg-slate-100 text-slate-700'
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -265,6 +279,10 @@ const markNotDocumented = async (appointment: Appointment) => {
                   </th>
 
                   <th className="px-6 py-3 text-xs text-center">
+                    {t('appointments.table.status')}
+                  </th>
+
+                  <th className="px-6 py-3 text-xs text-center">
                     {t('common.actions')}
                   </th>
                 </tr>
@@ -273,14 +291,17 @@ const markNotDocumented = async (appointment: Appointment) => {
               <tbody>
                {filteredAppointments.map((appointment) => {
                   const isNotDocumented = appointment.isDocumented === false
+                  const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id)
+                  const isSelected = consentAppointment?.id === appointment.id
                   return (
                       <tr
                         key={appointment.id}
-                        className={`hover:bg-slate-50 relative 
+                        className={`px-4 py-3 rounded-xl hover:bg-slate-50 transition relative 
+                          ${isSelected ? 'bg-blue-50 border border-blue-100' : ''}
                           ${isNotDocumented ? 'bg-red-50' : ''}
                         `}
                       >
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                       <div
                         className="flex items-center gap-3 cursor-pointer hover:bg-blue-50 rounded p-1"
                         onClick={() => {
@@ -290,71 +311,57 @@ const markNotDocumented = async (appointment: Appointment) => {
                         title={appointment.clientName}
                       >
                         <User className="w-5 h-5 text-primary" />
-                        <div>
-                          <div className={`font-medium hover:underline ${isNotDocumented ? 'text-red-600' : ''}`}>
+                        <div className="flex flex-col">
+                          <span className={`font-semibold text-slate-800 hover:underline ${isNotDocumented ? 'text-red-600' : ''}`}>
                             {appointment.clientName ?? '-'}
-                          </div>
-                          <div className="text-xs text-slate-500">
+                          </span>
+                          <span className="text-xs text-slate-500">
                             {appointment.serviceName ?? '-'}
+                          </span>
+                          <div className="mt-1">
+                            {hasConsent ? (
+                              <span className="flex items-center gap-1 text-green-600 text-xs font-medium opacity-80" title="הסכמה כבר נחתמה">
+                                <CheckCircle className="w-3 h-3" />
+                                נחתם
+                              </span>
+                            ) : (
+                              <span
+                                className="flex items-center gap-1 text-blue-600 text-xs font-medium cursor-pointer hover:underline opacity-80 hover:opacity-100"
+                                title="לחץ לחתימה"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setConsentAppointment(appointment)
+                                }}
+                              >
+                                <FileSignature className="w-3 h-3" />
+                                חתום על הסכמה
+                              </span>
+                            )}
                           </div>
-                          {(() => {
-                            const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id)
-
-                            return (
-                              <div className="text-xs font-medium">
-                                {hasConsent ? (
-                                  <span className="flex items-center gap-1 text-green-600 text-xs font-medium" title="הסכמה כבר נחתמה">
-                                    <CheckCircle className="w-3 h-3" />
-                                    נחתם
-                                  </span>
-                                ) : (
-                                  <span
-                                    className="flex items-center gap-1 text-blue-600 text-xs font-medium cursor-pointer hover:underline"
-                                    title="לחץ לחתימה"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setConsentAppointment(appointment)
-                                    }}
-                                  >
-                                    <FileSignature className="w-3 h-3" />
-                                    חתום על הסכמה
-                                  </span>
-                                )}
-                              </div>
-                            )
-                          })()}
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col text-sm">
+                        <span className="text-slate-800">
                         {formatDate(appointment.startTime)}
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <Clock className="w-4 h-4" />
+                        </span>
+                        <span className="text-xs text-slate-500">
                         {formatTime(appointment.startTime)}
+                        </span>
                       </div>
                     </td>
 
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       {appointment.staffName ?? '-'}
                     </td>
 
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2 flex-wrap">
                         
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-semibold
-                            ${appointment.status === AppointmentStatus.Scheduled && 'bg-blue-100 text-blue-700'}
-                            ${appointment.status === AppointmentStatus.Waiting && 'bg-yellow-100 text-yellow-700'}
-                            ${appointment.status === AppointmentStatus.InProgress && 'bg-purple-100 text-purple-700'}
-                            ${appointment.status === AppointmentStatus.Completed && 'bg-green-100 text-green-700'}
-                            ${appointment.status === AppointmentStatus.Cancelled && 'bg-red-100 text-red-700'}
-                            ${appointment.status === AppointmentStatus.NoShow && 'bg-gray-100 text-gray-700'}
-                          `}
+                          className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusBadgeClass(appointment.status)}`}
                         >
                           {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
                         </span>
@@ -367,7 +374,7 @@ const markNotDocumented = async (appointment: Appointment) => {
 
                       </div>
                     </td>
-                        <td className="px-6 py-4 text-end">
+                        <td className="px-4 py-3 text-end">
                         <div className="flex items-center gap-2 justify-end flex-wrap">
                           {/* Quick Actions */}
                           {appointment.status === 'Scheduled' && (
@@ -411,15 +418,16 @@ const markNotDocumented = async (appointment: Appointment) => {
                           )}
 
 
-                          {/* Edit/Delete */}
-                          <Edit
-                            className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
-                            onClick={() => setEditingAppointment(appointment)}
-                          />
-                          <Trash2
-                            className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
-                            onClick={() => handleDelete(appointment.id)}
-                          />
+                          <div className="flex gap-2 opacity-70 hover:opacity-100">
+                            <Edit
+                              className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
+                              onClick={() => setEditingAppointment(appointment)}
+                            />
+                            <Trash2
+                              className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
+                              onClick={() => handleDelete(appointment.id)}
+                            />
+                          </div>
                         </div>
                       </td>
                   </tr>
