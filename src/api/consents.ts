@@ -48,8 +48,12 @@ async createTemplate(data: {name: string, serviceId: string, content: string}) {
     return apiClient.get<SignedConsent[]>(`/api/consents/client/${clientId}`)
   },
 
-  async getById(consentId: string) {
-    return apiClient.get<SignedConsent>(`/api/consents/${consentId}`)
+  async getById(id: string) {
+    return apiClient.get<SignedConsent>(`/api/consents/${id}`)
+  },
+
+  async deleteConsent(id: string) {
+    return apiClient.del(`/api/consents/${id}`)
   },
 
   async downloadPdf(consentId: string) {

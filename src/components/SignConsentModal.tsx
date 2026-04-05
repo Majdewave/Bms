@@ -30,24 +30,19 @@ export default function SignConsentModal({
   const [loading, setLoading] = useState(false)
   const [signing, setSigning] = useState(false)
   const [template, setTemplate] = useState<ConsentTemplate | null>(null)
+  const [editableContent, setEditableContent] = useState('')
+  const [isEditing, setIsEditing] = useState(false)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawingRef = useRef(false)
 
-
-  console.log("SIGN PAYLOAD:", {
-  templateId: template?.id,
-  clientId,
-  appointmentId,
-  serviceId,
-  consentContent: template?.content,
-})
 
   useEffect(() => {
     if (!isOpen) return
 
     if (!serviceId) {
       setTemplate(null)
+      setEditableContent('')
       return
     }
 
@@ -88,6 +83,10 @@ export default function SignConsentModal({
       date: new Date().toLocaleDateString(),
     })
   }, [template, clientName, serviceName])
+
+  useEffect(() => {
+    setEditableContent(renderedHtml)
+  }, [renderedHtml])
 
   const getPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
@@ -158,7 +157,7 @@ export default function SignConsentModal({
       return
     }
 
-    if (!renderedHtml.trim()) {
+    if (!editableContent.trim()) {
       alert('Rendered consent content is empty')
       return
     }
@@ -175,7 +174,7 @@ export default function SignConsentModal({
         clientId,
         appointmentId,
         serviceId: serviceId || undefined,
-        consentContent: renderedHtml,
+        consentContent: editableContent,
         clientSignatureBase64: signature,
       })
       onSigned?.()
@@ -212,7 +211,42 @@ export default function SignConsentModal({
                 No consent template is configured for this service.
               </div>
             ) : (
-              <div className="prose prose-sm max-w-none text-slate-700" dangerouslySetInnerHTML={{ __html: renderedHtml }} />
+              <>
+                <div className="flex items-center justify-end gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className={`px-3 py-1.5 rounded-lg text-xs border ${
+                      isEditing
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-slate-700 border-slate-300'
+                    }`}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className={`px-3 py-1.5 rounded-lg text-xs border ${
+                      !isEditing
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-slate-700 border-slate-300'
+                    }`}
+                  >
+                    Preview
+                  </button>
+                </div>
+
+                {isEditing ? (
+                  <textarea
+                    value={editableContent}
+                    onChange={(e) => setEditableContent(e.target.value)}
+                    className="w-full h-full min-h-[400px] p-4 border rounded-lg text-sm font-mono"
+                  />
+                ) : (
+                  <div className="prose prose-sm max-w-none text-slate-700" dangerouslySetInnerHTML={{ __html: editableContent }} />
+                )}
+              </>
             )}
           </div>
 

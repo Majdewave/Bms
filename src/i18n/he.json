@@ -21,28 +21,38 @@
         "staffDeleted": "איש צוות נמחק"
       }
   },
-  "waitingCount": "מספר ממתינים",
+  "waitingCount": "ממתין בתור: {{count}}",
   "nextPatient": "המטופל הבא",
   "currentPatient": "המטופל הנוכחי",
   "none": "אין",
   "showOnlyNotDocumented": "הצג רק לא מתועדים",
-  "notDocumentedClients": "לקוחות לא מתועדים: {{count}}",  "settings": {
+  "notDocumentedClients": "לקוחות לא מתועדים: {{count}}",
+  "settings": {
     "deleteLogo": "מחק לוגו",
     "uploadLogo": "העלה לוגו חדש",
     "noLogo": "אין לוגו",
-    "autoDeleteTitle": "מחק לקוחות לא מתועדים באופן אוטומטי",
-    "enableAutoDelete": "הפוך את המחיקה האוטומטית",
+    "autoDeleteTitle": "מחיקה אוטומטית של לקוחות לא מתועדים",
+    "enableAutoDelete": "אפשר מחיקה אוטומטית",
     "autoDeleteOff": "מחיקה אוטומטית כבויה",
     "daysBeforeDeletion": "ימים לפני מחיקה",
-    "runCleanup": "הפעל ניקיון עכשיו",
-    "cleanupCompleted": "הניקיון הושלם",
+    "runCleanup": "הפעל ניקוי עכשיו",
+    "cleanupCompleted": "הניקוי הושלם",
     "autoDeleteDescription": "לקוחות המסומנים כ\"לא מתועדים\" יימחקו באופן אוטומטי לאחר מספר הימים שנבחר."
-  },  "app": {
+  },
+  "app": {
     "name": "Clienta",
     "tagline": "Client Management Made Simple",
     "clientHub": "Client Hub",
     "operations": "Operations"
   },
+  "consent": "הסכמה",
+  "consents": "הסכמות",
+  "signed_on": "נחתם בתאריך",
+  "view": "צפייה",
+  "download_pdf": "PDF",
+  "delete": "מחק",
+  "consent_document": "מסמך הסכמה",
+  "are_you_sure": "האם אתה בטוח?",
   "common": {
     "edit": "עריכה",
     "delete": "מחיקה",
@@ -58,6 +68,8 @@
     "sending": "שולח...",
     "loading": "טוען...",
     "noResults": "לא נמצאו תוצאות",
+    "client_signature": "חתימת לקוח",
+    "doctor_signature": "חתימת רופא",
     "off": "כבוי",
     "email": "אימייל",
     "phone": "טלפון",
@@ -145,13 +157,6 @@
     "ar": "ערבית"
   },
   "appointments": {
-    "actions": {
-      "arrived": "הגיע",
-      "start": "התחל טיפול",
-      "complete": "סיום",
-      "cancel": "ביטול",
-      "noshow": "לא הגיע"
-    },
     "title": "פגישות",
     "new": "פגישה חדשה",
     "subtitle": "נהל את כל הפגישות של הלקוחות",

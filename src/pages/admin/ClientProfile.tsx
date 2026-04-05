@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, FileText, Eye, Download } from "lucide-react"
+import { ChevronDown, FileText } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFeatures } from "@/contexts/FeatureContext"
 import * as apiClient from "@/api/apiClient"
@@ -66,8 +66,8 @@ export default function ClientProfile() {
   const [notes, setNotes] = useState<Note[]>([])
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
   const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
-  const [viewConsent, setViewConsent] = useState<ConsentViewRecord | null>(null)
-  const [loadingConsentView, setLoadingConsentView] = useState(false)
+  const [selectedConsent, setSelectedConsent] = useState<ConsentViewRecord | null>(null)
+  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false)
   const [drugs, setDrugs] = useState([
     { drugId: '', name: '', dosage: '', display: '' }
   ])
@@ -96,6 +96,18 @@ export default function ClientProfile() {
         ? prev.filter((id) => id !== sectionId)
         : [...prev, sectionId]
     )
+  }
+
+  const reloadConsents = async (clientId = id) => {
+    if (!clientId || clientId === 'new') return
+
+    try {
+      const consentsData = await consentsApi.getSignedByClient(clientId)
+      setSignedConsents(Array.isArray(consentsData) ? consentsData : [])
+    } catch (error) {
+      console.error('Failed loading consents:', error)
+      setSignedConsents([])
+    }
   }
 
   useEffect(() => {
@@ -146,8 +158,6 @@ export default function ClientProfile() {
         const prescriptionsData = await apiClient.get<Prescription[]>(
           `/api/prescriptions/client/${id}`
         )
-        const consentsData = await consentsApi.getSignedByClient(id)
-
         setNotes(Array.isArray(notesData) ? notesData : [])
         
         // Remove duplicates from fetched prescriptions
@@ -158,7 +168,7 @@ export default function ClientProfile() {
           : []
         
         setPrescriptions(unique)
-        setSignedConsents(Array.isArray(consentsData) ? consentsData : [])
+        await reloadConsents(id)
 
       } catch (err) {
         console.error("Load client failed:", err)
@@ -445,14 +455,28 @@ export default function ClientProfile() {
 
   const openConsent = async (consentId: string) => {
     try {
-      setLoadingConsentView(true)
-      const fullConsent = await consentsApi.getById(consentId)
-      setViewConsent(fullConsent)
+      const consent = await consentsApi.getById(consentId)
+      setSelectedConsent(consent)
+      setIsConsentModalOpen(true)
+    } catch (err) {
+      console.error('Failed loading consent:', err)
+    }
+  }
+
+  const handleDeleteConsent = async (consentId: string) => {
+    if (!confirm(t('are_you_sure'))) return
+
+    try {
+      await consentsApi.deleteConsent(consentId)
+
+      if (selectedConsent?.id === consentId) {
+        setSelectedConsent(null)
+        setIsConsentModalOpen(false)
+      }
+
+      await reloadConsents()
     } catch (error) {
-      console.error('Failed loading consent:', error)
-      alert('Failed to load consent')
-    } finally {
-      setLoadingConsentView(false)
+      console.error('Failed deleting consent:', error)
     }
   }
 
@@ -844,7 +868,7 @@ export default function ClientProfile() {
         >
           <div className="flex items-center justify-between gap-3">
             <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? "text-right" : "text-left"}`}>
-              Signed Consents
+              {t('consents')}
             </h3>
             <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
               {signedConsents.length}
@@ -860,38 +884,45 @@ export default function ClientProfile() {
         {openSections.includes("consents") && (
           <div className="px-6 pb-6 space-y-4">
             {signedConsents.length === 0 ? (
-              <div className="text-gray-500">No signed consents yet.</div>
+              <div className="text-gray-500">{t('common.noResults')}</div>
             ) : (
               <div className="space-y-3">
-                {signedConsents.map((consent) => (
-                  <div
-                    key={consent.id}
-                    className="border border-slate-200 rounded-xl p-4 flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="font-medium text-slate-800">{consent.serviceName || 'Consent'}</div>
-                      <div className="text-sm text-slate-500">
-                        Signed on {new Date(consent.signedAt).toLocaleString(i18n.language)}
+                {signedConsents.map((consent) => {
+                  console.log('CONSENT DATA:', consent)
+
+                  return (
+                    <div
+                      key={consent.id}
+                      className="border border-slate-200 rounded-xl p-4 flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="font-semibold text-slate-800">
+                          {consent.templateName || (consent.serviceName ? `${t('consent_document')} - ${consent.serviceName}` : t('consent_document'))}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {t('signed_on')} {formatDate(consent.signedAt)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ActionButton
+                          label={t('view')}
+                          variant="secondary"
+                          onClick={() => openConsent(consent.id)}
+                        />
+                        <ActionButton
+                          label={t('download_pdf')}
+                          variant="primary"
+                          onClick={() => downloadConsentPdf(consent.id)}
+                        />
+                        <ActionButton
+                          label={t('delete')}
+                          variant="danger"
+                          onClick={() => handleDeleteConsent(consent.id)}
+                        />
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => openConsent(consent.id)}
-                        className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm"
-                      >
-                        <Eye className="w-4 h-4" />
-                        View
-                      </button>
-                      <button
-                        onClick={() => downloadConsentPdf(consent.id)}
-                        className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
-                      >
-                        <Download className="w-4 h-4" />
-                        PDF
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
@@ -956,7 +987,7 @@ export default function ClientProfile() {
                         updateDrug(index, {
                           drugId: drugData.id,
                           name: drugData.name,
-                          dosage: drugData.dosage,
+                          dosage: drugData.dosage || '',
                           display
                         });
                       }}
@@ -1047,74 +1078,105 @@ export default function ClientProfile() {
         </div>
       )}
 
-      {viewConsent && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-slate-900">Signed Consent</h3>
-              <button
-                onClick={() => setViewConsent(null)}
-                className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700"
-              >
-                {t('common.close')}
-              </button>
-            </div>
-
-            {loadingConsentView ? (
-              <div className="text-slate-500">Loading consent...</div>
-            ) : (
-              <>
-                <div
-                  className="border border-slate-200 rounded-xl p-5 prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: viewConsent.consentContent }}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-slate-200 rounded-xl p-4">
-                    <div className="text-sm text-slate-500 mb-2">Client Signature</div>
-                    {resolveAssetUrl(viewConsent.clientSignatureUrl) ? (
-                      <img
-                        src={resolveAssetUrl(viewConsent.clientSignatureUrl)!}
-                        alt="Client signature"
-                        className="h-24 object-contain"
-                      />
-                    ) : (
-                      <div className="text-slate-400 text-sm">No signature</div>
-                    )}
-                  </div>
-                  <div className="border border-slate-200 rounded-xl p-4">
-                    <div className="text-sm text-slate-500 mb-2">Doctor Signature</div>
-                    {resolveAssetUrl(viewConsent.doctorSignatureUrl) ? (
-                      <img
-                        src={resolveAssetUrl(viewConsent.doctorSignatureUrl)!}
-                        alt="Doctor signature"
-                        className="h-24 object-contain"
-                      />
-                    ) : (
-                      <div className="text-slate-400 text-sm">No doctor signature</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => downloadConsentPdf(viewConsent.id)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download PDF
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      <ConsentViewModal
+        isOpen={isConsentModalOpen}
+        consent={selectedConsent}
+        onClose={() => setIsConsentModalOpen(false)}
+        onDownload={() => selectedConsent && downloadConsentPdf(selectedConsent.id)}
+        resolveAssetUrl={resolveAssetUrl}
+        t={t}
+      />
     </div>
   )
 }
 
 /* ================= COMPONENTS ================= */
+
+function ActionButton({ label, onClick, variant, disabled }: any) {
+  const base = 'px-3 py-1.5 rounded-lg text-sm flex items-center gap-1'
+
+  const styles = {
+    primary: 'bg-blue-600 text-white',
+    secondary: 'border border-slate-300 text-slate-700',
+    danger: 'text-red-500',
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`${base} ${styles[variant as keyof typeof styles] || styles.secondary} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+    >
+      {label}
+    </button>
+  )
+}
+
+function ConsentViewModal({ isOpen, consent, onClose, onDownload, resolveAssetUrl, t }: any) {
+  if (!isOpen || !consent) return null
+
+  console.log('Doctor signature:', consent.doctorSignatureUrl)
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-slate-900">
+            {consent.templateName || (consent.serviceName ? `${t('consent_document')} - ${consent.serviceName}` : t('consent_document'))}
+          </h3>
+          <button
+            onClick={onClose}
+            className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700"
+          >
+            {t('common.close')}
+          </button>
+        </div>
+
+        <div
+          className="border border-slate-200 rounded-xl p-5 prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: consent.consentContent }}
+        />
+
+        <div className="grid grid-cols-2 gap-6 mt-6">
+          <div className="text-center">
+            <div className="text-sm text-slate-500 mb-2">חתימת רופא</div>
+            {consent.doctorSignatureUrl ? (
+              <img
+                src={resolveAssetUrl(consent.doctorSignatureUrl) || consent.doctorSignatureUrl}
+                alt="Doctor signature"
+                className="h-16 object-contain mx-auto"
+              />
+            ) : (
+              <span className="text-slate-400">אין</span>
+            )}
+          </div>
+
+          <div className="text-center">
+            <div className="text-sm text-slate-500 mb-2">חתימת לקוח</div>
+            {consent.clientSignatureUrl ? (
+              <img
+                src={resolveAssetUrl(consent.clientSignatureUrl) || consent.clientSignatureUrl}
+                alt="Client signature"
+                className="h-16 object-contain mx-auto"
+              />
+            ) : (
+              <span className="text-slate-400">אין</span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <ActionButton
+            label={t('download_pdf')}
+            variant="primary"
+            onClick={onDownload}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function Field({ label, name, value, editing, onChange, isRTL }: any) {
 
