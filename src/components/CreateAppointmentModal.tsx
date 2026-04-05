@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { appointmentsService, type AppointmentClient } from '@/api'
+import { consentsApi, type SignedConsent } from '@/api/consents'
 import { servicesService, type BusinessService } from '@/api/servicesService'
 import { staffService, type StaffMember } from '@/api/staff'
 import { useTranslation } from 'react-i18next'
@@ -37,6 +38,7 @@ export default function CreateAppointmentModal({
   const [clients, setClients] = useState<AppointmentClient[]>([])
   const [services, setServices] = useState<BusinessService[]>([])
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
+  const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
   const [saving, setSaving] = useState(false)
   const [showConsentModal, setShowConsentModal] = useState(false)
 
@@ -85,6 +87,25 @@ export default function CreateAppointmentModal({
       }
     }
   }, [formData.serviceId, services])
+
+  useEffect(() => {
+    const loadSignedConsents = async () => {
+      if (mode !== 'edit' || !formData.clientId) {
+        setSignedConsents([])
+        return
+      }
+
+      try {
+        const data = await consentsApi.getSignedByClient(formData.clientId)
+        setSignedConsents(Array.isArray(data) ? data : [])
+      } catch (error) {
+        console.error('Failed loading signed consents:', error)
+        setSignedConsents([])
+      }
+    }
+
+    loadSignedConsents()
+  }, [mode, formData.clientId])
 
   const loadClients = async () => {
     const data = await appointmentsService.getClientsForAppointment()
@@ -144,6 +165,7 @@ export default function CreateAppointmentModal({
 
   const selectedClient = clients.find(c => c.id === formData.clientId)
   const selectedService = services.find(s => s.id === formData.serviceId)
+  const hasConsent = !!appointment?.id && signedConsents.some(c => c.appointmentId === appointment.id)
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -205,10 +227,17 @@ export default function CreateAppointmentModal({
               <div className="flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setShowConsentModal(true)}
-                  className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                  disabled={hasConsent}
+                  title={hasConsent ? 'הסכמה כבר נחתמה' : undefined}
+                  onClick={!hasConsent ? () => setShowConsentModal(true) : undefined}
+                  className={`
+                    px-3 py-1.5 rounded-lg text-sm flex items-center gap-1
+                    ${hasConsent
+                      ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}
+                  `}
                 >
-                  Sign Consent
+                  {hasConsent ? 'נחתם ✔' : 'חתום על הסכמה ▶'}
                 </button>
               </div>
             )}
@@ -318,7 +347,13 @@ export default function CreateAppointmentModal({
           serviceId={formData.serviceId}
           serviceName={selectedService?.name || ''}
           onClose={() => setShowConsentModal(false)}
-          onSigned={() => setShowConsentModal(false)}
+          onSigned={async () => {
+            setShowConsentModal(false)
+            if (formData.clientId) {
+              const data = await consentsApi.getSignedByClient(formData.clientId)
+              setSignedConsents(Array.isArray(data) ? data : [])
+            }
+          }}
         />
       )}
     </div>
