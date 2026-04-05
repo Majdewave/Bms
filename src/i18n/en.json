@@ -493,6 +493,7 @@
       "form": {
         "name": "Full Name",
         "namePlaceholder": "Enter client's full name",
+        "idNumberPlaceholder": "Enter ID number",
         "email": "Email Address",
         "emailPlaceholder": "client@example.com",
         "phone": "Phone Number",
@@ -500,6 +501,7 @@
         "dateOfBirth": "Date of Birth",
         "address": "Address",
         "addressPlaceholder": "Enter client's address",
+        "notePlaceholder": "Add an internal note",
         "submit": "Add Client",
         "update": "Update Client",
         "internalNote": "Internal Note",

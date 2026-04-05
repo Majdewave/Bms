@@ -488,6 +488,7 @@
       "form": {
         "name": "الاسم الكامل",
         "namePlaceholder": "أدخل الاسم الكامل للعميل",
+        "idNumberPlaceholder": "أدخل رقم الهوية",
         "email": "البريد الإلكتروني",
         "emailPlaceholder": "client@example.com",
         "phone": "رقم الهاتف",
@@ -495,6 +496,7 @@
         "dateOfBirth": "تاريخ الميلاد",
         "address": "العنوان",
         "addressPlaceholder": "أدخل عنوان العميل",
+        "notePlaceholder": "أضف ملاحظة داخلية",
         "submit": "أضف عميل",
         "update": "تحديث العميل"
         ,"internalNote": "ملاحظة داخلية",

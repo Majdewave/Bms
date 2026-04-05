@@ -482,6 +482,7 @@
       "form": {
         "name": "שם מלא",
         "namePlaceholder": "הזן את השם המלא של הלקוח",
+        "idNumberPlaceholder": "הזן מספר תעודת זהות",
         "email": "כתובת דוא\"ל",
         "emailPlaceholder": "client@example.com",
         "phone": "מספר טלפון",
@@ -489,6 +490,7 @@
         "dateOfBirth": "תאריך לידה",
         "address": "כתובת",
         "addressPlaceholder": "הזן את כתובת הלקוח",
+        "notePlaceholder": "הוסף הערה פנימית",
         "submit": "הוסף לקוח",
         "update": "עדכן לקוח"
         ,"internalNote": "הערה פנימית",

@@ -48,7 +48,13 @@ export default function CreateClientModal({ onClose, onCreated }) {
           {error && <div className="text-red-500 text-sm">{error}</div>}
           <div className="flex justify-end gap-2">
             <button type="button" className="btn btn-secondary" onClick={onClose}>{t('common.cancel')}</button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? t('common.saving') : t('admin.clients.form.submit')}</button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-primary-600 text-white font-medium shadow-sm hover:bg-primary-700 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {saving ? t('common.saving') : t('admin.clients.form.submit')}
+            </button>
           </div>
         </form>
       </div>

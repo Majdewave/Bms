@@ -203,8 +203,8 @@ export default function SignConsentModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" dir={dir}>
-      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 sm:p-6" dir={dir}>
+      <div className="w-full max-w-4xl max-h-[88vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-slate-900">{t('consent.title')}</h3>
@@ -215,8 +215,8 @@ export default function SignConsentModal({
           </button>
         </div>
 
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 max-h-[72vh] overflow-y-auto">
-          <div className="border border-slate-200 rounded-xl bg-slate-50 p-5 min-h-[420px]">
+        <div className="flex-1 min-h-0 p-5 grid grid-cols-1 lg:grid-cols-2 gap-5 overflow-y-auto">
+          <div className="border border-slate-200 rounded-xl bg-slate-50 p-4 min-h-[320px]">
             {loading ? (
               <div className="text-slate-500 text-sm">{t('common.loading')}</div>
             ) : !template ? (
@@ -254,7 +254,7 @@ export default function SignConsentModal({
                   <textarea
                     value={editableContent}
                     onChange={(e) => setEditableContent(e.target.value)}
-                    className="w-full h-full min-h-[400px] p-4 border rounded-lg text-sm font-mono"
+                    className="w-full h-full min-h-[300px] p-4 border rounded-lg text-sm font-mono"
                   />
                 ) : (
                   <div className="prose prose-sm max-w-none text-slate-700" dangerouslySetInnerHTML={{ __html: editableContent }} />
@@ -283,7 +283,7 @@ export default function SignConsentModal({
               onMouseMove={draw}
               onMouseUp={endDraw}
               onMouseLeave={endDraw}
-              className="w-full h-[220px] border border-dashed border-slate-300 rounded-xl bg-white touch-none"
+              className="w-full h-[190px] border border-dashed border-slate-300 rounded-xl bg-white touch-none"
             />
             <p className="text-xs text-slate-500">{t('consent.signInstruction')}</p>
             <p className="text-xs text-slate-600">{t('consent.confirmText')}</p>
