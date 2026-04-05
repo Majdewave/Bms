@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, FileText } from "lucide-react"
+import { ChevronDown, FileText, Eye, Download } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useFeatures } from "@/contexts/FeatureContext"
 import * as apiClient from "@/api/apiClient"
 import DrugAutocomplete from '@/components/DrugAutocomplete'
+import { consentsApi, type SignedConsent } from '@/api/consents'
 
 interface Client {
   id: string
@@ -30,14 +31,7 @@ interface Prescription {
   id: string
   date: string
   doctorName: string
-  drugs?: string[]
-}
-
-interface Drug {
-  id: string
-  name: string
-  dosage?: string
-  display: string
+  drugs?: Array<string | { display: string }>
 }
 
 interface CurrentStaff {
@@ -45,6 +39,11 @@ interface CurrentStaff {
    fullName?: string
   stampUrl?: string
   useStamp?: boolean
+}
+
+type ConsentViewRecord = SignedConsent & {
+  clientSignatureUrl?: string | null
+  doctorSignatureUrl?: string | null
 }
 
 export default function ClientProfile() {
@@ -66,6 +65,9 @@ export default function ClientProfile() {
   const [client, setClient] = useState<Client | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
+  const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
+  const [viewConsent, setViewConsent] = useState<ConsentViewRecord | null>(null)
+  const [loadingConsentView, setLoadingConsentView] = useState(false)
   const [drugs, setDrugs] = useState([
     { drugId: '', name: '', dosage: '', display: '' }
   ])
@@ -144,6 +146,7 @@ export default function ClientProfile() {
         const prescriptionsData = await apiClient.get<Prescription[]>(
           `/api/prescriptions/client/${id}`
         )
+        const consentsData = await consentsApi.getSignedByClient(id)
 
         setNotes(Array.isArray(notesData) ? notesData : [])
         
@@ -155,6 +158,7 @@ export default function ClientProfile() {
           : []
         
         setPrescriptions(unique)
+        setSignedConsents(Array.isArray(consentsData) ? consentsData : [])
 
       } catch (err) {
         console.error("Load client failed:", err)
@@ -211,7 +215,7 @@ export default function ClientProfile() {
     setDrugs(prev => prev.length === 1 ? [{ drugId: '', name: '', dosage: '', display: '' }] : prev.filter((_, i) => i !== index));
   }
 
-  const updateDrug = (index: number, drugObj: { drugId: string; name: string; dosage?: string; display: string }) => {
+  const updateDrug = (index: number, drugObj: { drugId: string; name: string; dosage: string; display: string }) => {
     setDrugs(prev => prev.map((d, i) => (i === index ? drugObj : d)));
   }
 
@@ -363,17 +367,6 @@ export default function ClientProfile() {
     }
   }
 
-  const handleDrugChange = (index: number, value: any) => {
-    updateDrug(index, value)
-    if (errors.drugs) {
-      const hasDrugs = drugs.some((d, i) => (i === index ? (value.display || '').trim() : (d.display || '').trim()).length > 0)
-      const hasInstructions = instructions.trim().length > 0
-      if (hasDrugs || hasInstructions) {
-        setErrors(prev => ({ ...prev, drugs: false }))
-      }
-    }
-  }
-
   const handleInstructionsChange = (value: string) => {
     setInstructions(value)
     if (errors.instructions) {
@@ -441,6 +434,43 @@ export default function ClientProfile() {
 
     setPrescriptions(prev => prev.filter(p => p.id !== id))
     alert("המרשם נמחק")
+  }
+
+  const resolveAssetUrl = (url?: string | null) => {
+    if (!url) return null
+    if (url.startsWith('http')) return url
+    const baseUrl = (import.meta as any).env.VITE_API_URL || 'http://localhost:5146'
+    return `${baseUrl}${url}`
+  }
+
+  const openConsent = async (consentId: string) => {
+    try {
+      setLoadingConsentView(true)
+      const fullConsent = await consentsApi.getById(consentId)
+      setViewConsent(fullConsent)
+    } catch (error) {
+      console.error('Failed loading consent:', error)
+      alert('Failed to load consent')
+    } finally {
+      setLoadingConsentView(false)
+    }
+  }
+
+  const downloadConsentPdf = async (consentId: string) => {
+    try {
+      const blob = await consentsApi.downloadPdf(consentId)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'consent.pdf'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed downloading consent PDF:', error)
+      alert('Failed to download consent PDF')
+    }
   }
 
   /* ================================
@@ -806,6 +836,68 @@ export default function ClientProfile() {
         )}
       </div>
 
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection("consents")}
+          className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? "text-right" : "text-left"}`}>
+              Signed Consents
+            </h3>
+            <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+              {signedConsents.length}
+            </span>
+          </div>
+          <ChevronDown
+            className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
+              openSections.includes("consents") ? "rotate-180" : "rotate-0"
+            }`}
+          />
+        </button>
+
+        {openSections.includes("consents") && (
+          <div className="px-6 pb-6 space-y-4">
+            {signedConsents.length === 0 ? (
+              <div className="text-gray-500">No signed consents yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {signedConsents.map((consent) => (
+                  <div
+                    key={consent.id}
+                    className="border border-slate-200 rounded-xl p-4 flex items-center justify-between"
+                  >
+                    <div>
+                      <div className="font-medium text-slate-800">{consent.serviceName || 'Consent'}</div>
+                      <div className="text-sm text-slate-500">
+                        Signed on {new Date(consent.signedAt).toLocaleString(i18n.language)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => openConsent(consent.id)}
+                        className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
+                      </button>
+                      <button
+                        onClick={() => downloadConsentPdf(consent.id)}
+                        className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
+                      >
+                        <Download className="w-4 h-4" />
+                        PDF
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {showPrescriptionModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto" dir="rtl">
@@ -951,6 +1043,70 @@ export default function ClientProfile() {
                 {savingPrescription ? 'שומר...' : 'שמירה'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {viewConsent && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900">Signed Consent</h3>
+              <button
+                onClick={() => setViewConsent(null)}
+                className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700"
+              >
+                {t('common.close')}
+              </button>
+            </div>
+
+            {loadingConsentView ? (
+              <div className="text-slate-500">Loading consent...</div>
+            ) : (
+              <>
+                <div
+                  className="border border-slate-200 rounded-xl p-5 prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: viewConsent.consentContent }}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border border-slate-200 rounded-xl p-4">
+                    <div className="text-sm text-slate-500 mb-2">Client Signature</div>
+                    {resolveAssetUrl(viewConsent.clientSignatureUrl) ? (
+                      <img
+                        src={resolveAssetUrl(viewConsent.clientSignatureUrl)!}
+                        alt="Client signature"
+                        className="h-24 object-contain"
+                      />
+                    ) : (
+                      <div className="text-slate-400 text-sm">No signature</div>
+                    )}
+                  </div>
+                  <div className="border border-slate-200 rounded-xl p-4">
+                    <div className="text-sm text-slate-500 mb-2">Doctor Signature</div>
+                    {resolveAssetUrl(viewConsent.doctorSignatureUrl) ? (
+                      <img
+                        src={resolveAssetUrl(viewConsent.doctorSignatureUrl)!}
+                        alt="Doctor signature"
+                        className="h-24 object-contain"
+                      />
+                    ) : (
+                      <div className="text-slate-400 text-sm">No doctor signature</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => downloadConsentPdf(viewConsent.id)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download PDF
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -1,5 +1,4 @@
 import { get, post, put, del } from './apiClient'
-import type { AppointmentStatus } from './appointments';
 
 
 const normalizeStatus = (status: string) => {
@@ -17,14 +16,18 @@ const normalizeStatus = (status: string) => {
 export interface Appointment {
   id: string
   clientId: string
+  clientName: string
+  clientEmail?: string | null
+  serviceName?: string | null
   startTime: string
   endTime: string
   notes?: string | null
   serviceId?: string | null
   staffId?: string | null
   staffName?: string | null
-  status: AppointmentStatus
+  status: string
   isDocumented: boolean
+  hasSignedConsent?: boolean
 }
 
 export const appointmentsService = {
@@ -62,14 +65,15 @@ export const appointmentsService = {
 
   async updateAppointment(
     id: string,
-    payload: {
+    payload: Partial<{
       startTime: string
       endTime: string
       status: string
       notes?: string | null
       staffId?: string | null
       serviceId?: string | null
-    }
+      isDocumented?: boolean
+    }>
   ): Promise<void> {
     return await put<void>(`/api/appointments/${id}`, payload)
   },

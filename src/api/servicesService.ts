@@ -4,6 +4,8 @@ export interface BusinessService {
   id: string;
   name: string;
   defaultDurationMinutes: number;
+  consentTemplateId?: string | null;
+  consentTemplateContent?: string | null;
 }
 
 export const servicesService = {

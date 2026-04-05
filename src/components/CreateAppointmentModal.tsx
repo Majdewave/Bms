@@ -1,16 +1,27 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
-import { appointmentsService, type AppointmentClient, type Appointment } from '@/api'
+import { appointmentsService, type AppointmentClient } from '@/api'
 import { servicesService, type BusinessService } from '@/api/servicesService'
 import { staffService, type StaffMember } from '@/api/staff'
 import { useTranslation } from 'react-i18next'
+import SignConsentModal from './SignConsentModal'
+
+type EditableAppointment = {
+  id: string
+  clientId?: string
+  serviceId?: string | null
+  staffId?: string | null
+  startTime: string
+  notes?: string | null
+  status?: string
+}
 
 interface CreateAppointmentModalProps {
   onClose: () => void
   onSuccess?: () => void
   defaultClientId?: string
   mode?: 'create' | 'edit'
-  appointment?: Appointment
+  appointment?: EditableAppointment
 }
 
 export default function CreateAppointmentModal({
@@ -27,6 +38,7 @@ export default function CreateAppointmentModal({
   const [services, setServices] = useState<BusinessService[]>([])
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
   const [saving, setSaving] = useState(false)
+  const [showConsentModal, setShowConsentModal] = useState(false)
 
   const [formData, setFormData] = useState({
     clientId: defaultClientId || '',
@@ -130,6 +142,9 @@ export default function CreateAppointmentModal({
     }
   }
 
+  const selectedClient = clients.find(c => c.id === formData.clientId)
+  const selectedService = services.find(s => s.id === formData.serviceId)
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-scroll flex flex-col overflow-hidden">
@@ -185,6 +200,18 @@ export default function CreateAppointmentModal({
                 </option>
               ))}
             </select>
+
+            {mode === 'edit' && appointment?.id && formData.clientId && formData.serviceId && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowConsentModal(true)}
+                  className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  Sign Consent
+                </button>
+              </div>
+            )}
 
             <label className="block text-sm font-semibold">
               {t('appointments.form.date')}
@@ -281,6 +308,19 @@ export default function CreateAppointmentModal({
         </form>
 
       </div>
+
+      {showConsentModal && mode === 'edit' && appointment?.id && (
+        <SignConsentModal
+          isOpen={showConsentModal}
+          appointmentId={appointment.id}
+          clientId={formData.clientId}
+          clientName={(selectedClient as any)?.fullName || (selectedClient as any)?.email || ''}
+          serviceId={formData.serviceId}
+          serviceName={selectedService?.name || ''}
+          onClose={() => setShowConsentModal(false)}
+          onSigned={() => setShowConsentModal(false)}
+        />
+      )}
     </div>
   )
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { servicesService, BusinessService } from "../../api/servicesService";
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { ConsentTemplateModal } from '@/components';
 
 interface Props {
   isAdmin: boolean;
@@ -19,6 +20,7 @@ export default function ServicesSection({ isAdmin }: Props) {
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [templateService, setTemplateService] = useState<BusinessService | null>(null);
   const [editData, setEditData] = useState({
     name: "",
     defaultDurationMinutes: 60
@@ -218,6 +220,13 @@ export default function ServicesSection({ isAdmin }: Props) {
                       ) : (
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            onClick={() => setTemplateService(service)}
+                            className="p-2 rounded-lg text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                            title="Consent Template"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                          <button
                             onClick={() => handleEdit(service)}
                             className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
                             title="Edit"
@@ -241,6 +250,16 @@ export default function ServicesSection({ isAdmin }: Props) {
           </table>
         )}
       </div>
+
+      {templateService && (
+        <ConsentTemplateModal
+          isOpen={Boolean(templateService)}
+          serviceId={templateService.id}
+          serviceName={templateService.name}
+          onClose={() => setTemplateService(null)}
+          onSaved={loadServices}
+        />
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Calendar, Clock, User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, XCircle } from 'lucide-react'
+import { Calendar, Clock, User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileCheck2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { PageHeader, CreateAppointmentModal } from '@/components'
+import { PageHeader, CreateAppointmentModal, SignConsentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
 import { connection } from '@/lib/signalr'
 import { appointmentsService, type Appointment } from '@/api/appointmentsService'
@@ -83,8 +83,7 @@ const markNotDocumented = async (appointment: Appointment) => {
 
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRow | null>(null)
-
-  const isStaffView = user?.role === 'staff'
+  const [consentAppointment, setConsentAppointment] = useState<AppointmentRow | null>(null)
 
   useEffect(() => {
     if (!hasPermission('manage_appointments')) {
@@ -308,6 +307,23 @@ const markNotDocumented = async (appointment: Appointment) => {
                             <div className="text-xs text-slate-500">
                               {appointment.serviceName}
                             </div>
+                            {appointment.hasSignedConsent ? (
+                              <span className="inline-flex items-center mt-1 gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[11px] font-medium">
+                                <FileCheck2 className="w-3 h-3" />
+                                Signed Consent
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setConsentAppointment(appointment)
+                                }}
+                                className="mt-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                              >
+                                Sign Consent
+                              </button>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -386,12 +402,10 @@ const markNotDocumented = async (appointment: Appointment) => {
                           <Edit
                             className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
                             onClick={() => setEditingAppointment(appointment)}
-                            title={t('appointments.actions.edit')}
                           />
                           <Trash2
                             className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
                             onClick={() => handleDeleteAppointment(appointment.id)}
-                            title={t('appointments.actions.delete')}
                           />
                         </div>
                       </td>
@@ -420,6 +434,22 @@ const markNotDocumented = async (appointment: Appointment) => {
           onSuccess={() => {
             loadData()
             setEditingAppointment(null)
+          }}
+        />
+      )}
+
+      {consentAppointment && (
+        <SignConsentModal
+          isOpen={Boolean(consentAppointment)}
+          appointmentId={consentAppointment.id}
+          clientId={consentAppointment.clientId}
+          clientName={consentAppointment.clientName}
+          serviceId={consentAppointment.serviceId}
+          serviceName={consentAppointment.serviceName}
+          onClose={() => setConsentAppointment(null)}
+          onSigned={() => {
+            setConsentAppointment(null)
+            loadData()
           }}
         />
       )}

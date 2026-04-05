@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import {
-  MoreVertical,
   Calendar,
   Clock,
   User,
@@ -9,10 +8,11 @@ import {
   Filter,
   Trash2,
   Edit,
+  FileCheck2,
 } from 'lucide-react'
 import ActionButton from '@/components/ActionButton'
 import { useNavigate } from 'react-router-dom'
-import { PageHeader, CreateAppointmentModal } from '@/components'
+import { PageHeader, CreateAppointmentModal, SignConsentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
 import { appointmentsService, type Appointment } from '@/api/appointmentsService'
 import { AppointmentStatus } from '@/constants/appointmentStatus'
@@ -35,6 +35,7 @@ export default function StaffAppointments() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingAppointment, setEditingAppointment] =
     useState<AppointmentRow | null>(null)
+  const [consentAppointment, setConsentAppointment] = useState<AppointmentRow | null>(null)
 
   // Removed dropdown state
   useEffect(() => {
@@ -103,8 +104,6 @@ const markNotDocumented = async (appointment: Appointment) => {
       setAppointments((prev) =>
         prev.filter((a) => a?.id !== id)
       )
-
-      setOpenDropdownId(null)
     } catch (error) {
       console.error(error)
     }
@@ -275,6 +274,23 @@ const markNotDocumented = async (appointment: Appointment) => {
                           <div className="text-xs text-slate-500">
                             {appointment.serviceName ?? '-'}
                           </div>
+                          {appointment.hasSignedConsent ? (
+                            <span className="inline-flex items-center mt-1 gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[11px] font-medium">
+                              <FileCheck2 className="w-3 h-3" />
+                              Signed Consent
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setConsentAppointment(appointment)
+                              }}
+                              className="mt-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                            >
+                              Sign Consent
+                            </button>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -367,12 +383,10 @@ const markNotDocumented = async (appointment: Appointment) => {
                           <Edit
                             className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
                             onClick={() => setEditingAppointment(appointment)}
-                            title={t('appointments.actions.edit')}
                           />
                           <Trash2
                             className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
                             onClick={() => handleDelete(appointment.id)}
-                            title={t('appointments.actions.delete')}
                           />
                         </div>
                       </td>
@@ -402,6 +416,22 @@ const markNotDocumented = async (appointment: Appointment) => {
           onSuccess={() => {
             loadAppointments()
             setEditingAppointment(null)
+          }}
+        />
+      )}
+
+      {consentAppointment && (
+        <SignConsentModal
+          isOpen={Boolean(consentAppointment)}
+          appointmentId={consentAppointment.id}
+          clientId={consentAppointment.clientId}
+          clientName={consentAppointment.clientName}
+          serviceId={consentAppointment.serviceId}
+          serviceName={consentAppointment.serviceName}
+          onClose={() => setConsentAppointment(null)}
+          onSigned={() => {
+            setConsentAppointment(null)
+            loadAppointments()
           }}
         />
       )}

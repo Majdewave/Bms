@@ -13,5 +13,7 @@ export { PermissionBasedRoute } from './PermissionBasedRoute'
 
 // Modal Components
 export { default as CreateAppointmentModal } from './CreateAppointmentModal'
+export { default as ConsentTemplateModal } from './ConsentTemplateModal'
+export { default as SignConsentModal } from './SignConsentModal'
 // Plan Components
 export { default as PlanDisplay } from './PlanDisplay'
