@@ -169,6 +169,8 @@ body {
   display: inline;
   font-size: 13px;
   color: #858585;
+  width: 100%;
+  text-align: center;
 }
 .ClientaBrand span{
   padding-left:2px;

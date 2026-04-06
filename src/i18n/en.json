@@ -206,7 +206,8 @@
       "start": "Start Treatment",
       "complete": "Complete",
       "cancel": "Cancel",
-      "noshow": "No Show"
+      "noshow": "No Show",
+      "past":"Past"
     },
     "title": "Appointments",
     "new": "New Appointment",

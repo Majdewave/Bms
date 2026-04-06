@@ -287,6 +287,9 @@ export default function AdminLayout() {
               </span>
             </div>
           </div>
+         <div className="ClientaBrand">
+            <span className='ClientaIcon'>C</span><span>Powered by</span><span className='ClientaText'>CLIENTA</span>
+        </div>
 
         </div>
 
@@ -330,9 +333,6 @@ export default function AdminLayout() {
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <NotificationsDropdown />
-            <div className="ClientaBrand">
-            <span className='ClientaIcon'>C</span><span>Powered by</span><span className='ClientaText'>CLIENTA</span>
-            </div>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition ml-2"
