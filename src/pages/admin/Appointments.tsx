@@ -333,13 +333,18 @@ const markNotDocumented = async (appointment: Appointment) => {
                   const isNotDocumented = appointment.isDocumented === false;
                   const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id)
                   const isSelected = consentAppointment?.id === appointment.id
+                  const now = new Date();
+                  const appointmentDate = new Date(appointment.startTime);
+                  const isPast = appointmentDate < now;
+
                   return (
                     <tr
                       key={appointment.id}
                       className={`px-4 py-3 rounded-xl hover:bg-slate-50 transition
                         ${isSelected ? 'bg-blue-50 border border-blue-100' : ''}
                         ${isCurrent ? 'bg-blue-50 border border-blue-100' : ''}
-                        ${isNotDocumented ? 'bg-red-50' : ''}`}
+                        ${isNotDocumented ? 'bg-red-50' : ''}
+                        ${isPast ? 'opacity-60' : ''}`}
                     >
                       <td className="px-4 py-3 cursor-pointer" onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}>
                         <div className="flex items-center gap-3">
@@ -349,7 +354,12 @@ const markNotDocumented = async (appointment: Appointment) => {
                             <span className="text-xs text-slate-500">
                               {appointment.serviceName}
                             </span>
-                            <div className="mt-1">
+                            <div className="mt-1 flex gap-2 items-center">
+                              {isPast && (
+                                <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-xs">
+                                  {t('appointments.past')}
+                                </span>
+                              )}
                               {hasConsent ? (
                                 <span className="flex items-center gap-1 text-green-600 text-xs font-medium opacity-80" title="הסכמה כבר נחתמה">
                                   <CheckCircle className="w-3 h-3" />
@@ -440,6 +450,7 @@ const markNotDocumented = async (appointment: Appointment) => {
                             <Edit
                               className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
                               onClick={() => setEditingAppointment(appointment)}
+                              style={isPast ? { pointerEvents: 'none', opacity: 0.5 } : {}}
                             />
                             <Trash2
                               className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
