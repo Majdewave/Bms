@@ -4,12 +4,10 @@ import { Pencil, Trash2, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ConsentTemplateModal } from '@/components';
 
-interface Props {
-  isAdmin: boolean;
-}
 
 export default function ServicesSection({ isAdmin }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'he' || i18n.language === 'ar';
   const [services, setServices] = useState<BusinessService[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,6 +26,7 @@ export default function ServicesSection({ isAdmin }: Props) {
 
   useEffect(() => {
     loadServices();
+    // eslint-disable-next-line
   }, []);
 
   const loadServices = async () => {
@@ -99,21 +98,21 @@ export default function ServicesSection({ isAdmin }: Props) {
   };
 
   if (loading) {
-    return <div className="p-6">Loading services...</div>;
+    return <div className="p-6">{t('common.loading') || 'Loading services...'}</div>;
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 mt-8">
+    <div className="bg-white rounded-2xl shadow-md border border-gray-200 mt-8" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">
-          Business Services
+          {t('services.title')}
         </h2>
 
         {isAdmin && (
           <div className="flex gap-2 items-center">
             <input
               type="text"
-              placeholder="Service name"
+              placeholder={t('services.serviceName')}
               value={newService.name}
               onChange={(e) =>
                 setNewService((s) => ({ ...s, name: e.target.value }))
@@ -140,7 +139,7 @@ export default function ServicesSection({ isAdmin }: Props) {
               disabled={saving}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
             >
-              {saving ? "Saving..." : "Add"}
+              {saving ? t('common.saving') || 'Saving...' : t('services.add')}
             </button>
           </div>
         )}
@@ -149,15 +148,15 @@ export default function ServicesSection({ isAdmin }: Props) {
       <div className="p-6">
         {services.length === 0 ? (
           <div className="text-gray-500 text-center">
-            No services found.
+            {t('services.empty')}
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className={`w-full text-sm ${isRTL ? 'text-right' : ''}`}>
             <thead className="text-gray-600 border-b">
               <tr>
-                <th className="text-center py-2">Name</th>
-                <th className="text-center py-2">Duration (min)</th>
-                {isAdmin && <th className="text-center py-2">Actions</th>}
+                <th className="text-center py-2">{t('services.name')}</th>
+                <th className="text-center py-2">{t('services.duration')}</th>
+                {isAdmin && <th className="text-center py-2">{t('services.actions')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -229,14 +228,14 @@ export default function ServicesSection({ isAdmin }: Props) {
                           <button
                             onClick={() => handleEdit(service)}
                             className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
-                            title="Edit"
+                            title={t('common.edit')}
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(service.id)}
                             className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
-                            title="Delete"
+                            title={t('common.delete')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

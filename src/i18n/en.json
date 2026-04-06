@@ -762,5 +762,14 @@
     "save": "Save",
     "actions": "Actions",
     "status": "Status"
+  },
+  "services": {
+    "title": "Business Services",
+    "add": "Add",
+    "serviceName": "Service name",
+    "actions": "Actions",
+    "duration": "Duration (min)",
+    "name": "Name",
+    "empty": "No services found."
   }
 }

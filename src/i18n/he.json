@@ -741,5 +741,15 @@
 
     "beforeAfterPhotos": "תמונות לפני/אחרי",
     "beforeAfterPhotosDesc": "הצג העלאת תמונות לפני ואחרי בפרופיל הלקוח"
+  },
+
+    "services": {
+    "title": "שירותים עסקיים",
+    "add": "הוסף",
+    "serviceName": "שם השירות",
+    "actions": "פעולות",
+    "duration": "משך (דקות)",
+    "name": "שם",
+    "empty": "לא נמצאו שירותים"
   }
 }

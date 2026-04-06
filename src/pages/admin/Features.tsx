@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Sliders, CheckCircle, X } from 'lucide-react'
+import { Sliders, CheckCircle, X, BarChart2, Receipt, Pill, Database, Image as ImageIcon } from 'lucide-react'
 import * as apiClient from '@/api/apiClient'
 import type { Features } from '@/contexts/FeatureContext'
 import { useFeatures } from '@/contexts/FeatureContext'
@@ -21,12 +21,15 @@ interface ToggleRowProps {
   disabled: boolean
 }
 
-function ToggleRow({ label, description, checked, onChange, disabled }: ToggleRowProps) {
+function ToggleRow({ label, description, checked, onChange, disabled, icon }: ToggleRowProps & { icon: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-4 border-b border-slate-100 last:border-0">
-      <div className="flex-1 pe-4">
-        <p className="font-medium text-slate-800">{label}</p>
-        <p className="text-sm text-slate-500 mt-0.5">{description}</p>
+    <div className="flex items-center justify-between py-4 border-b border-slate-100 last:border-0 bg-transparent">
+      <div className="flex items-center gap-3 flex-1 pe-4">
+        <span>{icon}</span>
+        <div>
+          <p className="text-base font-medium leading-6 text-slate-800">{label}</p>
+          <p className="text-sm leading-6 text-slate-500 mt-1">{description}</p>
+        </div>
       </div>
       <button
         type="button"
@@ -121,14 +124,14 @@ export default function AdminFeatures() {
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center">
           <Sliders className="w-5 h-5 text-blue-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">
+          <h1 className="text-[30px] font-bold text-gray-900 leading-tight">
             {t('features.title')}
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">
+          <p className="text-[16px] text-gray-500 mt-1">
             {t('features.subtitle')}
           </p>
         </div>
@@ -136,51 +139,56 @@ export default function AdminFeatures() {
 
       {/* Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-xl">
-        <h2 className="text-base font-semibold text-slate-700 mb-2">
+        <h2 className="text-lg font-semibold leading-7 text-slate-700 mb-2">
           {t('features.activeModules')}
         </h2>
-        <p className="text-sm text-slate-400 mb-4">
+        <p className="text-sm leading-6 text-slate-500 mb-4">
           {t('features.description')}
         </p>
 
         <ToggleRow
           label={t('features.reports')}
-          description={t('features.reportsDesc')}
+          description={t('features.reportsDesc') + ' - הצג את עמוד הדוחות בתפריט הניווט'}
           checked={settings.reportsEnabled}
           onChange={(val) => handleToggle('reportsEnabled', val)}
           disabled={saving}
+          icon={<BarChart2 className="w-5 h-5 text-blue-400" />}
         />
 
         <ToggleRow
           label={t('features.invoices')}
-          description={t('features.invoicesDesc')}
+          description={t('features.invoicesDesc') + ' - הצג את עמוד החשבוניות בתפריט הניווט'}
           checked={settings.invoicesEnabled}
           onChange={(val) => handleToggle('invoicesEnabled', val)}
           disabled={saving}
+          icon={<Receipt className="w-5 h-5 text-green-400" />}
         />
 
         <ToggleRow
           label={t('features.prescriptions')}
-          description={t('features.prescriptionsDesc')}
+          description={t('features.prescriptionsDesc') + ' - הצג את אפשרות כתיבת מרשם בפרופיל הלקוח'}
           checked={settings.prescriptionsEnabled}
           onChange={(val) => handleToggle('prescriptionsEnabled', val)}
           disabled={saving}
+          icon={<Pill className="w-5 h-5 text-purple-400" />}
         />
 
         <ToggleRow
           label={t('features.drugs')}
-          description={t('features.drugsDesc')}
+          description={t('features.drugsDesc') + ' - הצג את מאגר התרופות במערכת'}
           checked={settings.drugsEnabled}
           onChange={(val) => handleToggle('drugsEnabled', val)}
           disabled={saving}
+          icon={<Database className="w-5 h-5 text-indigo-400" />}
         />
 
         <ToggleRow
           label={t('features.beforeAfterPhotos')}
-          description={t('features.beforeAfterPhotosDesc')}
+          description={t('features.beforeAfterPhotosDesc') + ' - הצג העלאת תמונות לפני ואחרי בפרופיל הלקוח'}
           checked={settings.beforeAfterPhotosEnabled}
           onChange={(val) => handleToggle('beforeAfterPhotosEnabled', val)}
           disabled={saving}
+          icon={<ImageIcon className="w-5 h-5 text-pink-400" />}
         />
       </div>
     </div>
