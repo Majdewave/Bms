@@ -151,97 +151,191 @@ export default function ServicesSection({ isAdmin }: Props) {
             {t('services.empty')}
           </div>
         ) : (
-          <table className={`w-full text-sm ${isRTL ? 'text-right' : ''}`}>
+          <table dir={isRTL ? 'rtl' : 'ltr'} className="w-full text-sm">
             <thead className="text-gray-600 border-b">
               <tr>
-                <th className="text-center py-2">{t('services.name')}</th>
-                <th className="text-center py-2">{t('services.duration')}</th>
-                {isAdmin && <th className="text-center py-2">{t('services.actions')}</th>}
+                {isRTL ? (
+                  <>
+                    <th className="text-right px-4 py-2">{t('services.name')}</th>
+                    <th className="text-right px-4 py-2">{t('services.duration')}</th>
+                    {isAdmin && <th className="text-right px-4 py-2">{t('services.actions')}</th>}
+                  </>
+                ) : (
+                  <>
+                    {isAdmin && <th className="text-left px-4 py-2">{t('services.actions')}</th>}
+                    <th className="text-left px-4 py-2">{t('services.duration')}</th>
+                    <th className="text-left px-4 py-2">{t('services.name')}</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
               {services.map((service) => (
                 <tr key={service.id} className="border-b">
-                  <td className="py-2">
-                    {editingId === service.id ? (
-                      <input
-                        value={editData.name}
-                        onChange={(e) =>
-                          setEditData((d) => ({
-                            ...d,
-                            name: e.target.value
-                          }))
-                        }
-                        className="px-2 py-1 border rounded"
-                      />
-                    ) : (
-                      service.name
-                    )}
-                  </td>
-
-                  <td className="py-2">
-                    {editingId === service.id ? (
-                      <input
-                        type="number"
-                        min={1}
-                        value={editData.defaultDurationMinutes}
-                        onChange={(e) =>
-                          setEditData((d) => ({
-                            ...d,
-                            defaultDurationMinutes:
-                              Number(e.target.value) || 60
-                          }))
-                        }
-                        className="px-2 py-1 border rounded w-24"
-                      />
-                    ) : (
-                      service.defaultDurationMinutes
-                    )}
-                  </td>
-
-                  {isAdmin && (
-                    <td className="py-2">
-                      {editingId === service.id ? (
-                        <div className="flex items-center gap-3 justify-end">
-                          <button
-                            onClick={() => handleEditSave(service.id)}
-                            className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white hover:bg-green-700 transition font-medium shadow-sm"
-                          >
-                            {t('common.save')}
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
-                          >
-                            {t('common.cancel')}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setTemplateService(service)}
-                            className="p-2 rounded-lg text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 transition"
-                            title="Consent Template"
-                          >
-                            <FileText className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleEdit(service)}
-                            className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
-                            title={t('common.edit')}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(service.id)}
-                            className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
-                            title={t('common.delete')}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                  {isRTL ? (
+                    <>
+                      <td className="px-4 py-2 text-right">
+                        {editingId === service.id ? (
+                          <input
+                            value={editData.name}
+                            onChange={(e) =>
+                              setEditData((d) => ({
+                                ...d,
+                                name: e.target.value
+                              }))
+                            }
+                            className="px-2 py-1 border rounded"
+                          />
+                        ) : (
+                          service.name
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {editingId === service.id ? (
+                          <input
+                            type="number"
+                            min={1}
+                            value={editData.defaultDurationMinutes}
+                            onChange={(e) =>
+                              setEditData((d) => ({
+                                ...d,
+                                defaultDurationMinutes:
+                                  Number(e.target.value) || 60
+                              }))
+                            }
+                            className="px-2 py-1 border rounded w-24"
+                          />
+                        ) : (
+                          service.defaultDurationMinutes
+                        )}
+                      </td>
+                      {isAdmin && (
+                        <td className="px-4 py-2 text-right">
+                          {editingId === service.id ? (
+                            <div className="flex items-center gap-3 justify-start">
+                              <button
+                                onClick={() => handleEditSave(service.id)}
+                                className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white hover:bg-green-700 transition font-medium shadow-sm"
+                              >
+                                {t('common.save')}
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                              >
+                                {t('common.cancel')}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-start gap-2">
+                              <button
+                                onClick={() => setTemplateService(service)}
+                                className="p-2 rounded-lg text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                                title="Consent Template"
+                              >
+                                <FileText className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleEdit(service)}
+                                className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
+                                title={t('common.edit')}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(service.id)}
+                                className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
+                                title={t('common.delete')}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
                       )}
-                    </td>
+                    </>
+                  ) : (
+                    <>
+                      {isAdmin && (
+                        <td className="px-4 py-2 text-left">
+                          {editingId === service.id ? (
+                            <div className="flex items-center gap-3 justify-end">
+                              <button
+                                onClick={() => handleEditSave(service.id)}
+                                className="px-4 py-1.5 text-sm rounded-md bg-green-600 text-white hover:bg-green-700 transition font-medium shadow-sm"
+                              >
+                                {t('common.save')}
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                              >
+                                {t('common.cancel')}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => setTemplateService(service)}
+                                className="p-2 rounded-lg text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                                title="Consent Template"
+                              >
+                                <FileText className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleEdit(service)}
+                                className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
+                                title={t('common.edit')}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(service.id)}
+                                className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
+                                title={t('common.delete')}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      )}
+                      <td className="px-4 py-2 text-left">
+                        {editingId === service.id ? (
+                          <input
+                            type="number"
+                            min={1}
+                            value={editData.defaultDurationMinutes}
+                            onChange={(e) =>
+                              setEditData((d) => ({
+                                ...d,
+                                defaultDurationMinutes:
+                                  Number(e.target.value) || 60
+                              }))
+                            }
+                            className="px-2 py-1 border rounded w-24"
+                          />
+                        ) : (
+                          service.defaultDurationMinutes
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-left">
+                        {editingId === service.id ? (
+                          <input
+                            value={editData.name}
+                            onChange={(e) =>
+                              setEditData((d) => ({
+                                ...d,
+                                name: e.target.value
+                              }))
+                            }
+                            className="px-2 py-1 border rounded"
+                          />
+                        ) : (
+                          service.name
+                        )}
+                      </td>
+                    </>
                   )}
                 </tr>
               ))}
