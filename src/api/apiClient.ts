@@ -1,4 +1,4 @@
-const BASE_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:5146'
+const BASE_URL = (import.meta as any).env.VITE_API_URL || 'https://clienta.digitalpenpro.com'
 
 type RequestOptions = RequestInit & {
   isFormData?: boolean

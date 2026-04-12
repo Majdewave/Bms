@@ -196,25 +196,23 @@ export default function PlanDisplay({
           </div>
         )}
 
-        {/* Call to Action */}
-        {(planName === 'Trial' || planName === 'Basic') && (
-          <div className="pt-4 border-t border-gray-300">
-            <button
-              onClick={handleUpgradeClick}
-              disabled={isUpgrading || !onUpgrade}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg font-semibold text-sm transition-colors ${colors.button} ${
-                isUpgrading || !onUpgrade ? 'opacity-75 cursor-not-allowed' : ''
-              }`}
-            >
-              <span>{planName === 'Trial' ? 'Upgrade Now' : 'Upgrade to Pro'}</span>
-              {isUpgrading ? (
-                <Loader className="w-4 h-4 animate-spin" />
-              ) : (
-                <ArrowRight className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-        )}
+        {/* Call to Action - Always show Upgrade button */}
+        <div className="pt-4 border-t border-gray-300">
+          <button
+            onClick={handleUpgradeClick}
+            disabled={isUpgrading || !onUpgrade}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg font-semibold text-sm transition-colors ${colors.button} ${
+              isUpgrading || !onUpgrade ? 'opacity-75 cursor-not-allowed' : ''
+            }`}
+          >
+            <span>Upgrade Plan</span>
+            {isUpgrading ? (
+              <Loader className="w-4 h-4 animate-spin" />
+            ) : (
+              <ArrowRight className="w-4 h-4" />
+            )}
+          </button>
+        </div>
 
         {/* Plan Features */}
         <div className="bg-gray-50 rounded-lg p-4 space-y-2 border border-gray-200">

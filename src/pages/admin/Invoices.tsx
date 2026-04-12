@@ -84,7 +84,7 @@ export default function AdminInvoices() {
 
         console.log('UPDATE PAYLOAD:', payload)
 
-        const res = await fetch(`http://localhost:5146/api/invoices/${editingInvoiceId}`, {
+        const res = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/invoices/${editingInvoiceId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -129,7 +129,7 @@ export default function AdminInvoices() {
 
       const token = localStorage.getItem('token')
 
-      const res = await fetch(`http://localhost:5146/api/invoices/${id}/pdf`, {
+      const res = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/invoices/${id}/pdf`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -172,7 +172,7 @@ export default function AdminInvoices() {
     if (!confirm('Delete this invoice?')) return
     const token = localStorage.getItem('token')
     try {
-      const res = await fetch(`http://localhost:5146/api/invoices/${id}`, {
+      const res = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/invoices/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })

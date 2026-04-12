@@ -1,6 +1,6 @@
 import * as signalR from '@microsoft/signalr'
 
 export const connection = new signalR.HubConnectionBuilder()
-  .withUrl('http://localhost:5146/hubs/appointments')
+  .withUrl(`${(import.meta as any).env.VITE_API_URL}/hubs/appointments`)
   .withAutomaticReconnect()
   .build()

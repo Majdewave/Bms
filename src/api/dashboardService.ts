@@ -115,7 +115,7 @@ export interface UpgradeResponse {
 class DashboardService {
   async getPlanData(): Promise<PlanData> {
     const token = localStorage.getItem('authToken')
-    const response = await fetch('http://localhost:5146/api/dashboard', {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ class DashboardService {
 
   async getBillingStatus(): Promise<BillingStatus> {
     const token = localStorage.getItem('authToken')
-    const response = await fetch('http://localhost:5146/api/billing/status', {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/billing/status`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -166,7 +166,7 @@ class DashboardService {
 
   async upgrade(planType: number, billingCycle: number): Promise<UpgradeResponse> {
     const token = localStorage.getItem('authToken')
-    const response = await fetch('http://localhost:5146/api/billing/upgrade', {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/billing/upgrade`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

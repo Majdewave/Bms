@@ -440,7 +440,7 @@ export default function ClientProfile() {
     if (!confirmed) return
 
     await fetch(
-      `http://localhost:5146/api/prescriptions/${id}`,
+      `${(import.meta as any).env.VITE_API_URL}/api/prescriptions/${id}`,
       {
         method: "DELETE",
         headers: {

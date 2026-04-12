@@ -80,7 +80,7 @@ const mockInvoices: Invoice[] = [
 ]
 
 export const getInvoices = async (): Promise<Invoice[]> => {
-  const res = await fetch('http://localhost:5146/api/invoices', {
+  const res = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/invoices`, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem('token')}`,
     },
@@ -124,7 +124,7 @@ export const getInvoice = (id: string): Promise<Invoice | null> => {
 }
 
 export const createInvoice = async (data: CreateInvoiceRequest): Promise<Invoice> => {
-  const res = await fetch('http://localhost:5146/api/invoices', {
+  const res = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/invoices`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

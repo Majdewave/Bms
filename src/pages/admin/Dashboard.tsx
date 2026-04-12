@@ -1,4 +1,4 @@
-  // Returns translated label for activity action type
+// Returns translated label for activity action type
   const getActionLabel = (type: string, t: any) => {
     switch (type) {
       case 'appointment_created':
@@ -25,6 +25,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react'
+import PlanDisplay from '@/components/PlanDisplay'
 
 export default function AdminDashboard() {
   const { user } = useAuth()
@@ -106,6 +107,26 @@ export default function AdminDashboard() {
     return `${diffDays}d ago`
   }
 
+  const handleUpgrade = async () => {
+    const res = await fetch('https://clienta.digitalpenpro.com/api/billing/upgrade', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('authToken'),
+      },
+      body: JSON.stringify({
+        planType: 2,
+        billingCycle: 0,
+      }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert('Upgrade failed');
+    }
+  };
+
   if (loading) {
     return (
       <Container>
@@ -122,6 +143,11 @@ export default function AdminDashboard() {
         title={t('admin.dashboard.title', { name: user?.name })}
         description={t('admin.dashboard.subtitle')}
       />
+
+      {/* Upgrade Plan button always visible at top */}
+      <div className="mb-8">
+        <PlanDisplay onUpgrade={handleUpgrade} billingStatus={stats?.billingStatus || { plan: '', billingCycle: '', subscriptionStatus: '', trialEndsAt: '', daysRemaining: 0, userLimit: 0, messageLimit: 0, isSuspended: false, stripeCustomerId: '', features: { maxUsers: 0, maxMessages: 0, customBranding: false, emailAutomation: false, support: '', priority: '' } }} />
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
