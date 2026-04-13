@@ -56,10 +56,7 @@ async function request<T>(
 
   // Handle 401 Unauthorized only for auth-related endpoints
   if (response.status === 401) {
-    if (isAuthRelatedEndpoint(url)) {
-      localStorage.removeItem('authToken')
-      window.location.href = '/'
-    }
+    console.warn('401 Unauthorized for:', url);
     throw new ApiError('Unauthorized', 401)
   }
 
@@ -125,13 +122,10 @@ async function requestBlob(
 
   const response = await fetch(`${BASE_URL}${url}`, fetchOptions)
 
-  if (response.status === 401) {
-    if (isAuthRelatedEndpoint(url)) {
-      localStorage.removeItem('authToken')
-      window.location.href = '/'
-    }
-    throw new ApiError('Unauthorized', 401)
-  }
+if (response.status === 401) {
+  console.warn('401 Unauthorized for:', url);
+  throw new ApiError('Unauthorized', 401);
+}
 
   if (!response.ok) {
     throw new ApiError(`Request failed with status ${response.status}`, response.status)

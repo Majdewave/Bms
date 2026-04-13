@@ -20,11 +20,11 @@ export default function Success() {
       })
       .then(data => {
         if (data.token) {
-          localStorage.setItem("token", data.token);
+          localStorage.setItem("authToken", data.token);
 
-          // 🔥 UX קטן
+          //  UX קטן
           setTimeout(() => {
-            window.location.href = "/dashboard";
+            window.location.href = "/admin/dashboard";
           }, 1500);
         } else {
           setError("No token returned from server.");
