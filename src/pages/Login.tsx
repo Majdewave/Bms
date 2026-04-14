@@ -5,6 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { ClientaWordmark } from '@/components/Logo'
 
+
+import { post } from "../api/apiClient";
+
 interface FormErrors {
   email?: string
   password?: string
@@ -32,16 +35,6 @@ export default function Login() {
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [successMessage, setSuccessMessage] = useState('')
 
-  // Redirect to role-specific dashboard when user is set
-  useEffect(() => {
-    if (user && successMessage) {
-      const timer = setTimeout(() => {
-        const dashboardPath = `/${user.role}/dashboard`
-        navigate(dashboardPath)
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [user, successMessage, navigate])
 
   // Load remembered email on mount
   useEffect(() => {
@@ -165,7 +158,14 @@ export default function Login() {
 
     try {
       // Use AuthContext login (sets user in context)
-      await authLogin(formData.email, formData.password)
+      type LoginResponse = {
+      token: string;
+      user: any;
+    };
+
+    await authLogin(formData.email, formData.password);
+    navigate("/admin/dashboard", { replace: true });
+    setSuccessMessage("Login successful");
 
       // Handle remember me
       if (formData.rememberMe) {

@@ -82,39 +82,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const updatedUser = await authService.getCurrentUser()
       setUser(normalizeUser(updatedUser))
     } catch (error) {
-      localStorage.removeItem('authToken')
+      localStorage.removeItem('token')
       setUser(null)
     } finally {
       setLoading(false)
     }
   }, [])
 
-  useEffect(() => {
-    // Check for existing auth token on mount
-    const initAuth = async () => {
-      const token = localStorage.getItem('authToken')
-      if (token) {
-        try {
-          const currentUser = await authService.getCurrentUser()
-          setUser(normalizeUser(currentUser))
-        } catch (error) {
-          localStorage.removeItem('authToken')
-        }
-      }
-      setLoading(false)
-    }
+useEffect(() => {
+  const token = localStorage.getItem('token');
 
-    initAuth()
-  }, [])
+  if (!token) {
+    setLoading(false);
+    return; // ⛔ לא קורא /auth/me בלי token
+  }
+
+  authService.getCurrentUser()
+    .then(user => setUser(normalizeUser(user)))
+    .catch(() => {
+      localStorage.removeItem('token');
+      setUser(null);
+    })
+    .finally(() => setLoading(false));
+
+}, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await authService.login({ email, password })
-    localStorage.setItem('authToken', response.token)
+    localStorage.setItem('token', response.token)
     setUser(normalizeUser(response.user))
   }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem('authToken')
+    localStorage.removeItem('token')
     localStorage.removeItem('rememberedEmail')
     setUser(null)
   }, [])

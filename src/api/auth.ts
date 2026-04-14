@@ -28,7 +28,7 @@ export interface LoginResponse {
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
   const response = await post<{ token: string }>('/api/auth/login', credentials)
 
-  localStorage.setItem('authToken', response.token)
+  localStorage.setItem('token', response.token)
 
   const user = await getCurrentUser()
 
@@ -43,7 +43,7 @@ export const logout = (): Promise<void> => {
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
-  const token = localStorage.getItem('authToken')
+  const token = localStorage.getItem('token')
   
   if (!token) {
     return null

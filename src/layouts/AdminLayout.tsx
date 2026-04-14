@@ -183,11 +183,15 @@ export default function AdminLayout() {
   }
 
   const breadcrumbs = buildBreadcrumbs()
-  const businessLogo = tenant?.logoUrl
-    ? (tenant.logoUrl.startsWith('http')
-      ? tenant.logoUrl
-      : `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5146'}${tenant.logoUrl}`)
-    : null
+
+  function getTenantLogo(tenant: any) {
+    if (tenant?.logoUrl) {
+      if (tenant.logoUrl.startsWith('http')) return tenant.logoUrl;
+      return `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5146'}${tenant.logoUrl}`;
+    }
+    return '/clienta-logo.png';
+  }
+  const businessLogo = getTenantLogo(tenant);
 
   return (
 
@@ -204,27 +208,13 @@ export default function AdminLayout() {
         <div className="p-6 border-b border-slate-200 sideBarTopBlock" style={{ padding: 0 }}>
           <Link to={homePath} className="block BusinessLogoLink" style={{ padding: 0 }}>
             <div className="flex flex-col items-center py-4 gap-3 BusinessLogoContainer" style={{ padding: 0 }}>
-              {/* BUSINESS LOGO */}
-              {businessLogo ? (
-                <img
-                  src={businessLogo ? `${businessLogo}?v=${Date.now()}` : undefined}
-                  alt="Business Logo"
-                  className="h-16 object-contain BusinessLogoImg"
-                  style={{ height: 'auto', maxHeight: '140px' }}
-                  onError={(e) => (e.currentTarget.style.display = 'none')}
-                />
-              ) : (
-                <div className="w-16 h-16 bg-primary-500 rounded-lg flex items-center justify-center text-white font-bold">
-                  {user?.name?.charAt(0)}
-                </div>
-              )}
-
-              {/* CLIENTA LOGO */}
+              {/* BUSINESS OR CLIENTA LOGO */}
               <img
-                src="/clienta-logo.svg"
-                alt="Clienta"
-                className="h-6 opacity-80"
-                onError={(e) => (e.currentTarget.style.display = 'none')}
+                src={businessLogo}
+                alt="Logo"
+                className="h-10 object-contain BusinessLogoImg"
+                style={{ height: 'auto', maxHeight: '80px' }}
+                onError={(e) => (e.currentTarget.src = '/clienta-logo.png')}
               />
             </div>
           </Link>

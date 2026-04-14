@@ -5,7 +5,7 @@ type RequestOptions = RequestInit & {
 }
 
 const isAuthRelatedEndpoint = (url: string): boolean => {
-  return url.startsWith('/api/auth') || url.startsWith('/api/account')
+  return url.startsWith('/api/auth/login') || url.startsWith('/api/auth/register')
 }
 
 class ApiError extends Error {
@@ -23,7 +23,7 @@ async function request<T>(
   url: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const authToken = localStorage.getItem('authToken')
+  const authToken = localStorage.getItem('token')
 
   const isFormDataRequest = options.isFormData === true || options.body instanceof FormData
 
@@ -35,7 +35,8 @@ async function request<T>(
   if (isFormDataRequest) {
     delete headers['Content-Type'];
   }
-  if (authToken) {
+
+  if (authToken && !isAuthRelatedEndpoint(url)) {
     headers['Authorization'] = `Bearer ${authToken}`;
   }
   const fetchOptions: RequestInit = {
@@ -104,15 +105,20 @@ async function requestBlob(
   url: string,
   options: RequestOptions = {}
 ): Promise<Blob> {
-  const authToken = localStorage.getItem('authToken')
 
   let headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
   }
+  const isAuthRelatedEndpoint = (url: string): boolean => {
+  return url.startsWith('/api/auth');
+};
 
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`
-  }
+const authToken = localStorage.getItem('token');
+
+if (authToken && !isAuthRelatedEndpoint(url)) {
+  headers['Authorization'] = `Bearer ${authToken}`;
+}
+
 
   const fetchOptions: RequestInit = {
     ...options,

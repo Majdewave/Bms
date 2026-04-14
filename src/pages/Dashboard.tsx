@@ -1,399 +1,479 @@
-import { useEffect, useState } from 'react'
-import {
-  Calendar,
-  DollarSign,
-  FileText,
-  FolderOpen,
-  ArrowRight,
-  Clock,
-  AlertCircle,
-  CheckCircle,
-  AlertTriangle,
-} from 'lucide-react'
+// Returns translated label for activity action type
+  const getActionLabel = (type: string, t: any) => {
+    switch (type) {
+      case 'appointment_created':
+        return t('dashboard.activity.appointmentCreated');
+      case 'client_created':
+        return t('dashboard.activity.clientCreated');
+      case 'staff_created':
+        return t('dashboard.activity.staffCreated');
+      case 'staff_deleted':
+        return t('dashboard.activity.staffDeleted', 'Staff deleted');
+      default:
+        return type;
+    }
+  };
+import { useState, useEffect } from 'react'
+import { useTenant } from '@/hooks/useTenant'
+import { toast } from 'react-toastify';
+import { useAuth } from '@/contexts/AuthContext'
 import { dashboardService } from '@/api'
-import { PlanDisplay } from '@/components'
-import type {
-  NextAppointment,
-  OutstandingBalance,
-  LastInvoice,
-  LastFile,
-  PlanData,
-  BillingStatus,
-} from '@/api/dashboardService'
+import { Container, PageHeader, Card, CardHeader, CardContent } from '@/components'
+import { useTranslation } from 'react-i18next'
+import {
+  Users,
+  Calendar,
+  UserPlus,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react'
+import PlanDisplay from '@/components/PlanDisplay'
 
-export default function Dashboard() {
-  const [planData, setPlanData] = useState<PlanData | null>(null)
-  const [billingStatus, setBillingStatus] = useState<BillingStatus | null>(null)
+export default function AdminDashboard() {
+  const { tenant, isTrial, isExpired, isPaid, daysLeft, loading: tenantLoading } = useTenant();
+  const { user } = useAuth()
+  const { t, i18n } = useTranslation()
+  const dir = i18n.dir()
+  const isRTL = dir === 'rtl'
+  const [stats, setStats] = useState<any>(null)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [selectedActivity, setSelectedActivity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+
+  const activityConfig: Record<string, { icon: string; color: string }> = {
+    staff_created: { icon: '👤', color: 'text-green-600' },
+    staff_deleted: { icon: '🗑️', color: 'text-red-600' },
+    client_created: { icon: '👥', color: 'text-blue-600' },
+    appointment_created: { icon: '📅', color: 'text-purple-600' },
+  }
 
   useEffect(() => {
     const loadDashboardData = async () => {
-      setLoading(true)
-      setError(null)
       try {
-        const [plan, billing] = await Promise.all([
-          dashboardService.getPlanData(),
-          dashboardService.getBillingStatus(),
+        const [statsData, activityData] = await Promise.all([
+          dashboardService.getAdminStats(),
+          dashboardService.getRecentActivity(),
         ])
-
-        setPlanData(plan)
-        setBillingStatus(billing)
+        setStats(statsData)
+        
+        // Remove duplicates from activity data
+        if (Array.isArray(activityData)) {
+          const unique = activityData.filter(
+            (v, i, arr) => arr.findIndex(x => x.id === v.id) === i
+          )
+          console.log('Recent Activity:', unique)  // Debug
+          setRecentActivity(unique)
+        } else {
+          setRecentActivity([])
+        }
       } catch (error) {
         console.error('Failed to load dashboard data:', error)
-        const errorMessage = error instanceof Error ? error.message : 'Failed to load dashboard data'
-        if (errorMessage === 'Unauthorized') {
-          // User will be redirected to login by the service
-          return
-        }
-        setError(errorMessage)
-        alert('Failed to load dashboard data. Please try again.')
       } finally {
         setLoading(false)
       }
     }
-
     loadDashboardData()
   }, [])
 
-  const handleUpgrade = async (planType: number, billingCycle: number) => {
-    try {
-      const response = await dashboardService.upgrade(planType, billingCycle)
-      // Redirect to Stripe checkout
-      if (response.url) {
-        window.location.href = response.url
-      }
-    } catch (error) {
-      console.error('Upgrade failed:', error)
-      alert('Failed to initiate upgrade. Please try again.')
+  const getActivityIcon = (type: string) => {
+    const config = activityConfig[type]
+    if (config) {
+      return (
+        <span className={`w-5 h-5 inline-flex items-center justify-center ${config.color}`}>
+          {config.icon}
+        </span>
+      )
     }
-  }
 
-  const getInvoiceStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return {
-          bg: 'bg-green-50',
-          border: 'border-green-200',
-          text: 'text-green-700',
-          icon: 'text-green-600',
-        }
-      case 'pending':
-        return {
-          bg: 'bg-yellow-50',
-          border: 'border-yellow-200',
-          text: 'text-yellow-700',
-          icon: 'text-yellow-600',
-        }
-      case 'overdue':
-        return {
-          bg: 'bg-red-50',
-          border: 'border-red-200',
-          text: 'text-red-700',
-          icon: 'text-red-600',
-        }
+    switch (type) {
+      case 'appointment_created':
+        return <Calendar className="w-5 h-5" />;
+      case 'client_created':
+        return <UserPlus className="w-5 h-5 text-blue-600" />;
+      case 'staff_created':
+        return <Users className="w-5 h-5 text-purple-600" />;
       default:
-        return {
-          bg: 'bg-gray-50',
-          border: 'border-gray-200',
-          text: 'text-gray-700',
-          icon: 'text-gray-600',
-        }
+        return <Calendar className="w-5 h-5 text-slate-400" />;
     }
   }
 
-  const invoiceStatus = lastInvoice ? getInvoiceStatusColor(lastInvoice.status) : null
+  const formatRelativeTime = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
 
-  if (loading) {
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    return `${diffDays}d ago`
+  }
+
+  const handleUpgrade = async () => {
+    const res = await fetch('https://clienta.digitalpenpro.com/api/billing/upgrade', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+      },
+      body: JSON.stringify({
+        planType: 2,
+        billingCycle: 0,
+      }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert('Upgrade failed');
+    }
+  };
+
+  // Payment success toast
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      toast.success('🎉 Payment successful! Your plan is now active.');
+      window.history.replaceState({}, document.title, '/admin/dashboard');
+    }
+  }, []);
+
+  if (loading || tenantLoading) {
     return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Loading your data...</p>
+      <Container>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
-
-        {/* Skeleton Loading */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl shadow p-6 animate-pulse">
-              <div className="h-12 w-12 bg-gray-200 rounded-lg mb-4" />
-              <div className="h-6 bg-gray-200 rounded w-3/4 mb-4" />
-              <div className="h-4 bg-gray-200 rounded w-1/2" />
-            </div>
-          ))}
-        </div>
-      </div>
-    )
+      </Container>
+    );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Here's your account overview at a glance.</p>
+    <Container>
+      <PageHeader
+        title={t('admin.dashboard.title', { name: user?.name })}
+        description={t('admin.dashboard.subtitle')}
+      />
+
+      {/* Plan & Trial UI */}
+      <div className="mb-8 relative">
+        {/* Trial Active Banner */}
+        {isTrial && !isExpired && !tenant?.isSuspended && (
+          <div className="mb-4 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 flex items-center justify-between">
+            <div>
+              <span className="font-bold">🚀 You are on a 7-day trial</span> – {daysLeft} days remaining
+            </div>
+            <button
+              onClick={handleUpgrade}
+              className="ml-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold text-sm"
+            >
+              Upgrade Now
+            </button>
+          </div>
+        )}
+        {/* Trial Expired or Suspended Banner */}
+        {(isExpired || tenant?.isSuspended) && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 rounded-lg border-2 border-red-400">
+            <div className="text-red-700 text-lg font-bold mb-2">⚠️ Trial expired</div>
+            <div className="mb-4 text-red-600">Upgrade to continue using the system</div>
+            <button
+              onClick={handleUpgrade}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-semibold text-sm"
+            >
+              Upgrade Now
+            </button>
+          </div>
+        )}
+        {/* Paid Plan Badge */}
+        {isPaid && !tenant?.isSuspended && (
+          <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-900 flex items-center justify-between">
+            <span className="font-bold">✅ Pro Plan Active</span>
+            {/* Optional: Manage Subscription button */}
+            {/* <button className="ml-4 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded font-semibold text-xs">Manage Subscription</button> */}
+          </div>
+        )}
+        {/* PlanDisplay only for trial/expired, not for paid */}
+        {(!isPaid || isTrial) && (
+          <PlanDisplay onUpgrade={handleUpgrade} billingStatus={stats?.billingStatus || { plan: tenant?.plan || '', billingCycle: '', subscriptionStatus: '', trialEndsAt: tenant?.trialEndsAt || '', daysRemaining: daysLeft, userLimit: 0, messageLimit: 0, isSuspended: !!tenant?.isSuspended, stripeCustomerId: '', features: { maxUsers: 0, maxMessages: 0, customBranding: false, emailAutomation: false, support: '', priority: '' } }} />
+        )}
+        {/* Overlay to block UI if expired or suspended */}
+        {(isExpired || tenant?.isSuspended) && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/80 rounded-lg">
+            <div className="text-red-700 text-xl font-bold">⚠️ Your trial has expired. Please upgrade to continue.</div>
+          </div>
+        )}
       </div>
 
-      {/* Suspension Warning Banner */}
-      {billingStatus?.isSuspended && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-4">
-          <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-red-800">Account Suspended</h3>
-            <p className="text-red-700 mt-1">
-              Your account has been suspended due to non-payment or policy violation. Please contact support or upgrade your plan to restore access.
-            </p>
-            <button className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-sm transition-colors">
-              Upgrade Plan
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm text-slate-500 font-medium">{t('dashboard.appointmentsToday')}</p>
+                <p className="text-3xl font-bold text-slate-900 mt-2">
+                  {stats?.appointmentsToday?.count ?? 0}
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-green-50 text-green-600">
+                <Calendar className="w-6 h-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm text-slate-500 font-medium">{t('dashboard.completedToday')}</p>
+                <p className="text-3xl font-bold text-slate-900 mt-2">
+                  {stats?.completedToday?.count ?? 0}
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-blue-50 text-blue-600">
+                <CheckCircle className="w-6 h-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm text-slate-500 font-medium">{t('dashboard.totalClients')}</p>
+                <p className="text-3xl font-bold text-slate-900 mt-2">
+                  {stats?.totalClients?.count ?? 0}
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-purple-50 text-purple-600">
+                <Users className="w-6 h-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm text-slate-500 font-medium">{t('dashboard.notDocumentedClients')}</p>
+                <p className="text-3xl font-bold text-slate-900 mt-2">
+                  {stats?.upcomingAppointmentsList ? stats.upcomingAppointmentsList.filter((a: any) => !a.isDocumented).length : 0}
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-red-50 text-red-600">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Upcoming Appointments Section */}
+      <Card className="mb-8">
+        <CardHeader title={t('dashboard.upcomingAppointments')} />
+        <CardContent>
+          {(!stats?.upcomingAppointmentsList || stats.upcomingAppointmentsList.length === 0) ? (
+            <div className="text-slate-400 py-4 text-center">No upcoming appointments</div>
+          ) : (
+            <div className="overflow-x-auto" dir={dir}>
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.time')}</th>
+                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.client')}</th>
+                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.service')}</th>
+                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.staff')}</th>
+                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.status')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.upcomingAppointmentsList.slice(0, 5).map((apt: any, idx: number) => {
+                    const dateObj = new Date(apt.startTime);
+                    const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return (
+                      <tr
+                        key={`${apt.id}-${idx}`}
+                        className={
+                          `${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`
+                        }
+                      >
+                        <td className={`px-4 py-2 font-mono ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{time}</td>
+                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.clientName}</td>
+                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.serviceName}</td>
+                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.staffName}</td>
+                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                          <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700 capitalize">
+                            {apt.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader 
+          title={t('admin.dashboard.activity.title')}
+          description={t('admin.dashboard.activity.subtitle')}
+        />
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table dir={dir} className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-100">
+                  {isRTL ? (
+                    <>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.action')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.entity')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.performedBy')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.time')}</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.action')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.entity')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.performedBy')}</th>
+                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.time')}</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {recentActivity.map((activity, idx) => {
+                  // Action column
+                  const action = getActionLabel(activity.type, t);
+                  // Entity column
+                  let entity = '';
+                  if (activity.type === 'appointment_created') {
+                    entity = [activity.clientName, activity.serviceName].filter(Boolean).join(' • ');
+                  } else if (activity.type === 'client_created') {
+                    entity = activity.clientName || '';
+                  } else if (activity.type === 'staff_created') {
+                    entity = activity.staffName || '';
+                  } else if (activity.type === 'staff_deleted') {
+                    entity =
+                      activity.staffName ||
+                      activity.deletedStaffName ||
+                      activity.deletedUserName ||
+                      activity.targetName ||
+                      activity.entityName ||
+                      '';
+                  }
+                  else if (activity.type === 'client_deleted') {
+                  entity = activity.clientName || activity.entityName || '';
+                  }
+                  else if (activity.type === 'user_deleted') {
+                    entity = activity.staffName || activity.entityName || '';
+                  }
+                  // Performed By column
+                  const performedBy =
+                    activity.performedBy ||
+                    [activity.performedByName, activity.performedByEmail].filter(Boolean).join(' • ') ||
+                    [activity.actorName, activity.actorEmail].filter(Boolean).join(' • ') ||
+                    '';
+                  // Time column
+                  const time = formatRelativeTime(activity.timestamp);
+                  const activityTitle = activity.title || action;
+                  const config = activityConfig[activity.type] || {};
+                  return (
+                    <tr
+                      key={`${activity.id}-${idx}`}
+                      onClick={() => setSelectedActivity({ ...activity, title: activityTitle, performedBy })}
+                      className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} cursor-pointer hover:bg-gray-100 transition transform`}
+                    >
+                      {isRTL ? (
+                        <>
+                          <td className="px-4 py-2 text-right">
+                            <div className="flex items-center gap-2 justify-start">
+                              {getActivityIcon(activity.type)}
+                              <span className={config.color || 'text-slate-900'}>{config.icon ? `${activityTitle}` : activityTitle}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 text-right">{entity}</td>
+                          <td className="px-4 py-2 text-right">{performedBy}</td>
+                          <td className="px-4 py-2 text-sm text-slate-500 text-right">{time}</td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-2 text-left">
+                            <div className="flex items-center gap-2">
+                              {getActivityIcon(activity.type)}
+                              <span className={config.color || 'text-slate-900'}>{config.icon ? `${config.icon} ${activityTitle}` : activityTitle}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 text-left">{entity}</td>
+                          <td className="px-4 py-2 text-left">{performedBy}</td>
+                          <td className="px-4 py-2 text-sm text-slate-500 text-left">{time}</td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedActivity && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" dir={dir}>
+          <div className="bg-white rounded-xl p-6 w-[400px] shadow-lg">
+            <h2 className="text-lg font-bold mb-4">
+              {selectedActivity.title}
+            </h2>
+
+            <div className="space-y-2 text-sm">
+              <div>
+                <strong>סוג פעולה:</strong> {selectedActivity.type}
+              </div>
+
+              <div>
+                <strong>בוצע על ידי:</strong> {selectedActivity.performedBy}
+              </div>
+
+              {selectedActivity.staffName && (
+                <div>
+                  <strong>איש צוות:</strong> {selectedActivity.staffName}
+                </div>
+              )}
+
+              {selectedActivity.clientName && (
+                <div>
+                  <strong>לקוח:</strong> {selectedActivity.clientName}
+                </div>
+              )}
+
+              {selectedActivity.serviceName && (
+                <div>
+                  <strong>שירות:</strong> {selectedActivity.serviceName}
+                </div>
+              )}
+
+              <div>
+                <strong>תאריך:</strong>{' '}
+                {new Date(selectedActivity.timestamp).toLocaleString()}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSelectedActivity(null)}
+              className="mt-4 w-full bg-primary-600 text-white py-2 rounded"
+            >
+              סגור
             </button>
           </div>
         </div>
       )}
-
-      {/* Dashboard Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Plan Display Card - Show at top spanning full width */}
-        {billingStatus && (
-          <div className="md:col-span-1">
-            <PlanDisplay
-              billingStatus={billingStatus}
-              currentUsers={0}
-              currentMessages={0}
-              onUpgrade={handleUpgrade}
-            />
-          </div>
-        )}
-
-        {/* Next Appointment Card */}
-        <div className="bg-white rounded-xl shadow hover:shadow-lg transition-shadow p-6 border border-gray-200">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <p className="text-gray-600 text-sm font-semibold uppercase tracking-wide">
-                Next Appointment
-              </p>
-              <p className="text-gray-400 text-xs mt-1">Scheduled meeting</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Calendar className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-
-          {nextAppointment ? (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">{nextAppointment.title}</h3>
-                <p className="text-sm text-gray-600 mt-1">with {nextAppointment.attendee}</p>
-              </div>
-
-              <div className="flex items-center gap-2 text-gray-700">
-                <Clock className="w-4 h-4 text-gray-500" />
-                <span className="font-semibold">{nextAppointment.date}</span>
-                <span className="text-gray-500">at</span>
-                <span className="font-semibold">{nextAppointment.time}</span>
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <button className="w-full flex items-center justify-between px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors font-semibold text-blue-600 text-sm">
-                  <span>View Details</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600 font-semibold">No upcoming appointments</p>
-              <p className="text-gray-500 text-sm mt-1">Schedule one to get started</p>
-            </div>
-          )}
-        </div>
-
-        {/* Outstanding Balance Card */}
-        <div className="bg-white rounded-xl shadow hover:shadow-lg transition-shadow p-6 border border-gray-200">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <p className="text-gray-600 text-sm font-semibold uppercase tracking-wide">
-                Outstanding Balance
-              </p>
-              <p className="text-gray-400 text-xs mt-1">Amount due</p>
-            </div>
-            <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <DollarSign className="w-6 h-6 text-amber-600" />
-            </div>
-          </div>
-
-          {outstandingBalance ? (
-            <div className="space-y-4">
-              <div>
-                <p className="text-3xl font-bold text-gray-900">
-                  ${outstandingBalance.amount.toFixed(2)}
-                </p>
-                <p className="text-gray-600 text-sm mt-2">
-                  Due: <span className="font-semibold">{outstandingBalance.dueDate}</span>
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-                <span className="text-sm font-semibold text-gray-700">
-                  {outstandingBalance.invoiceCount} invoice(s) pending
-                </span>
-                <span className="text-xs font-bold text-amber-600 px-2 py-1 bg-amber-200 rounded">
-                  {outstandingBalance.invoiceCount === 1 ? 'Action' : 'Review'}
-                </span>
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <button className="w-full flex items-center justify-between px-4 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 transition-colors font-semibold text-amber-600 text-sm">
-                  <span>Pay Now</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600 font-semibold">No outstanding balance</p>
-              <p className="text-gray-500 text-sm mt-1">You're all caught up!</p>
-            </div>
-          )}
-        </div>
-
-        {/* Last Invoice Card */}
-        <div className="bg-white rounded-xl shadow hover:shadow-lg transition-shadow p-6 border border-gray-200">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <p className="text-gray-600 text-sm font-semibold uppercase tracking-wide">
-                Last Invoice
-              </p>
-              <p className="text-gray-400 text-xs mt-1">Most recent billing</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <FileText className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-
-          {lastInvoice && invoiceStatus ? (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">{lastInvoice.number}</h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {new Date(lastInvoice.date).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-gray-900">
-                  ${lastInvoice.amount.toFixed(2)}
-                </span>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${invoiceStatus.bg} ${invoiceStatus.text}`}
-                >
-                  {lastInvoice.status === 'paid' && (
-                    <CheckCircle className={`w-3 h-3 ${invoiceStatus.icon}`} />
-                  )}
-                  {lastInvoice.status === 'pending' && (
-                    <Clock className={`w-3 h-3 ${invoiceStatus.icon}`} />
-                  )}
-                  {lastInvoice.status === 'overdue' && (
-                    <AlertCircle className={`w-3 h-3 ${invoiceStatus.icon}`} />
-                  )}
-                  {lastInvoice.status.charAt(0).toUpperCase() + lastInvoice.status.slice(1)}
-                </span>
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <button className="w-full flex items-center justify-between px-4 py-2 rounded-lg bg-purple-50 hover:bg-purple-100 transition-colors font-semibold text-purple-600 text-sm">
-                  <span>View Invoice</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600 font-semibold">No invoices yet</p>
-              <p className="text-gray-500 text-sm mt-1">Your invoices will appear here</p>
-            </div>
-          )}
-        </div>
-
-        {/* Last Uploaded File Card */}
-        <div className="bg-white rounded-xl shadow hover:shadow-lg transition-shadow p-6 border border-gray-200">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <p className="text-gray-600 text-sm font-semibold uppercase tracking-wide">
-                Last Uploaded File
-              </p>
-              <p className="text-gray-400 text-xs mt-1">Recent document</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <FolderOpen className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-
-          {lastFile ? (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 truncate">{lastFile.name}</h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {new Date(lastFile.uploadedDate).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div>
-                  <p className="text-xs text-gray-600 font-semibold">File Type</p>
-                  <p className="text-sm font-bold text-gray-900">{lastFile.type}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-semibold">Size</p>
-                  <p className="text-sm font-bold text-gray-900">{lastFile.size}</p>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <button className="w-full flex items-center justify-between px-4 py-2 rounded-lg bg-green-50 hover:bg-green-100 transition-colors font-semibold text-green-600 text-sm">
-                  <span>Download</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <FolderOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600 font-semibold">No files uploaded</p>
-              <p className="text-gray-500 text-sm mt-1">Upload a document to get started</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl border border-primary-200 p-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="px-4 py-3 bg-white hover:bg-gray-50 rounded-lg font-semibold text-gray-700 text-sm transition-colors border border-gray-200">
-            Schedule Appointment
-          </button>
-          <button className="px-4 py-3 bg-white hover:bg-gray-50 rounded-lg font-semibold text-gray-700 text-sm transition-colors border border-gray-200">
-            Request Invoice
-          </button>
-          <button className="px-4 py-3 bg-white hover:bg-gray-50 rounded-lg font-semibold text-gray-700 text-sm transition-colors border border-gray-200">
-            Upload Document
-          </button>
-          <button className="px-4 py-3 bg-white hover:bg-gray-50 rounded-lg font-semibold text-gray-700 text-sm transition-colors border border-gray-200">
-            View Reports
-          </button>
-        </div>
-      </div>
-    </div>
+    </Container>
   )
 }

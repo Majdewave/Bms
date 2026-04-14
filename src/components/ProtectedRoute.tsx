@@ -6,7 +6,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const token = localStorage.getItem('authToken')
+  const token = localStorage.getItem('token')
   const location = useLocation()
 
   const currentPath = location.pathname

@@ -114,8 +114,8 @@ export interface UpgradeResponse {
 
 class DashboardService {
   async getPlanData(): Promise<PlanData> {
-    const token = localStorage.getItem('authToken')
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`, {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/dashboard`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -124,7 +124,7 @@ class DashboardService {
     })
 
     if (response.status === 401) {
-      localStorage.removeItem('authToken')
+      localStorage.removeItem('token')
       window.location.href = '/'
       throw new Error('Unauthorized')
     }
@@ -139,8 +139,8 @@ class DashboardService {
   }
 
   async getBillingStatus(): Promise<BillingStatus> {
-    const token = localStorage.getItem('authToken')
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/billing/status`, {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/billing/status`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ class DashboardService {
     })
 
     if (response.status === 401) {
-      localStorage.removeItem('authToken')
+      localStorage.removeItem('token')
       window.location.href = '/'
       throw new Error('Unauthorized')
     }
@@ -165,8 +165,8 @@ class DashboardService {
   }
 
   async upgrade(planType: number, billingCycle: number): Promise<UpgradeResponse> {
-    const token = localStorage.getItem('authToken')
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/billing/upgrade`, {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/billing/upgrade`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ class DashboardService {
     })
 
     if (response.status === 401) {
-      localStorage.removeItem('authToken')
+      localStorage.removeItem('token')
       window.location.href = '/'
       throw new Error('Unauthorized')
     }

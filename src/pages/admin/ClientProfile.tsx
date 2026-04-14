@@ -408,7 +408,7 @@ export default function ClientProfile() {
   }
 
   const downloadPrescription = async (id: string) => {
-    const token = localStorage.getItem('authToken')
+    const token = localStorage.getItem('token')
     if (!token) {
       alert('אין הרשאה להורדת הקובץ')
       return

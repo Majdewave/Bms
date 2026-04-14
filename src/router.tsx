@@ -42,6 +42,7 @@ import ClientFiles from '@/pages/client/Files'
 import ClientProfile from '@/pages/client/Profile'
 
 import React from 'react'
+import Register from './pages/Register';
 
 const ErrorFallback = () => (
   <div style={{ padding: 32, textAlign: 'center', color: '#b91c1c' }}>
@@ -60,7 +61,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <Login />,
+    element: <Navigate to="/register" replace />,
+  },
+  {
+    path: '/register',
+    element: <React.Suspense fallback={<div>Loading...</div>}><Register /></React.Suspense>,
   },
 
   {
