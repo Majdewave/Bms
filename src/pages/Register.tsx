@@ -12,6 +12,8 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Optionally, for field-level errors in the future:
+  // const [fieldError, setFieldError] = useState<{ field: string; message: string } | null>(null);
   const navigate = useNavigate();
 
   const { login } = useAuth();
@@ -22,27 +24,62 @@ export default function Register() {
    };
 
 
+
+  // Robust error message extraction for backend and future errors
+  const getErrorMessage = (apiError: any): string => {
+    if (!apiError) return "Registration failed. Please try again.";
+    // Prefer code-based handling, fallback to message, then generic
+    if (apiError.code) {
+      switch (apiError.code) {
+        case "USER_ALREADY_EXISTS":
+          return "This email is already registered.";
+        case "DATABASE_ERROR":
+          return "Something went wrong. Please try again later.";
+        case "UNKNOWN_ERROR":
+          return "Something went wrong. Please try again.";
+        // Add more known codes here as needed
+        default:
+          // If code is unknown, but message exists, show it
+          return apiError.message || `Unexpected error (${apiError.code}) occurred.`;
+      }
+    }
+    // If error is a string
+    if (typeof apiError === "string") return apiError;
+    // If error has a message
+    if (apiError.message) return apiError.message;
+    // If error has an error property
+    if (apiError.error) return apiError.error;
+    // Fallback
+    return "Registration failed. Please try again.";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    // setFieldError(null); // For future field-level error support
     try {
-        localStorage.removeItem("token");
-        const res = await post<RegisterResponse>("/api/auth/register", {
+      localStorage.removeItem("token");
+      const res = await post<RegisterResponse>("/api/auth/register", {
         businessName,
         email,
         password,
-        });
+      });
 
-    if (res.token) {
-        await login(email, password); //  זה הקסם
+      if (res.token) {
+        await login(email, password);
         navigate("/admin/dashboard", { replace: true });
-        }
-    else {
+      } else {
         setError("Something went wrong. Please try again.");
       }
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err: any) {
+      // Try to extract error from known structure (apiClient throws ApiError)
+      const apiError = err?.response || err;
+      setError(getErrorMessage(apiError));
+      // For future field-level error support:
+      // if (apiError?.field) {
+      //   setFieldError({ field: apiError.field, message: apiError.message });
+      // }
     } finally {
       setLoading(false);
     }
@@ -112,7 +149,7 @@ export default function Register() {
             </div>
             {error && (
               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded p-3 text-sm text-center mt-2">
-                ⚠️ Registration failed. Please try again.
+                ⚠️ {error}
               </div>
             )}
             <button

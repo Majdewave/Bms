@@ -231,8 +231,8 @@ export default function Login() {
         <div className="relative z-10">
           <div className="mb-12">
             {/* Professional Logo */}
-            <ClientaWordmark />
-            <p className="text-xs text-indigo-300 tracking-wide uppercase mt-2.5 font-medium">{t('login.systemLabel')}</p>
+             <img src="/clienta-logo.png" alt="Clienta" className="h-10 mb-2" />
+            <div className="text-xs text-gray-500 mb-8">A product of digitalpenpro.com</div>
           </div>
 
           {/* Divider */}
@@ -473,25 +473,7 @@ export default function Login() {
                 <div className="w-full border-t border-slate-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-slate-600">Demo credentials</span>
-              </div>
-            </div>
-
-            {/* Demo Credentials */}
-            <div className="bg-slate-50 rounded-lg p-4 mb-6 space-y-2">
-              <div className="space-y-2.5 text-sm">
-                <div>
-                  <p className="text-slate-600 font-medium">{t('login.demoAdmin')}</p>
-                  <p className="text-slate-500 font-mono text-xs">admin@example.com / admin123</p>
-                </div>
-                <div>
-                  <p className="text-slate-600 font-medium">{t('login.demoStaff')}</p>
-                  <p className="text-slate-500 font-mono text-xs">staff@example.com / staff123</p>
-                </div>
-                <div>
-                  <p className="text-slate-600 font-medium">{t('login.demoClient')}</p>
-                  <p className="text-slate-500 font-mono text-xs">demo@example.com / password123</p>
-                </div>
+                <span className="px-2 bg-white text-slate-600"></span>
               </div>
             </div>
           </form>
