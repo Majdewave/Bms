@@ -27,10 +27,10 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react'
-import PlanDisplay from '@/components/PlanDisplay'
+import { TrialBanner } from '@/components/TrialBanner'
 
 export default function AdminDashboard() {
-  const { tenant, isTrial, isExpired, isPaid, daysLeft, loading: tenantLoading } = useTenant();
+  const { loading: tenantLoading } = useTenant();
   const { user } = useAuth()
   const { t, i18n } = useTranslation()
   const dir = i18n.dir()
@@ -110,25 +110,7 @@ export default function AdminDashboard() {
     return `${diffDays}d ago`
   }
 
-  const handleUpgrade = async () => {
-    const res = await fetch('https://clienta.digitalpenpro.com/api/billing/upgrade', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + localStorage.getItem('token'),
-      },
-      body: JSON.stringify({
-        planType: 2,
-        billingCycle: 0,
-      }),
-    });
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      alert('Upgrade failed');
-    }
-  };
+
 
   // Payment success toast
   useEffect(() => {
@@ -151,58 +133,12 @@ export default function AdminDashboard() {
 
   return (
     <Container>
-      <PageHeader
-        title={t('admin.dashboard.title', { name: user?.name })}
-        description={t('admin.dashboard.subtitle')}
-      />
-
-      {/* Plan & Trial UI */}
-      <div className="mb-8 relative">
-        {/* Trial Active Banner */}
-        {isTrial && !isExpired && !tenant?.isSuspended && (
-          <div className="mb-4 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 flex items-center justify-between">
-            <div>
-              <span className="font-bold">🚀 You are on a 7-day trial</span> – {daysLeft} days remaining
-            </div>
-            <button
-              onClick={handleUpgrade}
-              className="ml-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold text-sm"
-            >
-              Upgrade Now
-            </button>
-          </div>
-        )}
-        {/* Trial Expired or Suspended Banner */}
-        {(isExpired || tenant?.isSuspended) && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 rounded-lg border-2 border-red-400">
-            <div className="text-red-700 text-lg font-bold mb-2">⚠️ Trial expired</div>
-            <div className="mb-4 text-red-600">Upgrade to continue using the system</div>
-            <button
-              onClick={handleUpgrade}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-semibold text-sm"
-            >
-              Upgrade Now
-            </button>
-          </div>
-        )}
-        {/* Paid Plan Badge */}
-        {isPaid && !tenant?.isSuspended && (
-          <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-900 flex items-center justify-between">
-            <span className="font-bold">✅ Pro Plan Active</span>
-            {/* Optional: Manage Subscription button */}
-            {/* <button className="ml-4 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded font-semibold text-xs">Manage Subscription</button> */}
-          </div>
-        )}
-        {/* PlanDisplay only for trial/expired, not for paid */}
-        {(!isPaid || isTrial) && (
-          <PlanDisplay onUpgrade={handleUpgrade} billingStatus={stats?.billingStatus || { plan: tenant?.plan || '', billingCycle: '', subscriptionStatus: '', trialEndsAt: tenant?.trialEndsAt || '', daysRemaining: daysLeft, userLimit: 0, messageLimit: 0, isSuspended: !!tenant?.isSuspended, stripeCustomerId: '', features: { maxUsers: 0, maxMessages: 0, customBranding: false, emailAutomation: false, support: '', priority: '' } }} />
-        )}
-        {/* Overlay to block UI if expired or suspended */}
-        {(isExpired || tenant?.isSuspended) && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/80 rounded-lg">
-            <div className="text-red-700 text-xl font-bold">⚠️ Your trial has expired. Please upgrade to continue.</div>
-          </div>
-        )}
+      <div className="space-y-4">
+        <TrialBanner daysLeft={7} />
+        <PageHeader
+          title={t('admin.dashboard.title', { name: user?.name })}
+          description={t('admin.dashboard.subtitle')}
+        />
       </div>
 
       {/* Stats Grid */}
