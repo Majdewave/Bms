@@ -1,3 +1,6 @@
+import { useState, useEffect } from 'react'
+import { useTenant } from '@/hooks/useTenant'
+import { useAuth } from '@/contexts/AuthContext'
 // Returns translated label for activity action type
   const getActionLabel = (type: string, t: any) => {
     switch (type) {
@@ -39,6 +42,9 @@ export default function AdminDashboard() {
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [selectedActivity, setSelectedActivity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loadingSub, setLoadingSub] = useState(true);
+  const navigate = useNavigate();
 
   const activityConfig: Record<string, { icon: string; color: string }> = {
     staff_created: { icon: '👤', color: 'text-green-600' },
@@ -72,7 +78,23 @@ export default function AdminDashboard() {
         setLoading(false)
       }
     }
-    loadDashboardData()
+    loadDashboardData();
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    setLoadingSub(true);
+    fetch('/api/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(res => res.json())
+      .then(data => setSubscription(data))
+      .catch(() => setSubscription(null))
+      .finally(() => setLoadingSub(false));
+  }, []);
+
+  const isTrialExpired = subscription?.trialEndsAt && new Date(subscription.trialEndsAt) < new Date();
+  const isSubSuspended = subscription?.isSuspended;
   }, [])
 
   const getActivityIcon = (type: string) => {
@@ -140,6 +162,15 @@ export default function AdminDashboard() {
   }, []);
 
   if (loading || tenantLoading) {
+    return (
+      <Container>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </Container>
+    );
+  }
+  if (loading || tenantLoading || loadingSub) {
     return (
       <Container>
         <div className="flex items-center justify-center min-h-screen">
@@ -238,6 +269,10 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+        {/* Example: Disable actions if expired */}
+        <button disabled={isTrialExpired} className="mt-6 px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50">
+          Create Appointment
+        </button>
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardContent>
