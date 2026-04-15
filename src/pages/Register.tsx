@@ -11,9 +11,8 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // Optionally, for field-level errors in the future:
-  // const [fieldError, setFieldError] = useState<{ field: string; message: string } | null>(null);
   const navigate = useNavigate();
 
   const { login } = useAuth();
@@ -57,13 +56,20 @@ export default function Register() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    // setFieldError(null); // For future field-level error support
+    
+    if (!fullName.trim()) {
+      setError("Full name is required");
+      setLoading(false);
+      return;
+    }
+
     try {
       localStorage.removeItem("token");
       const res = await post<RegisterResponse>("/api/auth/register", {
         businessName,
         email,
         password,
+        fullName
       });
 
       if (res.token) {
@@ -129,6 +135,14 @@ export default function Register() {
                 onChange={e => setBusinessName(e.target.value)}
                 required
                 autoFocus
+              />
+              <input
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-200 text-gray-900 bg-gray-50 shadow-sm text-left"
+                placeholder="Full Name"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
               />
               <input
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-200 text-gray-900 bg-gray-50 shadow-sm text-left"
