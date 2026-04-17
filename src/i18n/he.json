@@ -1,4 +1,4 @@
-{
+  {
   "dashboard": {
     "totalClients": "סה״כ לקוחות",
     "appointmentsToday": "תורים היום",
@@ -41,9 +41,33 @@
   },
   "app": {
     "name": "Clienta",
-    "tagline": "Client Management Made Simple",
-    "clientHub": "Client Hub",
-    "operations": "Operations"
+    "tagline": "ניהול לקוחות בצורה פשוטה",
+    "clientHub": "מרכז לקוחות",
+    "operations": "פעולות"
+  },
+
+  "billing": {
+    "trial": {
+      "title": "נותרו עוד {{days}} ימים לניסיון שלך",
+      "subtitle": "אל תאבד גישה ללקוחות ולפגישות שלך.",
+      "warning": "לאחר סיום הניסיון, הפיצ'רים יהיו מוגבלים."
+    },
+    "value": {
+      "clients": "לקוחות ללא הגבלה",
+      "automation": "אוטומציה",
+      "support": "תמיכה מועדפת"
+    },
+    "plans": {
+      "basic": "בסיסי",
+      "pro": "פרו",
+      "perMonth": "$${price} / חודש",
+      "popular": "הכי פופולרי"
+    },
+    "cta": {
+      "upgrade": "שמור על העסק שלי פעיל",
+      "basic": "בחר בסיסי",
+      "note": "אין צורך בכרטיס אשראי • ניתן לבטל בכל עת"
+    }
   },
   "consent": {
     "title": "מסמך הסכמה",
@@ -161,7 +185,7 @@
   },
   "layout": {
     "signedInAs": "מחובר כ",
-    "welcomeBack": "ברוך הבא חזרה",
+    "welcomeBack": "שלום ",
     "manageOperations": "נהל פעולות ופעילות לקוחות",
     "manageClientHub": "נהל את הפגישות והפרופיל שלך",
     "userMenu": "תפריט משתמש"

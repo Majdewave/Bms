@@ -45,6 +45,29 @@
     "clientHub": "Client Hub",
     "operations": "Operations"
   },
+    "billing": {
+    "trial": {
+      "title": "Only {{days}} days left on your trial",
+      "subtitle": "Don’t lose access to your clients and appointments.",
+      "warning": "After your trial ends, features will be limited."
+    },
+    "value": {
+      "clients": "Unlimited clients",
+      "automation": "Automation",
+      "support": "Priority support"
+    },
+    "plans": {
+      "basic": "Basic",
+      "pro": "Pro",
+      "perMonth": "$${price} / month",
+      "popular": "MOST POPULAR"
+    },
+    "cta": {
+      "upgrade": "Keep my business running",
+      "basic": "Choose Basic",
+      "note": "No credit card required • Cancel anytime"
+    }
+  },
   "consent": {
     "title": "Consent Form",
     "clientSignature": "Client Signature",

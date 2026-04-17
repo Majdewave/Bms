@@ -205,15 +205,15 @@ export default function AdminLayout() {
         } bg-white border-r border-slate-200 flex flex-col h-screen min-h-0`}
       >
 
-        <div className="p-6 border-b border-slate-200 sideBarTopBlock" style={{ padding: 0 }}>
+        <div className="p-6 sideBarTopBlock" style={{ padding: 0, borderBottom: 0 }}>
           <Link to={homePath} className="block BusinessLogoLink" style={{ padding: 0 }}>
             <div className="flex flex-col items-center py-4 gap-3 BusinessLogoContainer" style={{ padding: 0 }}>
               {/* BUSINESS OR CLIENTA LOGO */}
               <img
                 src={businessLogo}
                 alt="Logo"
-                className="h-10 object-contain BusinessLogoImg"
-                style={{ height: 'auto', maxHeight: '80px' }}
+                className="object-contain BusinessLogoImg"
+                style={{ height: 'auto', maxHeight: '150px', width: '100%', borderBottom: 0 }}
                 onError={(e) => (e.currentTarget.src = '/clienta-logo.png')}
               />
             </div>
@@ -294,7 +294,7 @@ export default function AdminLayout() {
           <div>
 
             <h1 className="text-lg font-semibold">
-              {t('layout.welcomeBack')}
+              {t('layout.welcomeBack')} {getInitials(user?.name)}
             </h1>
 
             <nav className="flex gap-2 text-xs text-slate-500">

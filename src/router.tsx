@@ -12,6 +12,7 @@ import BillingSuccess from '@/pages/BillingSuccess'
 import BillingPage from '@/pages/BillingPage'
 
 import AdminLayout from '@/layouts/AdminLayout'
+import AdminBillingPage from '@/pages/admin/BillingPage'
 import ClientLayout from '@/layouts/ClientLayout'
 
 /* ================= ADMIN PAGES ================= */
@@ -118,6 +119,14 @@ export const router = createBrowserRouter([
         element: (
           <RoleBasedRoute allowedRoles={['admin']}>
             <AdminDashboard />
+          </RoleBasedRoute>
+        ),
+      },
+      {
+        path: 'billing',
+        element: (
+          <RoleBasedRoute allowedRoles={['admin']}>
+            <AdminBillingPage />
           </RoleBasedRoute>
         ),
       },

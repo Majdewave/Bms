@@ -331,7 +331,8 @@ export default function BusinessSettings() {
                       <img
                         src={getCacheBustedLogoUrl(logoPreview)}
                         alt="Business logo"
-                        className="h-32 max-w-full object-contain"
+                        className="max-w-full object-contain"
+                        style={{ maxHeight: '220px', borderBottom: 0 }}
                       />
                     </div>
                   </div>
