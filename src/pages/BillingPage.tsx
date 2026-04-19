@@ -69,14 +69,17 @@ export default function BillingPage() {
   return (
     <div
       dir={isRTL ? 'rtl' : 'ltr'}
-      className="min-h-screen bg-[#f7f9fc] flex flex-col items-center px-6 py-16"
+      className="min-h-screen bg-[#f7f9fc] flex flex-col items-center px-6 pt-6 pb-20"
     >
 
       {/* LOGO */}
-      <div className="mb-10">
+
+      {/* LOGO - moved up, less spacing */}
+      <div className="mb-1 mt-2">
         <img
           src="/clienta-logo.png"
-          className="h-16 mx-auto object-contain"
+          className="h-16 md:h-20 mx-auto object-contain"
+          alt="Clienta Logo"
         />
       </div>
 
@@ -94,50 +97,47 @@ export default function BillingPage() {
       )}
 
       {/* PLAN */}
-      <div className="bg-white rounded-2xl shadow-lg p-10 w-full max-w-md text-center">
-
-        <div className="mb-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center">
+        <div className="mb-3">
           <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
             {t('billing.popular')}
           </span>
         </div>
 
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-          {t('billing.plan')}
+        <h2 className="text-[26px] font-semibold text-gray-900 mb-1">
+          {t('billing.plan') || 'PRO'}
         </h2>
 
-        <div className="mb-6">
-          <div className="text-4xl font-semibold text-gray-900">
-            ₪39
+        <div className="mb-5">
+          <div className="text-[42px] font-semibold text-gray-900">
+            €46
           </div>
-
-          <div className="text-gray-500 text-sm">
+          <div className="text-gray-500 text-base">
             {t('billing.perMonth')}
           </div>
-
-          <div className="text-xs text-gray-400 mt-1">
+          <div className="text-base text-gray-500 mt-1">
             {t('billing.yearly')}
           </div>
         </div>
 
-        <div className="space-y-3 text-gray-700 mb-8 text-sm">
-          <div>{t('billing.features.clients')}</div>
-          <div>{t('billing.features.appointments')}</div>
-          <div>{t('billing.features.staff')}</div>
-          <div>{t('billing.features.full')}</div>
+        <div className="space-y-2 text-gray-700 mb-7 text-[17px]">
+          <div><span className="text-blue-600 font-semibold">✔</span> {t('billing.features.clients').replace(/^✔\s*/, '')}</div>
+          <div><span className="text-blue-600 font-semibold">✔</span> {t('billing.features.appointments').replace(/^✔\s*/, '')}</div>
+          <div><span className="text-blue-600 font-semibold">✔</span> {t('billing.features.staff').replace(/^✔\s*/, '')}</div>
+          <div><span className="text-blue-600 font-semibold">✔</span> {t('billing.features. full').replace(/^✔\s*/, '')}</div>
         </div>
 
         <button
           onClick={handleUpgrade}
           disabled={isLoadingCheckout}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-sm font-medium transition"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-medium transition"
         >
           {isLoadingCheckout
             ? t('billing.redirect')
             : t('billing.upgrade')}
         </button>
 
-        <p className="text-xs text-gray-400 mt-4">
+        <p className="text-base text-gray-400 mt-4">
           {t('billing.footer')}
         </p>
       </div>

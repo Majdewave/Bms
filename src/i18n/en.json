@@ -46,26 +46,25 @@
     "operations": "Operations"
   },
     "billing": {
-    "trial": {
-      "title": "Only {{days}} days left on your trial",
-      "subtitle": "Don’t lose access to your clients and appointments.",
-      "warning": "After your trial ends, features will be limited."
-    },
-    "value": {
-      "clients": "Unlimited clients",
-      "automation": "Automation",
-      "support": "Priority support"
-    },
-    "plans": {
-      "basic": "Basic",
-      "pro": "Pro",
-      "perMonth": "$${price} / month",
-      "popular": "MOST POPULAR"
-    },
-    "cta": {
-      "upgrade": "Keep my business running",
-      "basic": "Choose Basic",
-      "note": "No credit card required • Cancel anytime"
+    "loading": "Loading...",
+    "loadError": "Failed to load billing information",
+    "error": "Something went wrong. Please try again.",
+    "activeTitle": "Pro Plan Active",
+    "activeSubtitle": "Your subscription is active",
+    "trial": "Trial · {{days}} days left",
+    "trialSubtitle": "You have full access to all features during your trial",
+    "popular": "Most popular",
+    "plan": "Pro Plan",
+    "perMonth": "per month",
+    "yearly": "or 460€/year (save 2 months)",
+    "upgrade": "Upgrade",
+    "redirect": "Redirecting...",
+    "footer": "Cancel anytime",
+      "features": {
+      "clients": "✔ Unlimited Clients",
+      "appointments": "✔ Appointment Management",
+      "staff": "✔ Staff Management",
+      "full": "✔ Full System Access"
     }
   },
   "consent": {
@@ -321,8 +320,8 @@
       "workflows": "Appointment scheduling",
       "analytics": "Financial tracking",
       "security": "Secure data management"
-    },
-    "accessTitle": "System Access",
+        },
+            "accessTitle": "System Access",
     "accessDescription": "Enter your credentials to continue",
     "subtitle": "A digital operating system for your business",
     "headline": "Sign in to your account",
