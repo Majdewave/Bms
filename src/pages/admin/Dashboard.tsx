@@ -27,7 +27,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react'
-import { TrialBanner } from '@/components/TrialBanner'
+import BillingBanner from '@/components/BillingBanner'
 
 export default function AdminDashboard() {
   const { loading: tenantLoading } = useTenant();
@@ -134,7 +134,7 @@ export default function AdminDashboard() {
   return (
     <Container>
       <div className="space-y-4">
-        <TrialBanner daysLeft={7} />
+        <BillingBanner />
         <PageHeader
           title={t('admin.dashboard.title', { name: user?.name })}
           description={t('admin.dashboard.subtitle')}

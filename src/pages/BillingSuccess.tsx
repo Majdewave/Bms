@@ -1,43 +1,37 @@
-import { useEffect } from 'react'
-import { CheckCircle } from 'lucide-react'
+import { useEffect } from "react";
 
 export default function BillingSuccess() {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      window.location.href = '/dashboard'
-    }, 2000)
+    const confirmPayment = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get("session_id");
 
-    return () => clearTimeout(timer)
-  }, [])
+        if (!sessionId) {
+          throw new Error("No session_id");
+        }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="bg-white rounded-xl shadow-lg p-12 max-w-md mx-auto text-center">
-        <div className="flex justify-center mb-6">
-          <CheckCircle className="w-16 h-16 text-green-600" />
-        </div>
+        const res = await fetch(`/api/stripe/confirm-session?session_id=${sessionId}`);
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">Success!</h1>
+        if (!res.ok) {
+          throw new Error("Confirm failed");
+        }
 
-        <p className="text-gray-600 mb-8">
-          Your subscription has been activated. You'll be redirected to your dashboard in a moment.
-        </p>
+        const data = await res.json();
 
-        <div className="flex justify-center">
-          <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin" />
-        </div>
+        // 👉 חשוב מאוד
+        localStorage.setItem("token", data.token);
 
-        <p className="text-sm text-gray-500 mt-6">
-          Redirecting in 2 seconds...
-        </p>
+        window.location.href = "/dashboard";
+      } catch (err) {
+        console.error(err);
+        alert("Payment confirmed but failed to sync. Please refresh.");
+        window.location.href = "/dashboard";
+      }
+    };
 
-        <a
-          href="/dashboard"
-          className="block mt-8 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
-        >
-          Go to Dashboard Now
-        </a>
-      </div>
-    </div>
-  )
+    confirmPayment();
+  }, []);
+
+  return <div>Processing payment...</div>;
 }
