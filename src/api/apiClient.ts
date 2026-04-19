@@ -1,3 +1,7 @@
+
+import { updateLastActivity, getLastActivity, isSessionExpired, resetSession } from './sessionManager'
+import { logout as doLogout } from './auth'
+
 const BASE_URL = (import.meta as any).env.VITE_API_URL || 'https://clienta.digitalpenpro.com'
 
 type RequestOptions = RequestInit & {
@@ -23,19 +27,25 @@ async function request<T>(
   url: string,
   options: RequestOptions = {}
 ): Promise<T> {
+  // Idle timeout check
+  if (isSessionExpired()) {
+    await doLogout()
+    window.location.href = '/login'
+    throw new Error('Session expired due to inactivity')
+  }
+
+  // Update last activity
+  updateLastActivity()
+
   const authToken = localStorage.getItem('token')
-
   const isFormDataRequest = options.isFormData === true || options.body instanceof FormData
-
   let headers: Record<string, string> = {
     'Content-Type': 'application/json; charset=utf-8',
     ...(options.headers as Record<string, string>),
   };
-  // Remove Content-Type for FormData, browser will set multipart boundary
   if (isFormDataRequest) {
     delete headers['Content-Type'];
   }
-
   if (authToken && !isAuthRelatedEndpoint(url)) {
     headers['Authorization'] = `Bearer ${authToken}`;
   }
@@ -44,7 +54,6 @@ async function request<T>(
     headers,
     credentials: 'include'
   };
-
   // Log full request details
   console.log(`[API Request] ${options.method || 'GET'} ${BASE_URL}${url}`)
   console.log('[API Request Headers]', headers)
@@ -53,50 +62,68 @@ async function request<T>(
   }
   console.log("BASE_URL:", BASE_URL);
 
-  const response = await fetch(`${BASE_URL}${url}`, fetchOptions)
+  let response = await fetch(`${BASE_URL}${url}`, fetchOptions)
 
-  // Handle 401 Unauthorized only for auth-related endpoints
-  if (response.status === 401) {
-    console.warn('401 Unauthorized for:', url);
-    throw new ApiError('Unauthorized', 401)
+  // Auto-refresh on 401
+  if (response.status === 401 && !isAuthRelatedEndpoint(url)) {
+    try {
+      // Try refresh
+      const refreshRes = await fetch(`${BASE_URL}/api/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (refreshRes.ok) {
+        // Assume new token is set via httpOnly cookie or similar
+        // Retry original request
+        response = await fetch(`${BASE_URL}${url}`, fetchOptions)
+        if (response.status !== 401) {
+          // Success on retry, continue
+        } else {
+          // Still 401 after refresh, logout
+          await doLogout()
+          window.location.href = '/login'
+          throw new ApiError('Unauthorized after refresh', 401)
+        }
+      } else {
+        // Refresh failed, logout
+        await doLogout()
+        window.location.href = '/login'
+        throw new ApiError('Session expired', 401)
+      }
+    } catch (e) {
+      await doLogout()
+      window.location.href = '/login'
+      throw new ApiError('Session expired', 401)
+    }
   }
 
-  // Handle non-ok responses
   if (!response.ok) {
     if (response.status === 403) {
-      // Return a structured forbidden response
       return { forbidden: true } as T;
     }
     let errorMessage = `Request failed with status ${response.status}`
     let errorData: any
     try {
       const text = await response.text()
-      // Log response status and text for non-ok responses
       console.error(`[API Error] Status: ${response.status}`)
       console.error(`[API Error] Response:`, text)
       try {
         errorData = JSON.parse(text)
         errorMessage = errorData.message || errorData.error || errorMessage
       } catch {
-        // Response is not JSON
         errorMessage = text || errorMessage
       }
-    } catch {
-      // Could not read response body
-    }
+    } catch {}
     throw new ApiError(errorMessage, response.status, errorData)
   }
 
-  // Handle empty responses (204 No Content, etc.)
   if (response.status === 204 || response.headers.get('content-length') === '0') {
     return undefined as T
   }
-
-  // Parse JSON response
   try {
     return await response.json()
   } catch {
-    // If JSON parsing fails, return empty object
     return {} as T
   }
 }

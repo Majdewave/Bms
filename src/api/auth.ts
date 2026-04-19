@@ -38,8 +38,10 @@ export const login = async (credentials: LoginRequest): Promise<LoginResponse> =
   }
 }
 
-export const logout = (): Promise<void> => {
-  return Promise.resolve()
+export const logout = async (): Promise<void> => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('refreshToken')
+  window.location.href = '/login'
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
