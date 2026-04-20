@@ -200,12 +200,9 @@ export default function BusinessSettings() {
     setSaving(true)
 
     try {
-      await updateBusinessSettings({
+      await apiClient.put('/api/tenant/me', {
         name: formData.name,
         logoUrl: logoUrl,
-      })
-
-      await apiClient.put('/api/tenant/me', {
         phone: formData.phone,
         whatsApp: formData.whatsApp,
       })
@@ -223,6 +220,7 @@ export default function BusinessSettings() {
       setSaving(false)
     }
   }
+
 
   if (pageLoading) {
     return (
