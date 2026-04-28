@@ -415,18 +415,36 @@ export default function ClientProfile() {
     }
 
     try {
-      const blob = await apiClient.getBlob(`/api/prescriptions/${id}/pdf`)
+      const token = localStorage.getItem('token')
+      const response = await fetch(
+        `${(import.meta as any).env.VITE_API_URL}/api/prescriptions/${id}/pdf`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      )
+
+      // 👇 קריטי
+      if (!response.ok) {
+        const text = await response.text()
+        console.error('NOT PDF RESPONSE:', text)
+        alert('Server returned error instead of PDF')
+        return
+      }
+
+      const blob = await response.blob()
+
       const url = window.URL.createObjectURL(blob)
-       window.open(url);
-       /* for download PDF
-      // const link = document.createElement('a')
-      // link.href = url
-      // link.download = `prescription-${id}.pdf`
-      // document.body.appendChild(link)
-      // link.click()
-      // link.remove()
-      // window.URL.revokeObjectURL(url)
-      */
+
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `prescription-${id}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+   
     } catch (error) {
       console.error('Failed to download prescription PDF:', error)
       alert('שגיאה בהורדת קובץ המרשם')
