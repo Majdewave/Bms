@@ -164,7 +164,27 @@ export default function Login() {
     };
 
     await authLogin(formData.email, formData.password);
-    navigate("/admin/dashboard", { replace: true });
+    
+    await authLogin(formData.email, formData.password);
+
+// 🔥 כאן בדיוק עושים decode ל־token
+const token = localStorage.getItem('token');
+
+if (!token) {
+  navigate('/login');
+  return;
+}
+
+const payload = JSON.parse(atob(token.split('.')[1]));
+
+const role =
+  payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]?.toLowerCase();
+
+// 🔥 ניווט לפי role
+if (role === 'admin') navigate('/admin/dashboard', { replace: true });
+else if (role === 'staff') navigate('/staff/dashboard', { replace: true });
+else if (role === 'client') navigate('/client/dashboard', { replace: true });
+else navigate('/', { replace: true });
     setSuccessMessage("Login successful");
 
       // Handle remember me
