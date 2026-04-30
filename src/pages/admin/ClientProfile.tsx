@@ -550,6 +550,42 @@ useEffect(() => {
     }
   }
 
+   // --- Visit Summary Actions ---
+  const handleDelete = async (id: string) => {
+    if (!confirm('למחוק את הסיכום?')) return;
+    try {
+      await visitSummariesService.delete(id);
+      setVisitSummaries(prev => prev.filter(s => s.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert('שגיאה במחיקה');
+    }
+  };
+
+  // --- Edit Modal State ---
+  const [editingSummary, setEditingSummary] = useState<VisitSummary | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const handleEdit = (summary: VisitSummary) => {
+    setEditingSummary(summary);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingSummary) return;
+    try {
+      await visitSummariesService.update(editingSummary.id, editingSummary);
+      setVisitSummaries(prev =>
+        prev.map(s => s.id === editingSummary.id ? editingSummary : s)
+      );
+      setIsEditModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert('שגיאה בעדכון');
+    }
+  };
+      
+
   /* ================================
      RENDER
   ================================ */
@@ -613,6 +649,69 @@ useEffect(() => {
 
         </div>
       </div>
+
+
+{isEditModalOpen && editingSummary && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg space-y-4" dir="rtl">
+            <h3 className="text-lg font-bold">עריכת סיכום ביקור</h3>
+              <div className="space-y-1 text-right">
+                <label className="text-sm font-semibold text-gray-700">
+                  בדיקה
+                </label>
+
+                <textarea
+                  value={editingSummary.examination}
+                  onChange={(e) =>
+                    setEditingSummary({ ...editingSummary, examination: e.target.value })
+                  }
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-1 text-right">
+                <label className="text-sm font-semibold text-gray-700">
+                  אבחנה
+                </label>
+
+                <textarea
+                  value={editingSummary.diagnosis}
+                  onChange={(e) =>
+                    setEditingSummary({ ...editingSummary, diagnosis: e.target.value })
+                  }
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-1 text-right">
+                <label className="text-sm font-semibold text-gray-700">
+                  המלצות וטיפול
+                </label>
+
+                <textarea
+                  value={editingSummary.recommendations}
+                  onChange={(e) =>
+                    setEditingSummary({ ...editingSummary, recommendations: e.target.value })
+                  }
+                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 bg-gray-300 rounded"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                שמירה
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* CLIENT CARD */}
 
@@ -807,25 +906,39 @@ useEffect(() => {
                       key={summary.id}
                       className="border border-slate-200 rounded-xl p-4 flex items-center justify-between"
                     >
-                      <div className="text-right">
-                        <div className="font-medium">
-                          {summary.createdAt ? new Date(summary.createdAt).toLocaleDateString() : '-'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {summary.examination?.slice(0, 40)}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
+                      {/* Actions (left) */}
+                      <div className="flex gap-3 items-center">
                         <button
                           onClick={() => visitSummariesService.openPdf(summary.id)}
-                          className="btn btn-sm"
+                          className="text-blue-600 text-sm"
                         >
                           PDF
                         </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(summary);
+                          }}
+                          className="text-gray-600 text-sm relative z-10"
+                        >
+                          עריכה
+                        </button>
+                        <button
+                          onClick={() => handleDelete(summary.id)}
+                          className="text-red-500 text-sm"
+                        >
+                          מחיקה
+                        </button>
+                      </div>
+                      {/* Info (right) */}
+                      <div className="text-right">
+                        <div>{summary.createdAt ? new Date(summary.createdAt).toLocaleDateString() : '-'}</div>
+                        <div className="text-gray-500 text-sm">{summary.diagnosis}</div>
                       </div>
                     </div>
                   ))}
-                </div>
+               </div>
               )}
             </div>
           )}
