@@ -765,7 +765,9 @@
     "drugsDesc": "הצג את מאגר התרופות במערכת",
 
     "beforeAfterPhotos": "תמונות לפני/אחרי",
-    "beforeAfterPhotosDesc": "הצג העלאת תמונות לפני ואחרי בפרופיל הלקוח"
+    "beforeAfterPhotosDesc": "הצג העלאת תמונות לפני ואחרי בפרופיל הלקוח",
+    "visitSummaries": "סיכומי ביקור",
+    "visitSummariesDesc": "הצג את אפשרות סיכומי ביקור בפרופיל הלקוח"
   },
 
     "services": {

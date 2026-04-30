@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { ChevronDown, FileCheck, FileText, Image as ImageIcon, MessageSquare, Pill, User } from "lucide-react"
+import { visitSummariesService, type VisitSummary } from '@/api/visitSummaries'
 import { useAuth } from "@/contexts/AuthContext"
 import { useFeatures } from "@/contexts/FeatureContext"
 import * as apiClient from "@/api/apiClient"
@@ -85,6 +86,7 @@ export default function ClientProfile() {
     instructions: false,
   })
   const [openSections, setOpenSections] = useState<string[]>([])
+  const [visitSummaries, setVisitSummaries] = useState<VisitSummary[]>([])
   const [prescriptionForm, setPrescriptionForm] = useState({
     date: new Date().toISOString().split('T')[0],
     nationalId: '',
@@ -239,6 +241,32 @@ export default function ClientProfile() {
       count > 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-200 text-gray-500'
     }`
 
+  // Visit Summaries count
+  const visitSummariesCount = visitSummaries.length
+  // Load visit summaries when section is expanded
+useEffect(() => {
+  if (!client?.id) return;
+
+  visitSummariesService.getByClientId(client.id)
+    .then((data) => {
+      console.log('VISIT SUMMARIES:', data); // לבדיקה
+      setVisitSummaries(Array.isArray(data) ? data : []);
+    })
+    .catch((err) => {
+      console.error('Visit summaries failed:', err);
+      setVisitSummaries([]);
+    });
+}, [client?.id]);
+
+
+useEffect(() => {
+  if (!client?.id) return;
+  if (!openSections.includes('visitSummaries')) return;
+
+  visitSummariesService.getByClientId(client.id)
+    .then((data) => setVisitSummaries(Array.isArray(data) ? data : []))
+    .catch(() => setVisitSummaries([]));
+}, [openSections]);
   /* ================================
      EDIT CLIENT
   ================================ */
@@ -539,6 +567,7 @@ export default function ClientProfile() {
         {t("admin.clientProfile.notFound")}
       </div>
     )
+    
 
   return (
     <div
@@ -734,6 +763,74 @@ export default function ClientProfile() {
 
       {/* NOTES */}
 
+      {features?.visitSummariesEnabled && (
+        <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+          <button
+            type="button"
+            onClick={() => toggleSection("visitSummaries")}
+            className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-400" />
+              <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? "text-right" : "text-left"}`}>
+                סיכומי ביקור
+              </h3>
+              <span className={getCounterClass(visitSummariesCount)}>
+                {visitSummariesCount}
+              </span>
+            </div>
+            <ChevronDown
+              className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
+                openSections.includes("visitSummaries") ? "rotate-180" : "rotate-0"
+              }`}
+            />
+          </button>
+
+          {openSections.includes("visitSummaries") && (
+            <div className="px-6 pb-6 space-y-4">
+              <div>
+                <button
+                  className="btn btn-primary mb-3"
+                  onClick={() => client && navigate(`/staff/visit-summary/${client.id}`)}
+                >
+                  סיכום ביקור חדש
+                </button>
+              </div>
+              {visitSummaries.length === 0 ? (
+                <div className="text-gray-400 text-center py-4">
+                  אין סיכומי ביקור
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {visitSummaries.map((summary) => (
+                    <div
+                      key={summary.id}
+                      className="border border-slate-200 rounded-xl p-4 flex items-center justify-between"
+                    >
+                      <div className="text-right">
+                        <div className="font-medium">
+                          {summary.createdAt ? new Date(summary.createdAt).toLocaleDateString() : '-'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {summary.examination?.slice(0, 40)}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => visitSummariesService.openPdf(summary.id)}
+                          className="btn btn-sm"
+                        >
+                          PDF
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <button
           type="button"

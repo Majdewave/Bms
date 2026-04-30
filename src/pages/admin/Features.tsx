@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Sliders, CheckCircle, X, BarChart2, Receipt, Pill, Database, Image as ImageIcon } from 'lucide-react'
+import { Sliders, CheckCircle, X, BarChart2, Receipt, Pill, Database, Image as ImageIcon, FileText } from 'lucide-react'
 import * as apiClient from '@/api/apiClient'
 import type { Features } from '@/contexts/FeatureContext'
 import { useFeatures } from '@/contexts/FeatureContext'
@@ -11,6 +11,7 @@ const defaultFeatures: Features = {
   prescriptionsEnabled: true,
   drugsEnabled: false,
   beforeAfterPhotosEnabled: false,
+  visitSummariesEnabled: true,
 }
 
 interface ToggleRowProps {
@@ -86,6 +87,7 @@ export default function AdminFeatures() {
       drugsEnabled: key === 'drugsEnabled' ? value : settings.drugsEnabled,
       beforeAfterPhotosEnabled:
         key === 'beforeAfterPhotosEnabled' ? value : settings.beforeAfterPhotosEnabled,
+      visitSummariesEnabled: key === 'visitSummariesEnabled' ? value : settings.visitSummariesEnabled,
     }
 
     setSettings(updated)
@@ -189,6 +191,15 @@ export default function AdminFeatures() {
           onChange={(val) => handleToggle('beforeAfterPhotosEnabled', val)}
           disabled={saving}
           icon={<ImageIcon className="w-5 h-5 text-pink-400" />}
+        />
+
+        <ToggleRow
+          label={t('features.visitSummaries')}
+          description={t('features.visitSummariesDesc') + ' - הצג את אפשרות סיכומי ביקור בפרופיל הלקוח'}
+          checked={settings.visitSummariesEnabled}
+          onChange={(val) => handleToggle('visitSummariesEnabled', val)}
+          disabled={saving}
+          icon={<FileText className="w-5 h-5 text-blue-400" />}
         />
       </div>
     </div>

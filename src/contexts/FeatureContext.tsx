@@ -9,6 +9,7 @@ export interface Features {
   prescriptionsEnabled: boolean
   drugsEnabled: boolean
   beforeAfterPhotosEnabled: boolean
+  visitSummariesEnabled: boolean
 }
 
 interface FeatureContextType {
@@ -22,6 +23,7 @@ const defaultFeatures: Features = {
   prescriptionsEnabled: true,
   drugsEnabled: false,
   beforeAfterPhotosEnabled: false,
+  visitSummariesEnabled: true,
 }
 
 const FeatureContext = createContext<FeatureContextType>({
@@ -38,9 +40,11 @@ const areFeaturesEqual = (a: Features | null, b: Features) => {
     a.invoicesEnabled === b.invoicesEnabled &&
     a.prescriptionsEnabled === b.prescriptionsEnabled &&
     a.drugsEnabled === b.drugsEnabled &&
-    a.beforeAfterPhotosEnabled === b.beforeAfterPhotosEnabled
+    a.beforeAfterPhotosEnabled === b.beforeAfterPhotosEnabled &&
+    a.visitSummariesEnabled === b.visitSummariesEnabled
   )
 }
+
 export function FeatureProvider({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
   const [features, setFeatures] = useState<Features | null>(null)
@@ -55,29 +59,34 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-     const data = await apiClient.get<Features>('/api/features')
+        const data = await apiClient.get<Features>('/api/features')
 
-      const safeData: Features = {
-        reportsEnabled: data.reportsEnabled ?? true,
-        invoicesEnabled: data.invoicesEnabled ?? true,
-        prescriptionsEnabled: data.prescriptionsEnabled ?? true,
-        drugsEnabled: data.drugsEnabled ?? false,
-        beforeAfterPhotosEnabled: data.beforeAfterPhotosEnabled ?? false,
-      }
+        const safeData: Features = {
+          reportsEnabled: data.reportsEnabled ?? true,
+          invoicesEnabled: data.invoicesEnabled ?? true,
+          prescriptionsEnabled: data.prescriptionsEnabled ?? true,
+          drugsEnabled: data.drugsEnabled ?? false,
+          beforeAfterPhotosEnabled: data.beforeAfterPhotosEnabled ?? false,
+          visitSummariesEnabled: data.visitSummariesEnabled ?? true,
+        }
 
-      setFeatures((prev) => (areFeaturesEqual(prev, safeData) ? prev : safeData))
+        setFeatures((prev) => (areFeaturesEqual(prev, safeData) ? prev : safeData))
       } catch (error) {
         const status = error instanceof apiClient.ApiError ? error.status : undefined
+
         if (status === 401) {
-          setFeatures((prev) => (areFeaturesEqual(prev, defaultFeatures) ? prev : defaultFeatures))
+          setFeatures((prev) =>
+            areFeaturesEqual(prev, defaultFeatures) ? prev : defaultFeatures
+          )
           loadedForUserIdRef.current = user.id
           return
         }
 
-        setFeatures((prev) => (areFeaturesEqual(prev, defaultFeatures) ? prev : defaultFeatures))
+        // fallback גם לשגיאות אחרות
+        setFeatures((prev) =>
+          areFeaturesEqual(prev, defaultFeatures) ? prev : defaultFeatures
+        )
       }
-
-      loadedForUserIdRef.current = user.id
     },
     [loading, user]
   )
@@ -87,7 +96,9 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
 
     if (!user) {
       loadedForUserIdRef.current = null
-      setFeatures((prev) => (areFeaturesEqual(prev, defaultFeatures) ? prev : defaultFeatures))
+      setFeatures((prev) =>
+        areFeaturesEqual(prev, defaultFeatures) ? prev : defaultFeatures
+      )
       return
     }
 

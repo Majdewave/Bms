@@ -776,7 +776,9 @@
     "drugsDesc": "Enable the drugs database and related features",
 
     "beforeAfterPhotos": "Before/After Photos",
-    "beforeAfterPhotosDesc": "Show before and after photo uploads in the client profile"
+    "beforeAfterPhotosDesc": "Show before and after photo uploads in the client profile",
+    "visitSummaries": "Visit Summaries",
+    "visitSummariesDesc": "Show the visit summary button in client profiles"
   },
   "common": {
     "edit": "Edit",

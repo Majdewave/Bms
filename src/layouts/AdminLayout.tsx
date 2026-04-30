@@ -48,7 +48,7 @@ const allMenuItems: MenuItem[] = [
 // Staff (permission based)
   { icon: LayoutDashboard, label: 'Dashboard', path: '/staff/dashboard', roles: ['staff'] },
   { icon: Calendar, label: 'My Appointments', path: '/staff/appointments', roles: ['staff'], permission: 'manage_appointments' },
-  { icon: Users, label: 'Manage Clients', path: '/admin/clients', roles: ['staff'], permission: 'manage_clients' },
+  { icon: Users, label: 'Manage Clients', path: '/staff/clients', roles: ['staff'], permission: 'manage_clients' },
 ]
 
 export default function AdminLayout() {
