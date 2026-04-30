@@ -889,7 +889,7 @@ useEffect(() => {
             <div className="px-6 pb-6 space-y-4">
               <div>
                 <button
-                  className="btn btn-primary mb-3"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-sm transition"
                   onClick={() => client && navigate(`/staff/visit-summary/${client.id}`)}
                 >
                   סיכום ביקור חדש
@@ -901,42 +901,44 @@ useEffect(() => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {visitSummaries.map((summary) => (
-                    <div
-                      key={summary.id}
-                      className="border border-slate-200 rounded-xl p-4 flex items-center justify-between"
-                    >
-                      {/* Actions (left) */}
-                      <div className="flex gap-3 items-center">
-                        <button
-                          onClick={() => visitSummariesService.openPdf(summary.id)}
-                          className="text-blue-600 text-sm"
-                        >
-                          PDF
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(summary);
-                          }}
-                          className="text-gray-600 text-sm relative z-10"
-                        >
-                          עריכה
-                        </button>
-                        <button
-                          onClick={() => handleDelete(summary.id)}
-                          className="text-red-500 text-sm"
-                        >
-                          מחיקה
-                        </button>
-                      </div>
-                      {/* Info (right) */}
-                      <div className="text-right">
-                        <div>{summary.createdAt ? new Date(summary.createdAt).toLocaleDateString() : '-'}</div>
-                        <div className="text-gray-500 text-sm">{summary.diagnosis}</div>
-                      </div>
-                    </div>
+                  {visitSummaries.map((summary,index) => (
+                                  <div
+                className={`
+                  flex items-center justify-between rounded-lg px-4 py-3 border
+                  ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
+                `}
+              >
+                
+                {/* צד שמאל — פעולות */}
+                <div className="flex gap-4 text-sm">
+                  <button
+                    onClick={() => visitSummariesService.openPdf(summary.id)}
+                    className="text-blue-600 hover:underline"
+                  >
+                    PDF
+                  </button>
+
+                  <button
+                    onClick={() => handleEdit(summary)}
+                    className="text-gray-600 hover:underline"
+                  >
+                    עריכה
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(summary.id)}
+                    className="text-red-500 hover:underline"
+                  >
+                    מחיקה
+                  </button>
+                </div>
+
+                {/* צד ימין — תאריך בלבד */}
+                <div className="text-right font-medium">
+                  {summary.createdAt ? new Date(summary.createdAt).toLocaleDateString() : '-'}
+                </div>
+
+              </div>
                   ))}
                </div>
               )}
