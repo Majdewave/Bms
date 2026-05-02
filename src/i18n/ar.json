@@ -262,7 +262,8 @@
       "noshow": "لم يحضر",
       "arrived": "وصل",
       "start": "ابدأ العلاج", 
-      "complete": "تم"
+      "complete": "تم",
+      "urgent": "عاجل"
     },
     "form": {
       "client": "العميل",
@@ -286,7 +287,8 @@
       "Cancelled": "ملغى",
       "NoShow": "لم يحضر",
       "InProgress": "قيد العلاج",
-      "waiting": "في الانتظار"
+      "waiting": "في الانتظار",
+      "urgent": "عاجل"
     },
     "services": {
       "consulting": "استشارات",
@@ -482,7 +484,11 @@
         "client": "عميل",
         "contact": "جهة اتصال",
         "appointments": "المواعيد",
-        "lastVisit": "آخر زيارة"
+        "lastVisit": "آخر زيارة",
+        "name": "الاسم",
+        "email": "البريد الإلكتروني",
+        "phone": "رقم الهاتف",
+        "status": "الحالة"
       },
       "id": "ID",
       "status": {

@@ -263,7 +263,8 @@
       "noshow": "No Show",
       "arrived": "Arrived",
       "start": "Start Treatment", 
-      "complete": "Complete"
+      "complete": "Complete",
+      "urgent": "Urgent"
     },
     "form": {
       "client": "Client",
@@ -484,7 +485,11 @@
         "client": "Client",
         "contact": "Contact",
         "appointments": "Appointments",
-        "lastVisit": "Last Visit"
+        "lastVisit": "Last Visit",
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "status": "Status"
       },
       "id": "ID",
       "status": {
