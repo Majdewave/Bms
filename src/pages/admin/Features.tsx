@@ -57,7 +57,7 @@ export default function AdminFeatures() {
   const isRTL = i18n.language === 'he' || i18n.language === 'ar'
   const { reload } = useFeatures()
 
-  const [settings, setSettings] = useState<Features>(defaultFeatures)
+  const [settings, setSettings] = useState<Features | null>(null) 
   const [saving, setSaving] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastError, setToastError] = useState(false)
@@ -67,18 +67,14 @@ export default function AdminFeatures() {
     apiClient
       .get<Features>('/api/features')
       .then((data) =>
-        setSettings({
-          reportsEnabled: data.reportsEnabled ?? true,
-          invoicesEnabled: data.invoicesEnabled ?? true,
-          prescriptionsEnabled: data.prescriptionsEnabled ?? true,
-          drugsEnabled: data.drugsEnabled ?? false,
-          beforeAfterPhotosEnabled: data.beforeAfterPhotosEnabled ?? false,
-        })
+        setSettings(data)
       )
       .catch(() => {})
   }, [])
 
   const handleToggle = async (key: keyof Features, value: boolean) => {
+    if (!settings) return;
+
     const updated: Features = {
       reportsEnabled: key === 'reportsEnabled' ? value : settings.reportsEnabled,
       invoicesEnabled: key === 'invoicesEnabled' ? value : settings.invoicesEnabled,
@@ -110,6 +106,8 @@ export default function AdminFeatures() {
     }
   }
 
+  if (!settings) return null;
+  
   return (
     <div className={`p-6 ${isRTL ? 'rtl' : 'ltr'}`}>
       {/* Toast */}
@@ -151,7 +149,7 @@ export default function AdminFeatures() {
         <ToggleRow
           label={t('features.reports')}
           description={t('features.reportsDesc') + ' - הצג את עמוד הדוחות בתפריט הניווט'}
-          checked={settings.reportsEnabled}
+          checked={settings?.reportsEnabled ?? false}
           onChange={(val) => handleToggle('reportsEnabled', val)}
           disabled={saving}
           icon={<BarChart2 className="w-5 h-5 text-blue-400" />}

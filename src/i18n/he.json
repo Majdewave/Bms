@@ -447,7 +447,7 @@
       "addButton": "הוסף לקוח",
       "addNew": "הוסף לקוח חדש",
       "directoryTitle": "נהל לקוחות",
-      "searchPlaceholder": "חפש לפי שם או דוא\"ל...",
+      "searchPlaceholder": "חפש לפי שם, ת.ז או דוא\"ל...",
       "filter": "סנן",
       "view": "צפה",
       "edit": "ערוך",
@@ -665,7 +665,7 @@
       "subtitle": "נהל חברי צוות, הרשאותיהם וגישתם",
       "addNew": "הוסף חבר צוות",
        "permissionsLabel": "הרשאות",
-      "searchPlaceholder": "חפש לפי שם, דוא\"ל או תפקיד...",
+      "searchPlaceholder": "חפש לפי שם, ת.ז או דוא\"ל...",
       "noResults": "לא נמצאו חברי צוות",
       "table": {
         "name": "שם",

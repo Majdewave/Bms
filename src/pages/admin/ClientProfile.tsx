@@ -603,6 +603,9 @@ useEffect(() => {
         {t("admin.clientProfile.notFound")}
       </div>
     )
+
+    if (!features)
+      return null;
     
 
   return (
@@ -621,7 +624,7 @@ useEffect(() => {
 
         <div className="flex gap-3">
 
-          {features?.prescriptionsEnabled !== false && (
+          {features?.prescriptionsEnabled === true && (
           <button
             onClick={() => setShowPrescriptionModal(true)}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl shadow-md hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg"
@@ -862,7 +865,7 @@ useEffect(() => {
 
       {/* NOTES */}
 
-      {features?.visitSummariesEnabled && (
+      {features?.visitSummariesEnabled === true && (
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
           <button
             type="button"

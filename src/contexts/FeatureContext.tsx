@@ -17,17 +17,8 @@ interface FeatureContextType {
   reload: () => void
 }
 
-const defaultFeatures: Features = {
-  reportsEnabled: true,
-  invoicesEnabled: true,
-  prescriptionsEnabled: true,
-  drugsEnabled: false,
-  beforeAfterPhotosEnabled: false,
-  visitSummariesEnabled: true,
-}
-
 const FeatureContext = createContext<FeatureContextType>({
-  features: defaultFeatures,
+  features: null,
   reload: () => {},
 })
 
@@ -61,31 +52,13 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
       try {
         const data = await apiClient.get<Features>('/api/features')
 
-        const safeData: Features = {
-          reportsEnabled: data.reportsEnabled ?? true,
-          invoicesEnabled: data.invoicesEnabled ?? true,
-          prescriptionsEnabled: data.prescriptionsEnabled ?? true,
-          drugsEnabled: data.drugsEnabled ?? false,
-          beforeAfterPhotosEnabled: data.beforeAfterPhotosEnabled ?? false,
-          visitSummariesEnabled: data.visitSummariesEnabled ?? true,
-        }
+        setFeatures((prev) => (areFeaturesEqual(prev, data) ? prev : data))
 
-        setFeatures((prev) => (areFeaturesEqual(prev, safeData) ? prev : safeData))
+        loadedForUserIdRef.current = user.id
       } catch (error) {
-        const status = error instanceof apiClient.ApiError ? error.status : undefined
+        console.error('FEATURES LOAD ERROR:', error)
 
-        if (status === 401) {
-          setFeatures((prev) =>
-            areFeaturesEqual(prev, defaultFeatures) ? prev : defaultFeatures
-          )
-          loadedForUserIdRef.current = user.id
-          return
-        }
-
-        // fallback גם לשגיאות אחרות
-        setFeatures((prev) =>
-          areFeaturesEqual(prev, defaultFeatures) ? prev : defaultFeatures
-        )
+        setFeatures(null)
       }
     },
     [loading, user]
@@ -96,9 +69,7 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
 
     if (!user) {
       loadedForUserIdRef.current = null
-      setFeatures((prev) =>
-        areFeaturesEqual(prev, defaultFeatures) ? prev : defaultFeatures
-      )
+      setFeatures(null)
       return
     }
 

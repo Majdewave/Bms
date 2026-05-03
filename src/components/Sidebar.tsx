@@ -47,7 +47,7 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true)
   const location = useLocation()
   const { user, hasPermission } = useAuth()
-  const { features } = useFeatures() // ✅ חשוב מאוד
+  const { features } = useFeatures() 
 
   // ✅ סינון נכון של התפריט
   const visibleMenuItems = menuItems.filter((item) => {
