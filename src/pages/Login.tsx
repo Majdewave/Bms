@@ -30,6 +30,7 @@ export default function Login() {
     rememberMe: false,
   })
   const [errors, setErrors] = useState<FormErrors>({})
+  const [cooldown, setCooldown] = useState(0);
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
@@ -440,13 +441,39 @@ else navigate('/', { replace: true });
                 />
                 <span className="text-sm text-slate-700 font-medium">{t('login.rememberMe')}</span>
               </label>
-              <a
-                href="#"
-                className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
-                onClick={(e) => e.preventDefault()}
-              >
-                {t('login.forgotPassword')}
-              </a>
+<button
+  type="button"
+  className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
+  onClick={async () => {
+    console.log("FORGOT CLICK");
+
+    if (!formData.email) {
+      setErrors(prev => ({
+        ...prev,
+        submit: "יש להזין אימייל קודם"
+      }));
+      return;
+    }
+
+    try {
+      await post('/api/auth/forgot-password', {
+        email: formData.email
+      });
+
+      // מעבר למסך reset (או עמוד הודעה)
+      setSuccessMessage("נשלח מייל לאיפוס סיסמה");
+      setCooldown(60); // Postback
+      setTimeout(() => setCooldown(0), 60000);
+    } catch (e) {
+      setErrors(prev => ({
+        ...prev,
+        submit: "שגיאה בשליחת מייל"
+      }));
+    }
+  }}
+>
+  {t('login.forgotPassword')}
+</button>
             </div>
 
             {/* Submit Button */}

@@ -1,3 +1,4 @@
+import ResetPassword from './pages/ResetPassword';
 import Success from "./pages/Success";
 import AdminDrugs from '@/pages/admin/AdminDrugs'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
@@ -74,6 +75,11 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+
+  {
+    path: '/reset-password',
+    element: <ResetPassword />,
   },
 
   {
