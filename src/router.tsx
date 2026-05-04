@@ -1,3 +1,4 @@
+import Upgrade from './pages/Upgrade';
 import ResetPassword from './pages/ResetPassword';
 import Success from "./pages/Success";
 import AdminDrugs from '@/pages/admin/AdminDrugs'
@@ -80,6 +81,11 @@ export const router = createBrowserRouter([
   {
     path: '/reset-password',
     element: <ResetPassword />,
+  },
+
+  {
+    path: '/upgrade',
+    element: <Upgrade />,
   },
 
   {

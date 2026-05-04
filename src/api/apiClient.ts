@@ -1,6 +1,8 @@
 
 import { updateLastActivity, getLastActivity, isSessionExpired, resetSession } from './sessionManager'
 import { logout as doLogout } from './auth'
+import { toast } from 'react-toastify';
+let isTrialRedirecting = false;
 
 const BASE_URL = (import.meta as any).env.VITE_API_URL || 'https://clienta.digitalpenpro.com'
 
@@ -99,6 +101,37 @@ async function request<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 402) {
+      let errorData: any = {};
+      try {
+        errorData = await response.json();
+      } catch {}
+      if (
+        errorData?.error === "trial_expired" &&
+        !isTrialRedirecting &&
+        window.location.pathname !== "/upgrade"
+      ) {
+        isTrialRedirecting = true;
+        const plan = errorData.plan || "התוכנית שלך";
+        const date = errorData.trialEndedAt
+          ? new Date(errorData.trialEndedAt).toLocaleDateString("he-IL")
+          : "";
+        const message = `⛔ ${plan} הסתיים${date ? ` בתאריך ${date}` : ""}. יש לשדרג כדי להמשיך.`;
+        if (!toast.isActive("trial-expired")) {
+          toast.error(message, {
+            toastId: "trial-expired",
+            autoClose: 2500,
+            pauseOnHover: false,
+            closeOnClick: true,
+          });
+        }
+        localStorage.removeItem("token");
+        setTimeout(() => {
+          window.location.href = "/upgrade";
+        }, 2500);
+        return Promise.reject(new ApiError("Trial expired", 402, errorData));
+      }
+    }
     if (response.status === 403) {
       return { forbidden: true } as T;
     }

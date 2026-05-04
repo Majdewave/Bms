@@ -1,3 +1,5 @@
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import { useEffect } from 'react';
 import { updateLastActivity } from './api/sessionManager';
@@ -33,6 +35,7 @@ export default function App() {
       <TenantProvider>
         <FeatureProvider>
           <RouterProvider router={router} />
+          <ToastContainer position="top-center" />
         </FeatureProvider>
       </TenantProvider>
     </AuthProvider>

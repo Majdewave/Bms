@@ -1,3 +1,5 @@
+import * as stripeApi from "./stripe";
+export const stripeService = stripeApi;
 // API Service Exports
 import * as authApi from './auth'
 import * as dashboardApi from './dashboard'
@@ -9,6 +11,7 @@ import * as clientsApi from './clients'
 import * as staffApi from './staff'
 import * as clientPhotosApi from './clientPhotosService'
 
+
 // Export service objects
 export const authService = authApi
 export const dashboardService = dashboardApi
@@ -19,6 +22,8 @@ export const profileService = profileApi
 export const clientsService = clientsApi
 export const staffService = staffApi
 export const clientPhotosService = clientPhotosApi
+
+
 
 // Export types
 export type { LoginRequest, LoginResponse, AuthUser } from './auth'
@@ -42,4 +47,6 @@ export type {
   CreateStaffRequest,
   UpdateStaffRequest,
 } from './staff'
+
+
 
