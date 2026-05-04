@@ -40,8 +40,9 @@ export default function Success() {
   if (loading)
     return (
       <div style={{ textAlign: "center", marginTop: 64 }}>
-        <h2>✅ Payment successful</h2>
-        <p>Setting up your account...</p>
+        <h2>✅ התשלום בוצע בהצלחה🎉</h2>
+        <p>החשבון שלך בתהליך הגדרה...</p>
+        <p>נשלח אליך מייל עם פרטים.</p>
       </div>
     );
 
