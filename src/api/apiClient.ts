@@ -127,8 +127,9 @@ async function request<T>(
         }
         localStorage.removeItem("token");
         setTimeout(() => {
-          window.location.href = "/upgrade";
-        }, 2500);
+          const tenantId = localStorage.getItem("tenantId");
+          window.location.href = `/upgrade?tenantId=${tenantId}`;
+        }, 3500);
         return Promise.reject(new ApiError("Trial expired", 402, errorData));
       }
     }

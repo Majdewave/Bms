@@ -13,12 +13,26 @@ export default function BillingPage() {
     try {
       setIsLoadingCheckout(true)
 
-      const res = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+ function getTenantIdFromToken(): string | null {
+  const token = localStorage.getItem('token')
+  if (!token) return null
+
+  const payload = JSON.parse(atob(token.split('.')[1]))
+  return payload.tenant_id || null
+}
+
+const tenantId = getTenantIdFromToken()
+const res = await fetch('/api/stripe/create-checkout-session', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+  },
+  body: JSON.stringify({
+    Plan: 'Pro',
+    TenantId: tenantId
+  }),
+})
 
       if (!res.ok) throw new Error('Failed to create checkout session')
 

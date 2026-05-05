@@ -45,6 +45,11 @@ export const logout = async (): Promise<void> => {
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
+   
+  if (window.location.pathname === "/upgrade") {
+    return null
+  }
+  
   const token = localStorage.getItem('token')
   
   if (!token) {

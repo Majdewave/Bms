@@ -1,10 +1,30 @@
 import { stripeService } from "../api";
+import { useEffect } from "react";
 
 export default function Upgrade() {
+
+    useEffect(() => {
+  // מונע redirect אוטומטי
+    document.title = "Upgrade";
+    }, []);
+
   const startCheckout = async () => {
     try {
-      const data = await stripeService.createCheckoutSession("pro_monthly");
-      if (data?.url) {
+
+        const params = new URLSearchParams(window.location.search);
+        const tenantId = params.get("tenantId")
+
+        if (!tenantId) {
+        alert("Tenant not found");
+        return;
+        }
+
+        const data = await stripeService.createCheckoutSession({
+        plan: "pro_monthly",
+        tenantId // עכשיו זה בטוח string
+        });
+
+        if (data?.url) {
         window.location.href = data.url;
       } else {
         window.location.href = "/billing";
@@ -16,14 +36,59 @@ export default function Upgrade() {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: 80 }}>
-      <h1>🚫 החשבון הוגבל</h1>
-      <p>תקופת הניסיון הסתיימה. שדרג כדי להמשיך.</p>
+        <div style={{
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "#f5f7fb"
+        }}>
+        <div style={{
+            background: "#fff",
+            padding: "40px 50px",
+            borderRadius: "16px",
+            textAlign: "center",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+            maxWidth: "420px",
+            width: "100%"
+        }}>
+            
+            <div style={{ fontSize: 40, marginBottom: 10 }}>🚫</div>
 
-      <button onClick={startCheckout}>
-        שדרג עכשיו
-      </button>
+            <h1 style={{
+            fontSize: 26,
+            marginBottom: 10,
+            color: "#1f2937"
+            }}>
+            החשבון הוגבל
+            </h1>
+
+            <p style={{
+            color: "#6b7280",
+            marginBottom: 25,
+            lineHeight: 1.6
+            }}>
+            תקופת הניסיון הסתיימה.<br />
+            שדרג את החשבון כדי להמשיך להשתמש במערכת.
+            </p>
+
+            <button
+            onClick={startCheckout}
+            style={{
+                background: "#2563eb",
+                color: "#fff",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: "10px",
+                fontSize: "16px",
+                cursor: "pointer",
+                width: "100%"
+            }}
+            >
+            שדרג עכשיו
+            </button>
+
+        </div>
     </div>
   );
-}
 }

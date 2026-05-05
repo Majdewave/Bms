@@ -4,6 +4,7 @@ import { LogIn, Mail, Lock, AlertCircle, CheckCircle, Eye, EyeOff, Phone } from 
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { ClientaWordmark } from '@/components/Logo'
+import { get } from "../api/apiClient";
 
 
 import { post } from "../api/apiClient";
@@ -35,6 +36,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [successMessage, setSuccessMessage] = useState('')
+
+  type MeResponse = {
+  businessId: string;
+};
 
 
   // Load remembered email on mount
@@ -166,11 +171,23 @@ export default function Login() {
 
     await authLogin(formData.email, formData.password);
     
-    await authLogin(formData.email, formData.password);
+    const token = localStorage.getItem('token');
 
-// 🔥 כאן בדיוק עושים decode ל־token
-const token = localStorage.getItem('token');
+if (token) {
+  const payload = JSON.parse(atob(token.split('.')[1]));
 
+  const tenantId =
+    payload["tenant_id"] || 
+    payload["tenantId"] ||
+    payload["businessId"] ||
+    payload["TenantId"];
+
+  if (tenantId) {
+    localStorage.setItem("tenantId", tenantId);
+  }
+}
+
+    
 if (!token) {
   navigate('/login');
   return;
@@ -529,12 +546,16 @@ else navigate('/', { replace: true });
           {/* Footer Link - Outside Card */}
           <p className="text-center text-slate-600 text-sm mt-6">
             {t('login.noAccount')}{' '}
-            <a 
-              href="mailto:support@clienta.com?subject=New Account Request" 
-              className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
-            >
-              {t('login.contactUs')}
-            </a>
+           <a
+                  href="/register"
+                  style={{
+                    color: "#2563eb",
+                    textDecoration: "none",
+                    fontWeight: 500
+                  }}
+                >
+              הצטרפות
+          </a>
           </p>
         </div>
       </div>
