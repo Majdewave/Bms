@@ -79,7 +79,15 @@ export default function AdminStaff() {
   }
 
   const handleCreateOrUpdate = async () => {
-    if (!formData.FullName.trim() || !formData.Email.trim() || !formData.Password.trim() || !formData.RoleLabel.trim()) {
+    if (
+      !formData.FullName.trim() ||
+      !formData.Email.trim() ||
+      !formData.RoleLabel.trim() ||
+      (!editingStaff && !formData.Password.trim())
+    ) {
+      console.warn('Validation failed: Missing required fields');
+      console.log('Form Data:', formData);
+      console.log('Editing Staff:', editingStaff);
       alert(t('admin.staff.validation.requiredFields'))
       return
     }

@@ -41,6 +41,8 @@ export interface UpdateStaffRequest {
   StampUrl?: string
   IsActive: boolean
   Permissions: string[]
+  Password?: string
+  Email?: string
 }
 
 export const staffService = {
