@@ -269,7 +269,7 @@ else navigate('/', { replace: true });
         <div className="relative z-10">
           <div className="mb-12">
             {/* Professional Logo */}
-             <img src="/clienta-logo.png" alt="Clienta" className="h-10 mb-2" />
+             <img src="/clienta-logo-white.png" alt="Clienta" className="h-10 mb-2" />
             <div className="text-xs text-gray-500 mb-8">A product of digitalpenpro.com</div>
           </div>
 
@@ -280,12 +280,6 @@ else navigate('/', { replace: true });
             {t('login.productTitle')}
           </h2>
           <p className="text-sm text-slate-400 mb-8 leading-relaxed">
-            {t('login.productDescription')}
-          </p>
-           <p className="text-sm text-slate-400 mb-8 leading-relaxed">
-            {t('login.productDescription')}
-          </p>
-                    <p className="text-sm text-slate-400 mb-8 leading-relaxed">
             {t('login.productDescription')}
           </p>
 
@@ -302,36 +296,40 @@ else navigate('/', { replace: true });
                 <span className="text-slate-400">{t(`login.capabilities.${feature.key}`)}</span>
               </div>
             ))}
-            </div>
-           </div>
-
-
-          {/* Business Type Section - Seamless Marketing Extension */}
-          <div className="mt-5 mb-8">
-            <h3 className="text-xs font-semibold text-indigo-200 mb-1 tracking-wide" style={{lineHeight: '1.2'}}>
+          </div>
+          {/* Business Type Section */}
+          <div className="mt-10">
+            <h3 className="text-sm font-semibold text-white mb-2">
               {t('login.businessTypeSection.title')}
             </h3>
-            <p className="text-xs text-slate-400 mb-2" style={{lineHeight: '1.2'}}>
+
+            <p className="text-xs text-slate-400 mb-4">
               {t('login.businessTypeSection.subtitle')}
             </p>
-            <ul className="space-y-1 mb-2 pl-0">
+
+            <div className="space-y-2.5 mb-4">
               {[
                 { key: 'medicalPrescriptions' },
                 { key: 'drugDatabase' },
                 { key: 'consentForms' },
                 { key: 'visitSummaries' },
                 { key: 'treatmentDocumentation' },
-              ].map((feature) => (
-                <li key={feature.key} className="flex items-center gap-2 text-xs text-slate-300 pl-0">
-                  <span className="inline-block w-1 h-1 rounded-full bg-indigo-300"></span>
-                  <span>{t(`login.businessTypeSection.features.${feature.key}`)}</span>
-                </li>
+              ].map((feature, i) => (
+                <div key={i} className="flex items-center gap-3 text-sm">
+                  <div className="w-1 h-1 bg-indigo-400 rounded-full"></div>
+
+                  <span className="text-slate-400">
+                    {t(`login.businessTypeSection.features.${feature.key}`)}
+                  </span>
+                </div>
               ))}
-            </ul>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed max-w-md">
               {t('login.businessTypeSection.bottom')}
             </p>
           </div>
+        </div>
 
         {/* Footer - Relative */}
         <div className="relative z-10">
@@ -596,4 +594,3 @@ else navigate('/', { replace: true });
     </div>
   )
 }
-

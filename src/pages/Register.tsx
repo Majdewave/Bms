@@ -101,7 +101,7 @@ export default function Register() {
             <img src="/clienta-logo.png" alt="Clienta" className="h-10 mb-2" />
             <div className="text-xs text-gray-500 mb-8">A product of digitalpenpro.com</div>
             <div className="text-2xl font-bold text-gray-900 mb-2">Manage your business smarter</div>
-            <div className="text-gray-700 mb-6">Appointments, clients, scheduling, and billing — all in one place</div>
+            <div className="text-gray-700 mb-6">Client management, scheduling, medical documentation, and operational workflows - all in one place</div>
             <ul className="mb-6 space-y-2">
               <li className="flex items-center gap-2 text-gray-700"><span className="text-green-500 text-lg">✔</span> 7-day free trial</li>
               <li className="flex items-center gap-2 text-gray-700"><span className="text-green-500 text-lg">✔</span> No credit card required</li>
@@ -116,7 +116,7 @@ export default function Register() {
                 <li className="flex items-center gap-2"><span className="text-green-500">✔</span> Full system access</li>
               </ul>
               <div className="text-xs text-gray-500 mt-2">Upgrade anytime to unlock full features</div>
-              <div className="text-xs text-blue-700 mt-1 font-semibold">Plans starting from 46€/month</div>
+              <div className="text-xs text-blue-700 mt-1 font-semibold">Plans starting from 186₪/month</div>
             </div>
           </div>
           {/* Optional illustration or gradient */}
