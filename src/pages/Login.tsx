@@ -282,6 +282,12 @@ else navigate('/', { replace: true });
           <p className="text-sm text-slate-400 mb-8 leading-relaxed">
             {t('login.productDescription')}
           </p>
+           <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+            {t('login.productDescription')}
+          </p>
+                    <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+            {t('login.productDescription')}
+          </p>
 
           {/* System Capabilities */}
           <div className="space-y-2.5">

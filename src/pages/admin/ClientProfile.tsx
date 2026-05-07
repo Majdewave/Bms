@@ -835,12 +835,6 @@ useEffect(() => {
             >
               {client.isActive ? t("admin.clients.deactivateButton") : t("admin.clients.activateButton")}
             </button>
-            <button
-              onClick={() => {/* send code logic here */}}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-            >
-              {t("admin.clients.sendLink")}
-            </button>
           </div>
         )}
 
