@@ -14,7 +14,9 @@ type AppointmentRow = Appointment
 export default function AdminAppointments() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { hasPermission, user } = useAuth()
+  const { hasPermission } = useAuth()
+
+  console.log('ADMIN APPOINTMENTS RENDERED');
 
   const [appointments, setAppointments] = useState<AppointmentRow[]>([])
   const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
@@ -116,41 +118,41 @@ const markNotDocumented = async (appointment: Appointment) => {
   }, [hasPermission, navigate])
 
   // --- SignalR Real-time Updates ---
-  useEffect(() => {
-    if (!user?.businessId) return;
 
-    let isMounted = true;
+    useEffect(() => {
+      console.log('SIGNALR EFFECT RUNNING');
+      let isMounted = true;
 
-    const startConnection = async () => {
-      if (connection.state === 'Disconnected') {
-        try {
-          await connection.start();
-        } catch (err) {
-          // Optionally handle connection error
+      const startConnection = async () => {
+        if (connection.state === 'Disconnected') {
+          try {
+            await connection.start();
+            console.log('SignalR state:', connection.state);
+            console.log('SignalR connectionId:', connection.connectionId);
+          } catch (err) {
+            console.error('SignalR connection error:', err);
+          }
         }
-      }
-      try {
-        await connection.invoke('JoinTenant', user.businessId);
-      } catch (err) {
-        // Optionally handle join group error
-      }
-    };
+      };
 
-    startConnection();
+      startConnection();
 
-    const handleAppointmentUpdated = () => {
-      if (isMounted) loadData();
-    };
-    connection.on('AppointmentUpdated', handleAppointmentUpdated);
+      const handleAppointmentUpdated = () => {
+        console.log('AppointmentUpdated received');
 
-    return () => {
-      isMounted = false;
-      connection.off('AppointmentUpdated', handleAppointmentUpdated);
-    };
-    // Only re-run if businessId changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.businessId]);
+        if (isMounted) {
+          loadData();
+        }
+      };
 
+      connection.on('AppointmentUpdated', handleAppointmentUpdated);
+
+      return () => {
+        isMounted = false;
+        connection.off('AppointmentUpdated', handleAppointmentUpdated);
+      };
+    }, []);
+      
   const loadData = async () => {
     setLoading(true)
     try {
