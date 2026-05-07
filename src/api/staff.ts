@@ -68,10 +68,12 @@ export const staffService = {
   },
 
   async toggleStaffStatus(
-    staffMember: StaffMember
+  staffMember: StaffMember
   ): Promise<StaffMember> {
     const payload: UpdateStaffRequest = {
       FullName: staffMember.fullName,
+      Email: staffMember.email,
+      role: staffMember.role,
       RoleLabel: staffMember.roleLabel,
       IsActive: !staffMember.isActive,
       Permissions: staffMember.permissions || [],

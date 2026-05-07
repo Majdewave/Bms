@@ -67,7 +67,7 @@ export default function CreateAppointmentModal({
         clientId: appointment.clientId ?? '',
         serviceId: (appointment as any).serviceId ?? '',
         staffId: (appointment as any).staffId ?? '',
-        date: start.toISOString().split('T')[0],
+        date: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`,
         time: start.toTimeString().slice(0,5),
         duration: '',
         description: appointment.notes ?? '',
@@ -140,8 +140,8 @@ export default function CreateAppointmentModal({
         clientId: formData.clientId,
         serviceId: formData.serviceId || undefined,
         staffId: formData.staffId || undefined,
-        startTime: startLocal.toISOString(),
-        endTime: endLocal.toISOString(),
+        startTime: `${formData.date}T${formData.time}:00`,
+        endTime: endLocal.toLocaleString('sv-SE').replace(' ', 'T'),
         status: formData.status,
         notes: formData.description || undefined
       }

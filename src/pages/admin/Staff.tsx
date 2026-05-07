@@ -424,18 +424,6 @@ export default function AdminStaff() {
                           <Ban className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleSendLoginLink(staffMember.id, staffMember.email)}
-                          disabled={sendingLink === staffMember.id}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
-                          title={t('admin.staff.actions.sendLink')}
-                        >
-                          {sendingLink === staffMember.id ? (
-                            <div className="animate-spin w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full" />
-                          ) : (
-                            <Mail className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
                           onClick={() => handleDelete(staffMember.id)}
                           className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
                           title={t('admin.staff.actions.delete')}
