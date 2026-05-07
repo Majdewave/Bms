@@ -67,6 +67,12 @@
       "full": "✔ Full System Access"
     }
   },
+
+  "validation": {
+  "required": "Required field",
+  "dateTimeRequired": "Date and time are required"
+  },
+
   "consent": {
     "title": "Consent Form",
     "clientSignature": "Client Signature",

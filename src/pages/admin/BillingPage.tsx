@@ -112,7 +112,7 @@ export default function BillingPage() {
 
         <div className="mb-5">
           <div className="text-[42px] font-semibold text-gray-900">
-            €46
+            ₪186
           </div>
           <div className="text-gray-500 text-base">
             {t('billing.perMonth')}
@@ -126,7 +126,7 @@ export default function BillingPage() {
           <div><span className="text-blue-600 font-semibold">✔</span> {t('billing.features.clients').replace(/^✔\s*/, '')}</div>
           <div><span className="text-blue-600 font-semibold">✔</span> {t('billing.features.appointments').replace(/^✔\s*/, '')}</div>
           <div><span className="text-blue-600 font-semibold">✔</span> {t('billing.features.staff').replace(/^✔\s*/, '')}</div>
-          <div><span className="text-blue-600 font-semibold">✔</span> {t('billing.features. full').replace(/^✔\s*/, '')}</div>
+          <div><span className="text-blue-600 font-semibold">✔</span> {t('billing.features.full').replace(/^✔\s*/, '')}</div>
         </div>
 
         <button

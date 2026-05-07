@@ -42,6 +42,8 @@ export default function CreateAppointmentModal({
   const [saving, setSaving] = useState(false)
   const [showConsentModal, setShowConsentModal] = useState(false)
 
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
   const [formData, setFormData] = useState({
     clientId: defaultClientId || '',
     serviceId: '',
@@ -126,8 +128,31 @@ export default function CreateAppointmentModal({
     }
   }
 
+  const validateForm = () => {
+  const newErrors: Record<string, string> = {}
+
+  if (!formData.clientId) {
+    newErrors.clientId = t('validation.required')
+  }
+
+  if (!formData.serviceId) {
+    newErrors.serviceId = t('validation.required')
+  }
+
+if (!formData.date || !formData.time) {
+  newErrors.dateTime = t('validation.dateTimeRequired')
+}
+
+  setErrors(newErrors)
+
+  return Object.keys(newErrors).length === 0
+}
+
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    if (!validateForm()) {
+       return
+}
 
     try {
       setSaving(true)
@@ -190,15 +215,19 @@ export default function CreateAppointmentModal({
 
           {/* BODY */}
            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            <label className="block text-sm font-semibold">
-              {t('appointments.form.client')}
-            </label>
+          <label className="block text-sm font-semibold">
+            {t('appointments.form.client')}
+            <span className="text-red-500 ml-1">*</span>
+          </label>
             <select
               value={formData.clientId}
               onChange={e => setFormData({ ...formData, clientId: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2"
-              required
-            >
+              className={`w-full rounded-lg px-3 py-2 border ${
+                  errors.clientId
+                    ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                    : 'border-slate-300'
+                }`}
+                >
               <option value="">{t('appointments.form.selectClient')}</option>
               {clients.map(c => (
                 <option key={c.id} value={c.id}>
@@ -207,14 +236,25 @@ export default function CreateAppointmentModal({
               ))}
             </select>
 
+            {errors.clientId && (
+            <p className="text-sm text-red-500 mt-1">
+              {errors.clientId}
+            </p>
+               )}
+
             <label className="block text-sm font-semibold">
               {t('appointments.form.service')}
+              <span className="text-red-500 ml-1">*</span>  
             </label>
             <select
               value={formData.serviceId}
               onChange={e => setFormData({ ...formData, serviceId: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2"
-            >
+              className={`w-full rounded-lg px-3 py-2 border ${
+                  errors.serviceId
+                    ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                    : 'border-slate-300'
+                }`}
+                >
               <option value="">{t('appointments.form.selectService')}</option>
               {services.map(s => (
                 <option key={s.id} value={s.id}>
@@ -244,6 +284,7 @@ export default function CreateAppointmentModal({
 
             <label className="block text-sm font-semibold">
               {t('appointments.form.date')}
+              <span className="text-red-500 ml-1">*</span>
             </label>
             <div className="grid grid-cols-2 gap-4">
               <input
@@ -259,6 +300,11 @@ export default function CreateAppointmentModal({
                 className="border rounded-lg px-3 py-2"
               />
             </div>
+              {errors.dateTime && (
+                <p className="text-sm text-red-500">
+                  {errors.dateTime}
+                </p>
+              )}
 
             <label className="block text-sm font-semibold">
               {t('appointments.form.staff')}
@@ -266,8 +312,12 @@ export default function CreateAppointmentModal({
             <select
               value={formData.staffId}
               onChange={e => setFormData({ ...formData, staffId: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2"
-            >
+              className={`w-full rounded-lg px-3 py-2 border ${
+                  errors.staffId
+                    ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                    : 'border-slate-300'
+                }`}
+                >
               <option value="">{t('appointments.form.staffPlaceholder')}</option>
               {staffMembers.map(s => (
                 <option key={s.id} value={s.id}>
@@ -283,8 +333,12 @@ export default function CreateAppointmentModal({
             <select
               value={formData.status}
               onChange={e => setFormData({ ...formData, status: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2"
-            >
+              className={`w-full rounded-lg px-3 py-2 border ${
+                  errors.status
+                    ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                    : 'border-slate-300'
+                }`}
+                >
               <option value="Scheduled">{t('appointments.status.scheduled')}</option>
               <option value="Completed">{t('appointments.status.completed')}</option>
               <option value="Cancelled">{t('appointments.status.cancelled')}</option>
@@ -293,6 +347,7 @@ export default function CreateAppointmentModal({
 
             <label className="block text-sm font-semibold">
               {t('appointments.form.duration')}
+              <span className="text-red-500 ml-1">*</span>
             </label>
             <div className="border rounded-lg px-3 py-2 bg-gray-100">
               {formData.duration
@@ -302,12 +357,17 @@ export default function CreateAppointmentModal({
 
             <label className="block text-sm font-semibold">
               {t('appointments.form.description')}
+              <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
               value={formData.description}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              className="w-full border rounded-lg px-3 py-2"
+              className={`w-full rounded-lg px-3 py-2 border ${
+                  errors.description
+                    ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                    : 'border-slate-300'
+                }`}
               placeholder={t('appointments.form.descriptionPlaceholder')}
             />
 
