@@ -356,7 +356,19 @@
     "noAccount": "ليس لديك حساب؟",
     "contactUs": "اتصل بنا",
     "noAccessYet": "ليس لديك وصول بعد؟",
-    "contactBusiness": "اتصل بعملك للحصول على تفاصيل تسجيل الدخول"
+    "contactBusiness": "اتصل بعملك للحصول على تفاصيل تسجيل الدخول",
+    "businessTypeSection": {
+      "title": "ملاءمة حسب نوع العمل",
+      "subtitle": "تفعيل الميزات حسب احتياجاتك:",
+      "features": {
+        "medicalPrescriptions": "وصفات طبية",
+        "drugDatabase": "قاعدة بيانات الأدوية",
+        "consentForms": "نماذج الموافقة",
+        "visitSummaries": "ملخصات الزيارة",
+        "treatmentDocumentation": "توثيق العلاجات"
+      },
+      "bottom": "مناسب للعيادات، مراكز التجميل، مراكز العلاج والأعمال القائمة على الخدمات."
+    }
   },
   "unauthorized": {
     "title": "تم رفض الوصول",

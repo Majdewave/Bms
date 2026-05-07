@@ -302,8 +302,36 @@ else navigate('/', { replace: true });
                 <span className="text-slate-400">{t(`login.capabilities.${feature.key}`)}</span>
               </div>
             ))}
+            </div>
+           </div>
+
+
+          {/* Business Type Section - Seamless Marketing Extension */}
+          <div className="mt-5 mb-8">
+            <h3 className="text-xs font-semibold text-indigo-200 mb-1 tracking-wide" style={{lineHeight: '1.2'}}>
+              {t('login.businessTypeSection.title')}
+            </h3>
+            <p className="text-xs text-slate-400 mb-2" style={{lineHeight: '1.2'}}>
+              {t('login.businessTypeSection.subtitle')}
+            </p>
+            <ul className="space-y-1 mb-2 pl-0">
+              {[
+                { key: 'medicalPrescriptions' },
+                { key: 'drugDatabase' },
+                { key: 'consentForms' },
+                { key: 'visitSummaries' },
+                { key: 'treatmentDocumentation' },
+              ].map((feature) => (
+                <li key={feature.key} className="flex items-center gap-2 text-xs text-slate-300 pl-0">
+                  <span className="inline-block w-1 h-1 rounded-full bg-indigo-300"></span>
+                  <span>{t(`login.businessTypeSection.features.${feature.key}`)}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              {t('login.businessTypeSection.bottom')}
+            </p>
           </div>
-        </div>
 
         {/* Footer - Relative */}
         <div className="relative z-10">
@@ -568,3 +596,4 @@ else navigate('/', { replace: true });
     </div>
   )
 }
+

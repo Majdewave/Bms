@@ -355,7 +355,19 @@
     "noAccount": "Don't have an account?",
     "contactUs": "Contact us",
     "noAccessYet": "Don't have access yet?",
-    "contactBusiness": "Contact your business to get login credentials"
+    "contactBusiness": "Contact your business to get login credentials",
+    "businessTypeSection": {
+      "title": "Tailored for Your Business Type",
+      "subtitle": "Enable features based on your needs:",
+      "features": {
+        "medicalPrescriptions": "Medical prescriptions",
+        "drugDatabase": "Drug database",
+        "consentForms": "Consent forms",
+        "visitSummaries": "Visit summaries",
+        "treatmentDocumentation": "Treatment documentation"
+      },
+      "bottom": "Suitable for clinics, beauty centers, treatment centers, and service-based businesses."
+    }
   },
   "unauthorized": {
     "title": "Access Denied",

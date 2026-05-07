@@ -348,7 +348,19 @@
     "noAccount": "אין לך חשבון?",
     "contactUs": "צור קשר",
     "noAccessYet": "עדיין אין לך גישה?",
-    "contactBusiness": "צור קשר עם העסק שלך כדי לקבל פרטי התחברות"
+    "contactBusiness": "צור קשר עם העסק שלך כדי לקבל פרטי התחברות",
+    "businessTypeSection": {
+      "title": "התאמה לפי סוג העסק",
+      "subtitle": "הפעלת תכונות בהתאם לצרכים שלך:",
+      "features": {
+        "medicalPrescriptions": "מרשמים רפואיים",
+        "drugDatabase": "מאגר תרופות",
+        "consentForms": "טפסי הסכמה",
+        "visitSummaries": "סיכומי ביקור",
+        "treatmentDocumentation": "תיעוד טיפולים"
+      },
+      "bottom": "מתאים למרפאות, קליניקות Beauty, מרכזי טיפולים ועסקים מבוססי שירות."
+    }
   },
   "unauthorized": {
     "title": "גישה נדחתה",
