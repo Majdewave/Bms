@@ -342,7 +342,7 @@ else navigate('/', { replace: true });
       {/* Right Side - Login Form with UI Background */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
         {/* Subtle UI Background Elements */}
-        <div className="absolute inset-0 bg-slate-50">
+        <div className="absolute login-container-mobile inset-0 bg-slate-50">
           {/* Grid overlay */}
           <div className="absolute inset-0 opacity-30">
             <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -369,18 +369,14 @@ else navigate('/', { replace: true });
         <div className="w-full max-w-md relative z-10">
           {/* Mobile Logo - only visible on small screens */}
           <div className="lg:hidden text-center mb-8">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg border border-slate-200 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 to-purple-100 opacity-60"></div>
-                <div className="relative text-xl font-bold">
-                  <span className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 bg-clip-text text-transparent">C</span>
-                </div>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Clienta</h1>
-                <p className="text-xs text-slate-500 tracking-wide uppercase">{t('login.systemLabel')}</p>
-              </div>
+            <div className="mb-6">
+              {/* Professional Logo */}
+              <div className='logoMobileContainer'>
+                <img src="/clienta-logo-white.png" alt="Clienta" className="h-12 mb-2" />
+               </div>
+              <div className="text-xs text-white mb-8">A product of digitalpenpro.com</div>
             </div>
+              <p className="text-s text-white tracking-wide mobile-subtitle uppercase">{t('login.systemLabel')}</p>
           </div>
 
           {/* Login Card with Premium Feel */}
@@ -576,7 +572,7 @@ else navigate('/', { replace: true });
           </div>
 
           {/* Footer Link - Outside Card */}
-          <p className="text-center text-slate-600 text-sm mt-6">
+          <p className="text-center text-slate-600 text-sm mt-6 mobile-footer-text">
             {t('login.noAccount')}{' '}
            <a
                   href="/register"

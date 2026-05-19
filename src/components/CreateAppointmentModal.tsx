@@ -290,12 +290,18 @@ if (!formData.date || !formData.time) {
               <input
                 type="date"
                 value={formData.date}
+                min={new Date().toISOString().split('T')[0]}
                 onChange={e => setFormData({ ...formData, date: e.target.value })}
                 className="border rounded-lg px-3 py-2"
               />
               <input
                 type="time"
                 value={formData.time}
+                min={
+                  formData.date === new Date().toISOString().split('T')[0]
+                    ? new Date().toTimeString().slice(0, 5)
+                    : undefined
+                }
                 onChange={e => setFormData({ ...formData, time: e.target.value })}
                 className="border rounded-lg px-3 py-2"
               />

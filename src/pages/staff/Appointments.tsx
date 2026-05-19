@@ -178,19 +178,16 @@ const markNotDocumented = async (appointment: Appointment) => {
     }
   }
 
-  const filteredAppointments = appointments
-    .filter(a => {
-      const matchesSearch =
-        a.clientName.toLowerCase().includes(searchQuery.toLowerCase())
+const filteredAppointments = appointments
+  .filter(a => {
+    const matchesSearch =
+      a.clientName.toLowerCase().includes(searchQuery.toLowerCase())
 
-      const matchesStatus =
-        statusFilter === 'all' || a.status.toLowerCase() === statusFilter.toLowerCase()
+    const matchesStatus =
+      statusFilter === 'all' || a.status.toLowerCase() === statusFilter.toLowerCase()
 
-      return matchesSearch && matchesStatus
-    })
-    .sort((a, b) =>
-      new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-    )
+    return matchesSearch && matchesStatus
+  })
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString()
@@ -221,7 +218,7 @@ const markNotDocumented = async (appointment: Appointment) => {
       {/* Queue Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
-          <div className="text-xs text-gray-500 mb-1">{t('currentPatient')}</div>
+          <div className="text-s text-gray-500 mb-1">{t('currentPatient')}</div>
           {current ? (
             <div className="flex items-center gap-2 font-semibold text-purple-700">
               <CheckCircle className="w-5 h-5 text-purple-500" />
@@ -232,7 +229,7 @@ const markNotDocumented = async (appointment: Appointment) => {
           )}
         </div>
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
-          <div className="text-xs text-gray-500 mb-1">{t('nextPatient')}</div>
+          <div className="text-s text-gray-500 mb-1">{t('nextPatient')}</div>
           {next ? (
             <div className="flex items-center gap-2 font-semibold text-yellow-700">
               <ArrowRight className="w-5 h-5 text-yellow-500" />
@@ -243,7 +240,7 @@ const markNotDocumented = async (appointment: Appointment) => {
           )}
         </div>
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
-          <div className="text-xs text-gray-500 mb-1">{t('waitingCount')}</div>
+          <div className="text-s text-gray-500 mb-1">{t('waitingCount')}</div>
           <div className="font-bold text-lg text-yellow-700">{waitingCount}</div>
         </div>
       </div>
@@ -324,8 +321,8 @@ const markNotDocumented = async (appointment: Appointment) => {
                   <th className="px-6 py-3 text-center text-xs">{t('appointments.table.client')}</th>
                   <th className="px-6 py-3 text-center text-xs">{t('appointments.table.datetime')}</th>
                   <th className="px-6 py-3 text-center text-xs">{t('appointments.table.staff')}</th>
-                  <th className="px-6 py-3 text-center text-xs">{t('appointments.table.status')}</th>
-                  <th className="px-6 py-3 text-center text-xs">{t('common.actions')}</th>
+                  <th className="px-6 py-3 text-center text-xs bg-slate-50 border-x border-slate-100">{t('appointments.table.status')}</th>
+                 <th className="px-6 py-3 text-center text-xs bg-slate-100/70 border-s border-slate-200">{t('common.actions')}</th>
                 </tr>
               </thead>
 
@@ -397,7 +394,7 @@ const markNotDocumented = async (appointment: Appointment) => {
                       <td className="px-4 py-3">
                         {appointment.staffName || '-'}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3 text-center bg-slate-50 border-x border-slate-100">
                         <span
                           className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusBadgeClass(appointment.status)}`}
                         >
@@ -407,7 +404,7 @@ const markNotDocumented = async (appointment: Appointment) => {
                           <span className="ml-2 px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">לא מתועד</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-end">
+                      <td className="px-4 py-3 text-end bg-slate-100/70 border-s border-slate-200">
                         <div className="flex items-center gap-2 justify-end flex-wrap">
                           {/* Quick Actions */}
                           {appointment.status === 'Scheduled' && (

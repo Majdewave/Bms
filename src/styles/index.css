@@ -191,3 +191,27 @@ body {
 .ClientaText {
     color: #222222;
 }
+
+@media only screen and (max-width: 800px) {
+  .logoMobileContainer {
+    justify-content: center;
+    text-align: center;
+  }
+.logoMobileContainer img {
+  display: initial;
+}
+ .login-container-mobile {
+    background-color: #172554 var(--tw-gradient-to-position);
+  }
+  .mobile-subtitle {
+    color: #fff;
+    background-color: #0000001f;
+  }
+  
+  .mobile-footer-text {
+    color: #fff;
+  }
+  .mobile-footer-text a {
+    color: #34aadc;
+  }
+}
