@@ -14,6 +14,7 @@ import {
   Sliders,
   UserPlus,
   Users,
+  CreditCard,
 } from "lucide-react"
 
 import { useAuth, UserRole } from '@/contexts/AuthContext'
@@ -43,6 +44,7 @@ const allMenuItems: MenuItem[] = [
   { icon: UserPlus, label: 'Staff Management', path: '/admin/staff', roles: ['admin'] },
   { icon: Pill, label: 'Drugs', path: '/admin/drugs', roles: ['admin'], feature: 'drugsEnabled' },
   { icon: Settings, label: 'Business Settings', path: '/admin/settings', roles: ['admin'] },
+  { icon: CreditCard, label: 'Billing', path: '/admin/billing', roles: ['admin'] },
   { icon: Sliders, label: 'Feature Toggles', path: '/admin/features', roles: ['admin'] },
  
 // Staff (permission based)
@@ -87,6 +89,8 @@ export default function AdminLayout() {
     switch (label) {
       case 'Dashboard':
         return t('common.dashboard')
+      case 'Billing': 
+        return t('חיובים ומנויים')
       case 'All Clients':
         return t('nav.allClients')
       case 'All Appointments':

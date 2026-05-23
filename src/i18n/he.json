@@ -186,7 +186,8 @@
     "appointments.new": "פגישה חדשה",
     "invoices": "חשבוניות",
     "files": "קבצים",
-    "profile": "פרופיל"
+    "profile": "פרופיל",
+    "billing": "חיובים ומנוי"
   },
   "layout": {
     "signedInAs": "מחובר כ",

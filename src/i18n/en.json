@@ -186,7 +186,8 @@
     "appointments.new": "New Appointment",
     "invoices": "Invoices",
     "files": "Files",
-    "profile": "Profile"
+    "profile": "Profile",
+    "billing": "Billing"
   },
   "layout": {
     "signedInAs": "Signed in as",

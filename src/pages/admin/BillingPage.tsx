@@ -1,40 +1,32 @@
 import { useTenant } from '@/hooks/useTenant'
 import { useState } from 'react'
+import { createBillingPortal } from '@/services/billingService'
+import { Alert } from '@/components/UI'
 import { useTranslation } from 'react-i18next'
 
 export default function BillingPage() {
   const { tenant, daysLeft, loading, error } = useTenant()
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
+  const [portalError, setPortalError] = useState<string | null>(null)
   const { t, i18n } = useTranslation()
-
   const isRTL = i18n.language === 'he'
 
-  const handleUpgrade = async () => {
-    try {
-      setIsLoadingCheckout(true)
 
-    const res = await fetch('/api/stripe/create-checkout-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify({}), // ← קריטי
-    })
+const handleManageSubscription = async () => {
+  try {
+    setIsLoadingCheckout(true)
 
-      if (!res.ok) throw new Error('Failed to create checkout session')
+    const res = await createBillingPortal()
 
-      const data = await res.json()
-
-      if (!data.url) throw new Error('No checkout URL returned')
-
-      window.location.href = data.url
-    } catch (err) {
-      console.error(err)
-      alert(t('billing.error'))
-      setIsLoadingCheckout(false)
-    }
+    window.location.href = res.url
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setIsLoadingCheckout(false)
   }
+}
+
+
 
   if (loading) {
     return (
@@ -52,21 +44,54 @@ export default function BillingPage() {
     )
   }
 
-  if (tenant.subscriptionStatus === 'Active') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f9fc]">
-        <div className="bg-white rounded-2xl shadow-lg p-10 text-center max-w-md">
-          <img src="/clienta-logo.png" className="h-14 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-gray-900">
-            {t('billing.activeTitle')}
-          </h1>
-          <p className="text-gray-500 mt-2">
-            {t('billing.activeSubtitle')}
-          </p>
+
+    if (tenant.subscriptionStatus === 'Active') {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-[#f7f9fc] px-6">
+          <div className="bg-white rounded-2xl shadow-lg p-10 text-center max-w-md w-full">
+
+            <img
+              src="/clienta-logo.png"
+              className="h-14 mx-auto mb-4"
+            />
+
+            <h1 className="text-xl font-semibold text-gray-900">
+              {t('billing.activeTitle')}
+            </h1>
+
+            <p className="text-gray-500 mt-2 mb-6">
+              {t('billing.activeSubtitle')}
+            </p>
+            
+
+            <button
+              onClick={handleManageSubscription}
+              disabled={isLoadingCheckout}
+              className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-medium transition ${
+                isLoadingCheckout
+                  ? 'opacity-60 cursor-not-allowed'
+                  : ''
+              }`}
+            >
+              {isLoadingCheckout
+                ? t('billing.redirect')
+                : 'ניהול מנוי'}
+            </button>
+
+            {portalError && (
+              <div className="mt-4">
+                <Alert
+                  type="error"
+                  message={portalError}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
+
+
 
   return (
     <div
@@ -129,15 +154,21 @@ export default function BillingPage() {
           <div><span className="text-blue-600 font-semibold">✔</span> {t('billing.features.full').replace(/^✔\s*/, '')}</div>
         </div>
 
+
+        {/* Stripe Billing Portal Button */}
         <button
-          onClick={handleUpgrade}
+          onClick={handleManageSubscription}
           disabled={isLoadingCheckout}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-medium transition"
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-medium transition ${isLoadingCheckout ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
-          {isLoadingCheckout
-            ? t('billing.redirect')
-            : t('billing.upgrade')}
+          {isLoadingCheckout ? t('billing.redirect') : 'ניהול מנוי'}
         </button>
+
+        {portalError && (
+          <div className="mt-4">
+            <Alert type="error" message={portalError} />
+          </div>
+        )}
 
         <p className="text-base text-gray-400 mt-4">
           {t('billing.footer')}

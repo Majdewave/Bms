@@ -187,7 +187,8 @@
     "appointments.new": "موعد جديد",
     "invoices": "الفواتير",
     "files": "الملفات",
-    "profile": "الملف الشخصي"
+    "profile": "الملف الشخصي",
+    "billing": "الفواتير والدفع"
   },
   "layout": {
     "signedInAs": "متصل كـ",
