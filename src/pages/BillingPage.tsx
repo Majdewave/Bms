@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { createBillingPortal } from '@/services/billingService'
 import { Alert } from '@/components/UI'
 import { useTranslation } from 'react-i18next'
+import { createCheckoutSession } from '@/services/billingService'
 
 export default function BillingPage() {
   const { tenant, daysLeft, loading, error } = useTenant()
@@ -10,6 +11,8 @@ export default function BillingPage() {
   const [portalError, setPortalError] = useState<string | null>(null)
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'he'
+
+  const [billingCycle, setBillingCycle] = useState<'Monthly' | 'Yearly'>('Monthly')
 
 
 const handleManageSubscription = async () => {
@@ -25,6 +28,27 @@ const handleManageSubscription = async () => {
     setIsLoadingCheckout(false)
   }
 }
+
+
+const handleUpgrade = async () => {
+  try {
+
+    setIsLoadingCheckout(true)
+
+    const res = await createCheckoutSession(
+      billingCycle
+    )
+
+    window.location.href = res.url
+
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setIsLoadingCheckout(false)
+  }
+}
+
+
 
 
 
@@ -135,15 +159,48 @@ const handleManageSubscription = async () => {
           {t('billing.plan') || 'PRO'}
         </h2>
 
+
+
+      <div className="flex items-center justify-center mb-6">
+        <div className="bg-gray-100 rounded-xl p-1 flex">
+
+          <button
+            onClick={() => setBillingCycle('Monthly')}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
+              billingCycle === 'Monthly'
+                ? 'bg-white shadow text-blue-600'
+                : 'text-gray-500'
+            }`}
+          >
+            חודשי
+          </button>
+
+          <button
+            onClick={() => setBillingCycle('Yearly')}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
+              billingCycle === 'Yearly'
+                ? 'bg-white shadow text-blue-600'
+                : 'text-gray-500'
+            }`}
+          >
+            שנתי
+          </button>
+
+        </div>
+      </div>
+
+
+
+
         <div className="mb-5">
           <div className="text-[42px] font-semibold text-gray-900">
-            ₪186
+            {billingCycle === 'Monthly' ? '₪186' : '₪1860'}
           </div>
           <div className="text-gray-500 text-base">
             {t('billing.perMonth')}
           </div>
           <div className="text-base text-gray-500 mt-1">
-            {t('billing.yearly')}
+            {billingCycle === 'Monthly' ? t('billing.perMonth') : t('billing.yearly')}
           </div>
         </div>
 
@@ -157,11 +214,11 @@ const handleManageSubscription = async () => {
 
         {/* Stripe Billing Portal Button */}
         <button
-          onClick={handleManageSubscription}
+          onClick={handleUpgrade}
           disabled={isLoadingCheckout}
           className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-medium transition ${isLoadingCheckout ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
-          {isLoadingCheckout ? t('billing.redirect') : 'ניהול מנוי'}
+          {isLoadingCheckout ? t('billing.redirect') : 'שדרג עכשיו'}
         </button>
 
         {portalError && (

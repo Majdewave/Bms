@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 export type TenantInfo = {
+  id: string;
   plan: string;
   subscriptionStatus: string;
   trialEndsAt?: string;
