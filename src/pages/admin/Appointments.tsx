@@ -350,7 +350,7 @@ const filteredAppointments = appointments
                           <User className="w-5 h-5 text-primary" />
                           <div className="flex flex-col">
                             <span className={`font-semibold text-slate-800 ${isNotDocumented ? 'text-red-600' : ''}`}>{appointment.clientName}</span>
-                            <span className="text-xs text-slate-500">
+                            <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-xs">
                               {appointment.serviceName}
                             </span>
                             <div className="mt-1 flex gap-2 items-center">
@@ -394,7 +394,7 @@ const filteredAppointments = appointments
                       <td className="px-4 py-3">
                         {appointment.staffName || '-'}
                       </td>
-                      <td className="px-4 py-3 text-center bg-slate-50 border-x border-slate-100">
+                      <td className="px-4 py-3 text-center bg-slate-50 border-x border-slate-200">
                         <span
                           className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusBadgeClass(appointment.status)}`}
                         >

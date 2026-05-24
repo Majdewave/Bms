@@ -13,6 +13,7 @@ export interface Client {
   joinDate?: string
   lastVisit?: string
   appointmentsCount?: number
+  isNotDocumented?: boolean
 }
 
 export interface ClientAppointment {
