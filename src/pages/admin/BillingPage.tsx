@@ -7,6 +7,15 @@ import { createCheckoutSession } from '@/services/billingService'
 
 export default function BillingPage() {
   const { tenant, daysLeft, loading, error } = useTenant()
+  const isCanceling =
+  tenant?.subscriptionStatus === 'Active' &&
+  tenant?.subscriptionEndsAt &&
+  new Date(tenant.subscriptionEndsAt) > new Date();
+
+  console.log('tenant', tenant);
+  console.log('subscriptionEndsAt', tenant?.subscriptionEndsAt);
+  console.log('isCanceling', isCanceling);
+
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
   const [portalError, setPortalError] = useState<string | null>(null)
   const { t, i18n } = useTranslation()
@@ -80,9 +89,24 @@ const handleUpgrade = async () => {
             />
 
             <h1 className="text-xl font-semibold text-gray-900">
-              {t('billing.activeTitle')}
+              {isCanceling
+                ? 'המנוי יבוטל בסוף התקופה'
+                : t('billing.activeTitle')}
             </h1>
 
+              {isCanceling && (
+                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
+                  <div className="font-medium text-amber-800">
+                    המנוי פעיל עד
+                  </div>
+
+                  <div className="text-amber-700">
+                    {new Date(
+                      tenant.subscriptionEndsAt!
+                    ).toLocaleDateString('he-IL')}
+                  </div>
+                </div>
+              )}
             <p className="text-gray-500 mt-2 mb-6">
               {t('billing.activeSubtitle')}
             </p>

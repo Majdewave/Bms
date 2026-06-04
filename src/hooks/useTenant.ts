@@ -5,6 +5,7 @@ export type TenantInfo = {
   plan: string;
   subscriptionStatus: string;
   trialEndsAt?: string;
+  subscriptionEndsAt?: string;
   isSuspended: boolean;
 };
 
