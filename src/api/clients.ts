@@ -2,6 +2,7 @@ import { get, post, put, del } from './apiClient'
 
 export interface Client {
   id: string
+  idNumber?: string
   fullName: string
   email?: string
   phone?: string

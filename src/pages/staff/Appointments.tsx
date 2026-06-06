@@ -318,11 +318,11 @@ const filteredAppointments = appointments
             <table className="w-full">
               <thead className="bg-slate-50 border-b">
                 <tr>
-                  <th className="px-6 py-3 text-center text-xs">{t('appointments.table.client')}</th>
-                  <th className="px-6 py-3 text-center text-xs">{t('appointments.table.datetime')}</th>
-                  <th className="px-6 py-3 text-center text-xs">{t('appointments.table.staff')}</th>
-                  <th className="px-6 py-3 text-center text-xs bg-slate-50 border-x border-slate-100">{t('appointments.table.status')}</th>
-                 <th className="px-6 py-3 text-center text-xs bg-slate-100/70 border-s border-slate-200">{t('common.actions')}</th>
+                  <th className="px-6 py-3 text-center text-sm">{t('appointments.table.client')}</th>
+                  <th className="px-6 py-3 text-center text-sm">{t('appointments.table.datetime')}</th>
+                  <th className="px-6 py-3 text-center text-sm">{t('appointments.table.staff')}</th>
+                  <th className="px-6 py-3 text-center text-sm bg-slate-50 border-x border-slate-100">{t('appointments.table.status')}</th>
+                 <th className="px-6 py-3 text-center text-sm bg-slate-100/70 border-s border-slate-200">{t('common.actions')}</th>
                 </tr>
               </thead>
 
@@ -350,23 +350,23 @@ const filteredAppointments = appointments
                           <User className="w-5 h-5 text-primary" />
                           <div className="flex flex-col">
                             <span className={`font-semibold text-slate-800 ${isNotDocumented ? 'text-red-600' : ''}`}>{appointment.clientName}</span>
-                            <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-xs">
+                            <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">
                               {appointment.serviceName}
                             </span>
                             <div className="mt-1 flex gap-2 items-center">
                               {isPast && (
-                                <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-xs">
+                                <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-sm">
                                   {t('appointments.past')}
                                 </span>
                               )}
                               {hasConsent ? (
-                                <span className="flex items-center gap-1 text-green-600 text-xs font-medium opacity-80" title="הסכמה כבר נחתמה">
+                                <span className="flex items-center gap-1 text-green-600 text-sm font-medium opacity-80" title="הסכמה כבר נחתמה">
                                   <CheckCircle className="w-3 h-3" />
                                   נחתם
                                 </span>
                               ) : (
                                 <span
-                                  className="flex items-center gap-1 text-blue-600 text-xs font-medium cursor-pointer hover:underline opacity-80 hover:opacity-100"
+                                  className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer hover:underline opacity-80 hover:opacity-100"
                                   title="לחץ לחתימה"
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -394,14 +394,14 @@ const filteredAppointments = appointments
                       <td className="px-4 py-3">
                         {appointment.staffName || '-'}
                       </td>
-                      <td className="px-4 py-3 text-center bg-slate-50 border-x border-slate-100">
+                      <td className="px-4 py-3 text-center bg-slate-50 border-x border-slate-200">
                         <span
-                          className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusBadgeClass(appointment.status)}`}
+                          className={`px-2 py-1 text-sm rounded-full font-medium ${getStatusBadgeClass(appointment.status)}`}
                         >
                           {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
                         </span>
                         {isNotDocumented && (
-                          <span className="ml-2 px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">לא מתועד</span>
+                          <span className="ml-2 px-2 py-1 rounded-full text-sm font-bold bg-red-100 text-red-700">לא מתועד</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-end bg-slate-100/70 border-s border-slate-200">

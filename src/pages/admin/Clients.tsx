@@ -51,17 +51,22 @@ export default function Clients() {
 
   const notDocumentedCount = safeClients.filter(c => c.isNotDocumented).length
 
+  const normalizeDigits = (value?: string) => (value ?? '').replace(/\D/g, '')
+
   const filteredClients = safeClients.filter((client) => {
     if (showNotDocumentedOnly && !client.isNotDocumented) return false
 
     if (!searchQuery) return true
 
-    const q = searchQuery.toLowerCase()
+    const q = searchQuery.toLowerCase().trim()
+    const idQuery = normalizeDigits(searchQuery)
+    const clientIdNumber = normalizeDigits(client.idNumber ?? (client as any).nationalId)
 
     return (
       client.fullName?.toLowerCase().includes(q) ||
       client.email?.toLowerCase().includes(q) ||
-      client.phone?.toLowerCase().includes(q)
+      client.phone?.toLowerCase().includes(q) ||
+      (idQuery.length > 0 && clientIdNumber.includes(idQuery))
     )
   })
 

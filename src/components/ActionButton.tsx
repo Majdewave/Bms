@@ -47,7 +47,7 @@ export default function ActionButton({ type, onClick }: Props) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${item.className}`}
+      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition ${item.className}`}
     >
       {item.icon}
       {item.label}
