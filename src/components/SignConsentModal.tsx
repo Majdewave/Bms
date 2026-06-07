@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, FileCheck2, Eraser } from 'lucide-react'
+import { toast } from 'react-toastify'
 import { consentsApi, type ConsentTemplate } from '@/api/consents'
+import { tabletDemo, type WacomRoot, type WacomSession } from '@/lib/wacomStu500.ts'
+
+declare global {
+  interface Window {
+    WacomGSS?: WacomRoot
+  }
+}
 
 type Props = {
   isOpen: boolean
@@ -16,6 +24,53 @@ type Props = {
 
 const fillTemplate = (template: string, vars: Record<string, string>) => {
   return template.replace(/{{\s*(\w+)\s*}}/g, (_, key) => vars[key] || '')
+}
+
+const WACOM_SCRIPT_PATHS = {
+  q: '/q.js',
+  sdk: '/wgssStuSdk.js',
+}
+
+const loadedScripts = new Map<string, Promise<void>>()
+
+const loadScript = async (key: string, src: string) => {
+  if (loadedScripts.has(key)) {
+    await loadedScripts.get(key)
+    return
+  }
+
+  const task = (async () => {
+    await new Promise<void>((resolve, reject) => {
+      const existing = document.querySelector(`script[data-wacom-script="${src}"]`) as HTMLScriptElement | null
+      if (existing?.dataset.loaded === 'true') {
+        resolve()
+        return
+      }
+
+      const script = existing || document.createElement('script')
+      if (!existing) {
+        script.src = src
+        script.async = true
+        script.dataset.wacomScript = src
+        document.body.appendChild(script)
+      }
+
+      script.onload = () => {
+        script.dataset.loaded = 'true'
+        resolve()
+      }
+      script.onerror = () => reject(new Error(`Failed to load script: ${src}`))
+    })
+  })()
+
+  loadedScripts.set(key, task)
+
+  try {
+    await task
+  } catch (error) {
+    loadedScripts.delete(key)
+    throw error
+  }
 }
 
 export default function SignConsentModal({
@@ -34,6 +89,11 @@ export default function SignConsentModal({
   const [template, setTemplate] = useState<ConsentTemplate | null>(null)
   const [editableContent, setEditableContent] = useState('')
   const [isEditing, setIsEditing] = useState(false)
+  const [wacomSignature, setWacomSignature] = useState<string | null>(null)
+  const [isWacomModalOpen, setIsWacomModalOpen] = useState(false)
+  const [wacomStatus, setWacomStatus] = useState('')
+  const wacomSessionRef = useRef<WacomSession | null>(null)
+  const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawingRef = useRef(false)
@@ -101,6 +161,22 @@ export default function SignConsentModal({
     setEditableContent(renderedHtml)
   }, [renderedHtml])
 
+  useEffect(() => {
+    const onSignatureCaptured = (event: Event) => {
+      const customEvent = event as CustomEvent<string>
+      if (typeof customEvent.detail === 'string' && customEvent.detail.trim()) {
+        setWacomSignature(customEvent.detail)
+        setIsWacomModalOpen(false)
+        setWacomStatus('')
+      }
+    }
+
+    window.addEventListener('wacom-signature-captured', onSignatureCaptured)
+    return () => {
+      window.removeEventListener('wacom-signature-captured', onSignatureCaptured)
+    }
+  }, [])
+
   const getPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
     if (!canvas) return null
@@ -145,6 +221,12 @@ export default function SignConsentModal({
   }
 
   const clearSignature = () => {
+    setWacomSignature(null)
+    const signatureCanvas = signatureCanvasRef.current
+    if (signatureCanvas) {
+      const signatureCtx = signatureCanvas.getContext('2d')
+      signatureCtx?.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height)
+    }
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -162,8 +244,64 @@ export default function SignConsentModal({
     return canvas.toDataURL('image/png')
   }
 
+  const disconnect = async () => {
+    if (wacomSessionRef.current) {
+      try {
+        await wacomSessionRef.current.disconnect()
+      } catch {
+        // Ignore disconnect failures because the modal should still close.
+      }
+      wacomSessionRef.current = null
+    }
+
+    setIsWacomModalOpen(false)
+    setWacomStatus('')
+  }
+
+  const handleWacomSign = async () => {
+    try {
+      setWacomStatus('Loading Wacom components...')
+      await loadScript('wacom-sdk', WACOM_SCRIPT_PATHS.sdk)
+
+      const wacom = window.WacomGSS
+      if (!wacom) {
+        throw new Error('Wacom SDK global is unavailable')
+      }
+
+      const signatureCanvas = signatureCanvasRef.current
+      if (!signatureCanvas) {
+        throw new Error('Signature canvas is unavailable')
+      }
+
+      if (wacomSessionRef.current) {
+        await wacomSessionRef.current.disconnect()
+        wacomSessionRef.current = null
+      }
+
+      wacomSessionRef.current = await tabletDemo(wacom, {
+        createModalWindow: (message?: string) => {
+          setIsWacomModalOpen(true)
+          setWacomStatus(message || 'Please sign on your Wacom device and press OK.')
+        },
+        setStatus: (message: string) => {
+          setWacomStatus(message)
+        },
+        closeModalWindow: () => {
+          setIsWacomModalOpen(false)
+          setWacomStatus('')
+          wacomSessionRef.current = null
+        },
+      }, signatureCanvas)
+    } catch (error) {
+      console.error(error)
+      await disconnect()
+      toast.error('Wacom device not connected')
+    }
+  }
+
   const handleSign = async () => {
-    const signature = getSignatureBase64()
+    const canvasSignature = getSignatureBase64()
+    const signature = wacomSignature ?? canvasSignature
 
     if (!template?.id) {
       alert(t('consent.noTemplate'))
@@ -264,27 +402,43 @@ export default function SignConsentModal({
           </div>
 
           <div className="space-y-3">
+            <canvas ref={signatureCanvasRef} width={700} height={260} className="hidden" />
             <div className="flex items-center justify-between">
               <h4 className="font-medium text-slate-800">{t('consent.clientSignature')}</h4>
-              <button
-                type="button"
-                onClick={clearSignature}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
-              >
-                <Eraser className="w-3 h-3" />
-                {t('consent.clear')}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleWacomSign}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-blue-300 text-blue-700 hover:bg-blue-50"
+                >
+                  Sign with Wacom
+                </button>
+                <button
+                  type="button"
+                  onClick={clearSignature}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
+                >
+                  <Eraser className="w-3 h-3" />
+                  {t('consent.clear')}
+                </button>
+              </div>
             </div>
-            <canvas
-              ref={canvasRef}
-              width={700}
-              height={260}
-              onMouseDown={startDraw}
-              onMouseMove={draw}
-              onMouseUp={endDraw}
-              onMouseLeave={endDraw}
-              className="w-full h-[190px] border border-dashed border-slate-300 rounded-xl bg-white touch-none"
-            />
+            {wacomSignature ? (
+              <div className="w-full h-[190px] border border-dashed border-slate-300 rounded-xl bg-white p-2 flex items-center justify-center">
+                <img src={wacomSignature} alt="Wacom signature preview" className="max-h-full max-w-full object-contain" />
+              </div>
+            ) : (
+              <canvas
+                ref={canvasRef}
+                width={700}
+                height={260}
+                onMouseDown={startDraw}
+                onMouseMove={draw}
+                onMouseUp={endDraw}
+                onMouseLeave={endDraw}
+                className="w-full h-[190px] border border-dashed border-slate-300 rounded-xl bg-white touch-none"
+              />
+            )}
             <p className="text-xs text-slate-500">{t('consent.signInstruction')}</p>
             <p className="text-xs text-slate-600">{t('consent.confirmText')}</p>
           </div>
@@ -308,6 +462,26 @@ export default function SignConsentModal({
           </button>
         </div>
       </div>
+
+      {isWacomModalOpen ? (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-xl border border-slate-200 p-5 space-y-3">
+            <h4 className="text-base font-semibold text-slate-900">Wacom Signature Capture</h4>
+            <p className="text-sm text-slate-600">{wacomStatus || 'Waiting for Wacom device...'}</p>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  void disconnect()
+                }}
+                className="px-3 py-1.5 rounded-md border border-slate-300 text-slate-700 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
