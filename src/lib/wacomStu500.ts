@@ -236,6 +236,7 @@ const connectTablet = async (stu: StuNamespace) => {
 
   const connectMessage = await intf.connect(usbDevices[0], true)
 
+  console.log('CONNECT RESULT', connectMessage)
   if (typeof connectMessage?.value === 'number' &&
       connectMessage.value !== 0) {
     throw new Error("can't connect")
@@ -376,6 +377,7 @@ export async function tabletDemo(
   ctx.reportHandler = reportHandler
 
   const penData = (report: PenData) => {
+       console.log('PEN', report)
     if (processButtons(ctx, report, ctx.displayCanvas)) {
       processPoint(ctx, report, ctx.displayCanvas, ctx.displayCtx)
       ctx.penData.push(report)
@@ -519,7 +521,7 @@ export function processButtons(ctx: WacomDemoContext, point: PenData, inCanvas: 
     }
   }
 
-  if (ctx.isDown && !isDown2) {
+if (ctx.isDown && !isDown2) {
     if (btn !== -1 && ctx.clickBtn === btn) {
       ctx.buttons[btn].click()
     }
@@ -527,7 +529,16 @@ export function processButtons(ctx: WacomDemoContext, point: PenData, inCanvas: 
   } else if (btn !== -1 && !ctx.isDown && isDown2) {
     ctx.clickBtn = btn
   }
+    console.log('BTN CHECK', nextPoint.x, nextPoint.y, 'BTN', btn, 'CLICKBTN', ctx.clickBtn)
+    
+    console.log('BUTTONS', JSON.stringify(ctx.buttons.map(b =>
+       ({text: b.text, bounds: b.bounds    })),
+    null,
+    2
+  )
+)
 
+    ctx.isDown = isDown2
   return btn === -1
 }
 
