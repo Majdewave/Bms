@@ -16,6 +16,7 @@ interface Client {
   email: string
   phone: string
   idNumber?: string
+  birthDate?: string
   address?: string
   internalNote?: string
   lastVisit?: string | null
@@ -539,7 +540,11 @@ useEffect(() => {
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = 'consent.pdf'
+      const fileName = client?.idNumber
+            ? `Consent_${client.idNumber}.pdf`
+            : `Consent_${consentId}.pdf`
+
+      link.download = fileName
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -770,6 +775,32 @@ useEffect(() => {
             } ${!editingClient ? "bg-slate-50 text-slate-500" : ""}`}
           />
         </div>
+
+        <div>
+          <label className="block text-sm text-slate-500 mb-2">
+            תאריך לידה
+          </label>
+
+          <input
+            type="date"
+            value={
+              client.birthDate
+                ? client.birthDate.split('T')[0]
+                : ''
+            }
+            onChange={(e) =>
+              setClient({
+                ...client,
+                birthDate: e.target.value
+              })
+            }
+            disabled={!editingClient}
+            className={`w-full border rounded-lg p-3 ${
+              !editingClient ? 'bg-slate-50 text-slate-500' : ''
+            }`}
+          />
+     </div>
+
 
     <div>
       <label className="block text-sm text-slate-500 mb-2">

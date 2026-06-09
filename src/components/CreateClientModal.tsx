@@ -10,6 +10,7 @@ export default function CreateClientModal({ onClose, onCreated }) {
     phone: '',
     address: '',
     idNumber: '',
+    birthDate: '',
     internalNote: '',
   })
   const [saving, setSaving] = useState(false)
@@ -101,6 +102,16 @@ export default function CreateClientModal({ onClose, onCreated }) {
               </p>
             )}
           </div>
+
+          <div>
+            <input
+              name="birthDate"
+              type="date"
+              value={form.birthDate || ''}
+              onChange={handleChange}
+              className="w-full rounded-lg px-3 py-2 border border-slate-300"
+            />
+        </div>
 
           <input name="email" value={form.email} onChange={handleChange} type="email" placeholder={t('admin.clients.form.emailPlaceholder')} className="input w-full" />
           <div> 
