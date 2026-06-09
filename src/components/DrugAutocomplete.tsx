@@ -28,6 +28,17 @@ const DrugAutocomplete: React.FC<DrugAutocompleteProps> = ({
 
   /* ================= SEARCH ================= */
 
+  const handleCustomDrug = () => {
+  const customDrug: Drug = {
+    id: 'custom',
+    name: query.trim(),
+  };
+
+  setShowDropdown(false);
+  onSelect(customDrug);
+};
+
+
   useEffect(() => {
     if (query.length < 2) {
       setResults([]);
@@ -103,9 +114,18 @@ const DrugAutocomplete: React.FC<DrugAutocompleteProps> = ({
             <div className="px-4 py-2 text-sm text-gray-500">טוען...</div>
           )}
 
-          {!loading && results.length === 0 && (
-            <div className="px-4 py-2 text-sm text-gray-400">
-              לא נמצאו תוצאות
+          {!loading && results.length === 0 && query.trim() && (
+            <div
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-t"
+              onMouseDown={handleCustomDrug}
+            >
+              <div className="font-medium">
+                ➕ הוסף כטקסט חופשי
+              </div>
+
+              <div className="text-sm text-gray-500">
+                {query}
+              </div>
             </div>
           )}
 
@@ -119,8 +139,17 @@ const DrugAutocomplete: React.FC<DrugAutocompleteProps> = ({
               {drug.dosage && <span className="text-xs text-gray-500">{drug.dosage}</span>}
             </div>
           ))}
-
+          {query.trim() && (
+              <div
+                className="px-4 py-2 border-t bg-gray-50 hover:bg-gray-100 cursor-pointer"
+                onMouseDown={handleCustomDrug}
+              >
+                ➕ השתמש ב־"{query}" כטקסט חופשי
+              </div>
+            )}
+          
         </div>
+        
       )}
     </div>
   );

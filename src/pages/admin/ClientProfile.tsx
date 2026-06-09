@@ -1223,11 +1223,18 @@ useEffect(() => {
             />
           </button>
 
-          {openSections.includes('beforeAfterPhotos') && (
-            <div className="px-6 pb-6">
-              <ClientBeforeAfterPhotos clientId={client.id} onCountChange={setPhotosCount} />
+            <div
+              className={
+                openSections.includes('beforeAfterPhotos')
+                  ? 'px-6 pb-6'
+                  : 'hidden'
+              }
+            >
+              <ClientBeforeAfterPhotos
+                clientId={client.id}
+                onCountChange={setPhotosCount}
+              />
             </div>
-          )}
         </div>
       )}
 
