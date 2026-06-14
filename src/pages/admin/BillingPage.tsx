@@ -12,10 +12,6 @@ export default function BillingPage() {
   tenant?.subscriptionEndsAt &&
   new Date(tenant.subscriptionEndsAt) > new Date();
 
-  console.log('tenant', tenant);
-  console.log('subscriptionEndsAt', tenant?.subscriptionEndsAt);
-  console.log('isCanceling', isCanceling);
-
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
   const [portalError, setPortalError] = useState<string | null>(null)
   const { t, i18n } = useTranslation()

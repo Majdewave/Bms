@@ -82,8 +82,6 @@ export default function AdminInvoices() {
           notes: newInvoice.notes,
         }
 
-        console.log('UPDATE PAYLOAD:', payload)
-
         const res = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/invoices/${editingInvoiceId}`, {
           method: 'PUT',
           headers: {
@@ -125,8 +123,6 @@ export default function AdminInvoices() {
 
   const downloadInvoice = async (id: string) => {
     try {
-      console.log('DOWNLOAD CLICKED:', id)
-
       const token = localStorage.getItem('token')
 
       const res = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/invoices/${id}/pdf`, {

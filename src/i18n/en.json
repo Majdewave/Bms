@@ -544,7 +544,7 @@
         "email": "Email Address",
         "emailPlaceholder": "client@example.com",
         "phone": "Phone Number",
-        "phonePlaceholder": "+1 (555) 000-0000",
+        "phonePlaceholder": "Enter client's phone number",
         "dateOfBirth": "Date of Birth",
         "address": "Address",
         "addressPlaceholder": "Enter client's address",

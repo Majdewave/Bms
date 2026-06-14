@@ -160,7 +160,6 @@ class DashboardService {
     }
 
     const data = await response.json()
-    console.log('Billing status response:', data)
     return data
   }
 
@@ -190,7 +189,6 @@ class DashboardService {
     }
 
     const data = await response.json()
-    console.log('Upgrade response:', data)
     return data
   }
 }

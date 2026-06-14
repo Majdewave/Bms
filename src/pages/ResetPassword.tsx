@@ -17,10 +17,6 @@ export default function ResetPassword() {
     e.preventDefault();
 
     if (!token) {
-      console.log("TOKEN:", token);
-      console.log("URL:", window.location.href);
-      console.log("FULL URL:", window.location.href);
-      console.log("SEARCH:", window.location.search);
       setError("קישור לא תקין");
       return;
     }

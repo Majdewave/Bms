@@ -543,7 +543,7 @@
         "email": "البريد الإلكتروني",
         "emailPlaceholder": "client@example.com",
         "phone": "رقم الهاتف",
-        "phonePlaceholder": "+1 (555) 000-0000",
+        "phonePlaceholder": "أدخل رقم الهاتف",
         "dateOfBirth": "تاريخ الميلاد",
         "address": "العنوان",
         "addressPlaceholder": "أدخل عنوان العميل",

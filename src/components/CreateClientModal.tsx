@@ -32,9 +32,9 @@ export default function CreateClientModal({ onClose, onCreated }) {
   if (!form.phone.trim()) {
     newErrors.phone = t('validation.required')
   }
-    if (!form.idNumber.trim()) {
-    newErrors.idNumber = t('validation.required')
-  }
+    // if (!form.idNumber.trim()) {
+    // newErrors.idNumber = t('validation.required')
+    //   }
 
   setErrors(newErrors)
 
@@ -49,7 +49,12 @@ export default function CreateClientModal({ onClose, onCreated }) {
     setSaving(true)
     setError('')
     try {
-      const client = await clientsService.createClient(form)
+      const payload = {
+          ...form,
+          birthDate: form.birthDate ? form.birthDate : null,
+        }
+
+      const client = await clientsService.createClient(payload)
       onCreated(client)
     } catch (err) {
       setError(t('admin.clients.createError') || 'Failed to create client')

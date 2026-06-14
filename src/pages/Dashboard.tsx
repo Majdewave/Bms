@@ -67,7 +67,6 @@ export default function AdminDashboard() {
           const unique = activityData.filter(
             (v, i, arr) => arr.findIndex(x => x.id === v.id) === i
           )
-          console.log('Recent Activity:', unique)  // Debug
           setRecentActivity(unique)
         } else {
           setRecentActivity([])

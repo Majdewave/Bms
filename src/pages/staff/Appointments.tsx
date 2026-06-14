@@ -16,8 +16,6 @@ export default function AdminAppointments() {
   const { t } = useTranslation()
   const { hasPermission } = useAuth()
 
-  console.log('ADMIN APPOINTMENTS RENDERED');
-
   const [appointments, setAppointments] = useState<AppointmentRow[]>([])
   const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
   const [loading, setLoading] = useState(true)
@@ -120,7 +118,6 @@ const markNotDocumented = async (appointment: Appointment) => {
   // --- SignalR Real-time Updates ---
 
     useEffect(() => {
-      console.log('SIGNALR EFFECT RUNNING');
       let isMounted = true;
 
       const startConnection = async () => {
@@ -138,8 +135,6 @@ const markNotDocumented = async (appointment: Appointment) => {
       startConnection();
 
       const handleAppointmentUpdated = () => {
-        console.log('AppointmentUpdated received');
-
         if (isMounted) {
           loadData();
         }

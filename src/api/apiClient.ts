@@ -57,12 +57,8 @@ async function request<T>(
     credentials: 'include'
   };
   // Log full request details
-  console.log(`[API Request] ${options.method || 'GET'} ${BASE_URL}${url}`)
-  console.log('[API Request Headers]', headers)
   if (fetchOptions.body) {
-    console.log('[API Request Body]', fetchOptions.body)
   }
-  console.log("BASE_URL:", BASE_URL);
 
   let response = await fetch(`${BASE_URL}${url}`, fetchOptions)
 
@@ -214,13 +210,10 @@ export async function getBlob(url: string): Promise<Blob> {
 }
 
 export async function post<T>(url: string, body?: any, isFormData?: boolean): Promise<T> {
-  console.log('[POST Request] URL:', url)
-  console.log('[POST Request] Body (before stringify):', body)
   const isFormDataRequest = isFormData === true || body instanceof FormData
   let requestBody: any = body;
   if (!isFormDataRequest) {
     requestBody = JSON.stringify(body ?? {});
-    console.log('[POST Request] Body (after stringify):', requestBody);
   }
   return request<T>(url, {
     method: 'POST',
@@ -230,8 +223,6 @@ export async function post<T>(url: string, body?: any, isFormData?: boolean): Pr
 }
 
 export async function put<T>(url: string, body?: any, isFormData?: boolean): Promise<T> {
-  console.log('[PUT Request] URL:', url)
-  console.log('[PUT Request] Body (before stringify):', body)
   const isFormDataRequest = isFormData === true || body instanceof FormData
   const requestBody = isFormDataRequest ? body : JSON.stringify(body ?? {})
 

@@ -250,7 +250,6 @@ useEffect(() => {
 
   visitSummariesService.getByClientId(client.id)
     .then((data) => {
-      console.log('VISIT SUMMARIES:', data); // לבדיקה
       setVisitSummaries(Array.isArray(data) ? data : []);
     })
     .catch((err) => {
@@ -280,23 +279,30 @@ useEffect(() => {
     setClient({ ...client, [name]: value })
   }
 
-  const saveClient = async () => {
-    if (!client) return
-    setSavingClient(true)
+const saveClient = async () => {
+  if (!client) return
 
-    try {
-      await apiClient.put(`/api/clients/${client.id}`, {
-        ...client,
-        idNumber: client.idNumber,
-      })
-      setEditingClient(false)
-    } catch (err) {
-      console.error("Save failed", err)
-    } finally {
-      setSavingClient(false)
+  setSavingClient(true)
+
+  try {
+    const payload = {
+      ...client,
+      idNumber: client.idNumber?.trim() || null,
+      birthDate: client.birthDate || null,
+      email: client.email?.trim() || null,
+      address: client.address?.trim() || null,
+      internalNote: client.internalNote?.trim() || null,
     }
-  }
 
+    await apiClient.put(`/api/clients/${client.id}`, payload)
+
+    setEditingClient(false)
+  } catch (err) {
+    console.error("Save failed", err)
+  } finally {
+    setSavingClient(false)
+  }
+}
   /* ================================
      STATUS TOGGLE
   ================================ */
@@ -1159,8 +1165,6 @@ useEffect(() => {
             ) : (
               <div className="space-y-3">
                 {signedConsents.map((consent) => {
-                  console.log('CONSENT DATA:', consent)
-
                   return (
                     <div
                       key={consent.id}
@@ -1424,8 +1428,6 @@ function ActionButton({ label, onClick, variant, disabled }: any) {
 
 function ConsentViewModal({ isOpen, consent, onClose, onDownload, resolveAssetUrl, t }: any) {
   if (!isOpen || !consent) return null
-
-  console.log('Doctor signature:', consent.doctorSignatureUrl)
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

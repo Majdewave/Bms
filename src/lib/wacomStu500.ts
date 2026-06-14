@@ -236,7 +236,6 @@ const connectTablet = async (stu: StuNamespace) => {
 
   const connectMessage = await intf.connect(usbDevices[0], true)
 
-  console.log('CONNECT RESULT', connectMessage)
   if (typeof connectMessage?.value === 'number' &&
       connectMessage.value !== 0) {
     throw new Error("can't connect")
@@ -261,10 +260,6 @@ export async function tabletDemo(
   const capability = await tablet.getCapability()
   const info = await tablet.getInformation()
   const productId = await tablet.getProductId()
-
-  console.log('TABLET DEMO VERSION 777777')
-  console.log('Model name', info.modelName ?? 'Unknown')
-  console.log('Product ID', productId)
 
   const inkThreshold = await tablet.getInkThreshold()
 
@@ -529,7 +524,6 @@ if (ctx.isDown && !isDown2) {
   } else if (btn !== -1 && !ctx.isDown && isDown2) {
     ctx.clickBtn = btn
   }
-    console.log('BTN CHECK', nextPoint.x, nextPoint.y, 'BTN', btn, 'CLICKBTN', ctx.clickBtn)
     
     console.log('BUTTONS', JSON.stringify(ctx.buttons.map(b =>
        ({text: b.text, bounds: b.bounds    })),

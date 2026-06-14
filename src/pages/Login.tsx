@@ -490,7 +490,6 @@ else navigate('/', { replace: true });
   type="button"
   className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
   onClick={async () => {
-    console.log("FORGOT CLICK");
 
     if (!formData.email) {
       setErrors(prev => ({
