@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature } from 'lucide-react'
+import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature, ChevronDown, ChevronUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader, CreateAppointmentModal, SignConsentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
@@ -21,6 +21,7 @@ export default function AdminAppointments() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'Scheduled' | 'Waiting' | 'InProgress' | 'Completed' | 'Cancelled' | 'NoShow'>('all')
+  const [showHistory, setShowHistory] = useState(false)
   // --- Queue Logic ---
   const current = appointments.find(a => a.status === 'InProgress') || null;
   const waitingList = appointments
@@ -182,6 +183,26 @@ const filteredAppointments = appointments
     return matchesSearch && matchesStatus
   })
 
+const activeAppointments = filteredAppointments.filter(a => {
+  const appointmentDate = new Date(a.startTime)
+
+  return (
+    appointmentDate >= new Date() ||
+    a.status === 'Waiting' ||
+    a.status === 'InProgress'
+  )
+})
+
+const historyAppointments = filteredAppointments.filter(a => {
+  const appointmentDate = new Date(a.startTime)
+
+  return (
+    appointmentDate < new Date() &&
+    a.status !== 'Waiting' &&
+    a.status !== 'InProgress'
+  )
+})
+
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString()
 
@@ -202,6 +223,157 @@ const filteredAppointments = appointments
       default:
         return 'bg-slate-100 text-slate-700'
     }
+  }
+
+  const renderAppointmentsTable = (rows: AppointmentRow[]) => {
+    if (loading) {
+      return (
+        <div className="p-12 text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-slate-50 border-b">
+            <tr>
+              <th className="px-6 py-3 text-center text-sm">{t('appointments.table.client')}</th>
+              <th className="px-6 py-3 text-center text-sm">{t('appointments.table.datetime')}</th>
+              <th className="px-6 py-3 text-center text-sm">{t('appointments.table.staff')}</th>
+              <th className="px-6 py-3 text-center text-sm bg-slate-50 border-x border-slate-100">{t('appointments.table.status')}</th>
+              <th className="px-6 py-3 text-center text-sm bg-slate-100/70 border-s border-slate-200">{t('common.actions')}</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.map(appointment => {
+              const isCurrent = appointment.status === 'InProgress';
+              const isNotDocumented = appointment.isDocumented === false;
+              const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id)
+              const isSelected = consentAppointment?.id === appointment.id
+
+              return (
+                <tr
+                  key={appointment.id}
+                  className={`transition
+                    ${isSelected ? 'bg-blue-50 border border-blue-100' : ''}
+                    ${isCurrent ? 'bg-blue-50 border border-blue-100' : ''}
+                    ${isNotDocumented ? 'bg-red-50' : ''}
+                  `}
+                >
+                  <td className="px-4 py-3 cursor-pointer" onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}>
+                    <div className="flex items-center gap-3">
+                      <User className="w-5 h-5 text-primary" />
+                      <div className="flex flex-col">
+                        <span className={`font-semibold text-slate-800 ${isNotDocumented ? 'text-red-600' : ''}`}>{appointment.clientName}</span>
+                        <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">
+                          {appointment.serviceName}
+                        </span>
+                        <div className="mt-1 flex gap-2 items-center">
+                          {hasConsent ? (
+                            <span className="flex items-center gap-1 text-green-600 text-sm font-medium opacity-80" title="הסכמה כבר נחתמה">
+                              <CheckCircle className="w-3 h-3" />
+                              נחתם
+                            </span>
+                          ) : (
+                            <span
+                              className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer hover:underline opacity-80 hover:opacity-100"
+                              title="לחץ לחתימה"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setConsentAppointment(appointment)
+                              }}
+                            >
+                              <FileSignature className="w-3 h-3" />
+                              חתום על הסכמה
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col text-sm">
+                      <span className="text-slate-800">
+                      {formatDate(appointment.startTime)}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                      {formatTime(appointment.startTime)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    {appointment.staffName || '-'}
+                  </td>
+                  <td className="px-4 py-3 text-center bg-slate-50 border-x border-slate-200">
+                    <span
+                      className={`px-2 py-1 text-sm rounded-full font-medium ${getStatusBadgeClass(appointment.status)}`}
+                    >
+                      {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
+                    </span>
+                    {isNotDocumented && (
+                      <span className="ml-2 px-2 py-1 rounded-full text-sm font-bold bg-red-100 text-red-700">לא מתועד</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-end bg-slate-100/70 border-s border-slate-200">
+                    <div className="flex items-center gap-2 justify-end flex-wrap">
+                      {appointment.status === 'Scheduled' && (
+                        <ActionButton
+                          type="arrived"
+                          onClick={() => updateStatus(appointment.id, 'Waiting')}
+                        />
+                      )}
+                      {appointment.status === 'Waiting' && (
+                        <ActionButton
+                          type="start"
+                          onClick={() => updateStatus(appointment.id, 'InProgress')}
+                        />
+                      )}
+                      {appointment.status === 'InProgress' && (
+                        <ActionButton
+                          type="complete"
+                          onClick={() => updateStatus(appointment.id, 'Completed')}
+                        />
+                      )}
+                      {appointment.status !== 'Cancelled' && appointment.status !== 'Completed' && (
+                        <ActionButton
+                          type="cancel"
+                          onClick={() => updateStatus(appointment.id, 'Cancelled')}
+                        />
+                      )}
+                      {appointment.status !== 'NoShow' && appointment.status !== 'Completed' && (
+                        <ActionButton
+                          type="noshow"
+                          onClick={() => updateStatus(appointment.id, 'NoShow')}
+                        />
+                      )}
+                      {appointment.status === 'Completed' && appointment.isDocumented !== false && (
+                        <ActionButton
+                          type="notDocumented"
+                          onClick={() => markNotDocumented(appointment)}
+                        />
+                      )}
+                      <div className="flex gap-2 opacity-70 hover:opacity-100">
+                        <Edit
+                          className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
+                          onClick={() => setEditingAppointment(appointment)}
+                        />
+                        <Trash2
+                          className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
+                          onClick={() => handleDeleteAppointment(appointment.id)}
+                        />
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
   }
 
 
@@ -302,178 +474,37 @@ const filteredAppointments = appointments
 
       {/* Table */}
       <div className="card overflow-hidden">
-        {loading ? (
-          <div className="p-12 text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b">
-                <tr>
-                  <th className="px-6 py-3 text-center text-sm">{t('appointments.table.client')}</th>
-                  <th className="px-6 py-3 text-center text-sm">{t('appointments.table.datetime')}</th>
-                  <th className="px-6 py-3 text-center text-sm">{t('appointments.table.staff')}</th>
-                  <th className="px-6 py-3 text-center text-sm bg-slate-50 border-x border-slate-100">{t('appointments.table.status')}</th>
-                 <th className="px-6 py-3 text-center text-sm bg-slate-100/70 border-s border-slate-200">{t('common.actions')}</th>
-                </tr>
-              </thead>    
-
-              <tbody>
-                {filteredAppointments.map(appointment => {
-                  const isCurrent = appointment.status === 'InProgress';
-                  const isNotDocumented = appointment.isDocumented === false;
-                  const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id)
-                  const isSelected = consentAppointment?.id === appointment.id
-                  const now = new Date()
-                  const appointmentDate = new Date(appointment.startTime)
-
-                  const isPast =
-                    appointmentDate < now &&
-                    appointment.status !== 'Completed' &&
-                    appointment.status !== 'Cancelled' &&
-                    appointment.status !== 'NoShow' &&
-                    appointment.status !== 'InProgress'
-
-                  return (
-                    <tr
-                      key={appointment.id}
-                      className={`transition
-                        ${isSelected ? 'bg-blue-50 border border-blue-100' : ''}
-                        ${isCurrent ? 'bg-blue-50 border border-blue-100' : ''}
-                        ${isNotDocumented ? 'bg-red-50' : ''}
-                        ${
-                          isPast &&
-                          appointment.status !== 'Completed' &&
-                          appointment.status !== 'Cancelled' &&
-                          appointment.status !== 'NoShow'
-                            ? 'bg-gray-100 text-gray-400'
-                            : ''
-                        }
-                      `}
-                    >
-                      <td className="px-4 py-3 cursor-pointer" onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}>
-                        <div className="flex items-center gap-3">
-                          <User className="w-5 h-5 text-primary" />
-                          <div className="flex flex-col">
-                            <span className={`font-semibold text-slate-800 ${isNotDocumented ? 'text-red-600' : ''}`}>{appointment.clientName}</span>
-                            <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">
-                              {appointment.serviceName}
-                            </span>
-                            <div className="mt-1 flex gap-2 items-center">
-                              {isPast && (
-                                <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-sm">
-                                  {t('appointments.past')}
-                                </span>
-                              )}
-                              {hasConsent ? (
-                                <span className="flex items-center gap-1 text-green-600 text-sm font-medium opacity-80" title="הסכמה כבר נחתמה">
-                                  <CheckCircle className="w-3 h-3" />
-                                  נחתם
-                                </span>
-                              ) : (
-                                <span
-                                  className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer hover:underline opacity-80 hover:opacity-100"
-                                  title="לחץ לחתימה"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setConsentAppointment(appointment)
-                                  }}
-                                >
-                                  <FileSignature className="w-3 h-3" />
-                                  חתום על הסכמה
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col text-sm">
-                          <span className="text-slate-800">
-                          {formatDate(appointment.startTime)}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                          {formatTime(appointment.startTime)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {appointment.staffName || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-center bg-slate-50 border-x border-slate-200">
-                        <span
-                          className={`px-2 py-1 text-sm rounded-full font-medium ${getStatusBadgeClass(appointment.status)}`}
-                        >
-                          {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
-                        </span>
-                        {isNotDocumented && (
-                          <span className="ml-2 px-2 py-1 rounded-full text-sm font-bold bg-red-100 text-red-700">לא מתועד</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-end bg-slate-100/70 border-s border-slate-200">
-                        <div className="flex items-center gap-2 justify-end flex-wrap">
-                          {/* Quick Actions */}
-                          {appointment.status === 'Scheduled' && (
-                            <ActionButton
-                              type="arrived"
-                              onClick={() => updateStatus(appointment.id, 'Waiting')}
-                            />
-                          )}
-                          {appointment.status === 'Waiting' && (
-                            <ActionButton
-                              type="start"
-                              onClick={() => updateStatus(appointment.id, 'InProgress')}
-                            />
-                          )}
-                          {appointment.status === 'InProgress' && (
-                            <ActionButton
-                              type="complete"
-                              onClick={() => updateStatus(appointment.id, 'Completed')}
-                            />
-                          )}
-                          {/* Always allow Cancel/No Show */}
-                          {appointment.status !== 'Cancelled' && appointment.status !== 'Completed' && (
-                            <ActionButton
-                              type="cancel"
-                              onClick={() => updateStatus(appointment.id, 'Cancelled')}
-                            />
-                          )}
-                          {appointment.status !== 'NoShow' && appointment.status !== 'Completed' && (
-                            <ActionButton
-                              type="noshow"
-                              onClick={() => updateStatus(appointment.id, 'NoShow')}
-                            />
-                          )}
-                          {/* Not Documented Action */}
-                          {appointment.status === 'Completed' && appointment.isDocumented !== false && (
-                            <ActionButton
-                              type="notDocumented"
-                              onClick={() => markNotDocumented(appointment)}
-                            />
-                          )}
-                          <div className="flex gap-2 opacity-70 hover:opacity-100">
-                            <Edit
-                              className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
-                              onClick={() => setEditingAppointment(appointment)}
-                              style={isPast ? { pointerEvents: 'none', opacity: 0.5 } : {}}
-                            />
-                            <Trash2
-                              className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
-                              onClick={() => handleDeleteAppointment(appointment.id)}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-            </tbody>
-
-            </table>
-          </div>
-        )}
+        {renderAppointmentsTable(activeAppointments)}
       </div>
+
+      <div className="flex justify-center">
+        <button
+          onClick={() => setShowHistory(!showHistory)}
+          className="
+flex items-center gap-2
+px-4 py-2
+bg-slate-100 hover:bg-slate-200
+border border-slate-200
+rounded-lg
+font-medium
+transition
+"
+        >
+          {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {showHistory
+            ? `▼ היסטוריה (${historyAppointments.length})`
+            : `▶ היסטוריה (${historyAppointments.length})`}
+        </button>
+      </div>
+
+      {showHistory && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-slate-800">היסטוריה</h3>
+          <div className="card overflow-hidden">
+            {renderAppointmentsTable(historyAppointments)}
+          </div>
+        </div>
+      )}
 
       {showCreateModal && (
         <CreateAppointmentModal
