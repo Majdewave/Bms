@@ -325,18 +325,32 @@ const filteredAppointments = appointments
                   const isNotDocumented = appointment.isDocumented === false;
                   const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id)
                   const isSelected = consentAppointment?.id === appointment.id
-                  const now = new Date();
-                  const appointmentDate = new Date(appointment.startTime);
-                  const isPast = appointmentDate < now;
+                  const now = new Date()
+                  const appointmentDate = new Date(appointment.startTime)
+
+                  const isPast =
+                    appointmentDate < now &&
+                    appointment.status !== 'Completed' &&
+                    appointment.status !== 'Cancelled' &&
+                    appointment.status !== 'NoShow' &&
+                    appointment.status !== 'InProgress'
 
                   return (
                     <tr
                       key={appointment.id}
-                      className={`px-4 py-3 rounded-xl hover:bg-slate-50 transition
+                      className={`transition
                         ${isSelected ? 'bg-blue-50 border border-blue-100' : ''}
                         ${isCurrent ? 'bg-blue-50 border border-blue-100' : ''}
                         ${isNotDocumented ? 'bg-red-50' : ''}
-                        ${isPast ? 'opacity-60' : ''}`}
+                        ${
+                          isPast &&
+                          appointment.status !== 'Completed' &&
+                          appointment.status !== 'Cancelled' &&
+                          appointment.status !== 'NoShow'
+                            ? 'bg-gray-100 text-gray-400'
+                            : ''
+                        }
+                      `}
                     >
                       <td className="px-4 py-3 cursor-pointer" onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}>
                         <div className="flex items-center gap-3">

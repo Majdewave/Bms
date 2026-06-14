@@ -139,6 +139,10 @@ export default function CreateAppointmentModal({
     newErrors.serviceId = t('validation.required')
   }
 
+  if (!formData.staffId) {
+    newErrors.staffId = t('validation.required')
+  }
+
 if (!formData.date || !formData.time) {
   newErrors.dateTime = t('validation.dateTimeRequired')
 }
@@ -331,6 +335,11 @@ if (!formData.date || !formData.time) {
                 </option>
               ))}
             </select>
+            {errors.staffId && (
+              <p className="text-sm text-red-500 mt-1">
+                {errors.staffId}
+              </p>
+            )}
 
             {/* STATUS */}
             <label className="block text-sm font-semibold mb-1">

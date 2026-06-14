@@ -274,7 +274,7 @@
       "selectService": "בחר שירות",
       "date": "תאריך",
       "time": "שעה",
-      "staff": "חבר צוות",
+      "staff": "חבר צוות מטפל",
       "staffPlaceholder": "למשל, יוחנן סמית'",
       "duration": "משך",
       "description": "תיאור",
@@ -393,7 +393,7 @@
       "details": {
         "date": "תאריך",
         "time": "שעה",
-        "staff": "חבר צוות",
+        "staff": "חבר צוות מטפל",
         "service": "סוג שירות",
         "notes": "הערות"
       },
