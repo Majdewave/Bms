@@ -116,7 +116,7 @@ export default function Register() {
                 <li className="flex items-center gap-2"><span className="text-green-500">✔</span> Full system access</li>
               </ul>
               <div className="text-xs text-gray-500 mt-2">Upgrade anytime to unlock full features</div>
-              <div className="text-xs text-blue-700 mt-1 font-semibold">Plans starting from 186₪/month</div>
+              <div className="text-xs text-blue-700 mt-1 font-semibold">Plans starting from 46EUR/month</div>
             </div>
           </div>
           {/* Optional illustration or gradient */}

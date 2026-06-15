@@ -214,7 +214,7 @@ const handleUpgrade = async () => {
 
         <div className="mb-5">
           <div className="text-[42px] font-semibold text-gray-900">
-            {billingCycle === 'Monthly' ? '₪186' : '₪1860'}
+            {billingCycle === 'Monthly' ? '46EUR' : '460EUR'}
           </div>
           <div className="text-gray-500 text-base">
             {t('billing.perMonth')}
