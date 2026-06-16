@@ -225,6 +225,20 @@ const historyAppointments = filteredAppointments.filter(a => {
     }
   }
 
+
+  const markDocumented = async (appointment: Appointment) => {
+  try {
+    await appointmentsService.updateAppointment(appointment.id, {
+      ...appointment,
+      isDocumented: true
+    })
+
+    await loadAppointments()
+  } catch (error) {
+    console.error(error)
+  }
+}
+
   const renderAppointmentsTable = (rows: AppointmentRow[]) => {
     if (loading) {
       return (
@@ -355,6 +369,14 @@ const historyAppointments = filteredAppointments.filter(a => {
                           onClick={() => markNotDocumented(appointment)}
                         />
                       )}
+                      {appointment.isDocumented === false && (
+                      <button
+                        onClick={() => markDocumented(appointment)}
+                        className="px-2 py-1 rounded bg-green-100 text-green-700 text-sm"
+                      >
+                        סמן כמתועד
+                      </button>
+                    )}
                       <div className="flex gap-2 opacity-70 hover:opacity-100">
                         <Edit
                           className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"

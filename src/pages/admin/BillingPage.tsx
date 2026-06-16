@@ -214,10 +214,7 @@ const handleUpgrade = async () => {
 
         <div className="mb-5">
           <div className="text-[42px] font-semibold text-gray-900">
-            {billingCycle === 'Monthly' ? '46EUR' : '460EUR'}
-          </div>
-          <div className="text-gray-500 text-base">
-            {t('billing.perMonth')}
+            {billingCycle === 'Monthly' ? '46€' : '460€'}
           </div>
           <div className="text-base text-gray-500 mt-1">
             {billingCycle === 'Monthly' ? t('billing.perMonth') : t('billing.yearly')}
