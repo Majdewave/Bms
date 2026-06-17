@@ -160,7 +160,7 @@ const AdminDrugs: React.FC = () => {
 
       {/* Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-[10px] md:px-0">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
             <h2 className="text-2xl font-bold mb-6 text-primary-800">{editingDrug ? t('common.edit') : t('drugs.add')}</h2>
             <div className="mb-4">

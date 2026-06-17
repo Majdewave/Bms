@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature, ChevronDown, ChevronUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { PageHeader, CreateAppointmentModal, SignConsentModal } from '@/components'
+import { CreateAppointmentModal, SignConsentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
 import { connection } from '@/lib/signalr'
 import { appointmentsService, type Appointment } from '@/api/appointmentsService'
@@ -249,8 +249,121 @@ const historyAppointments = filteredAppointments.filter(a => {
     }
 
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      <>
+        {/* Mobile: cards */}
+        <div className="flex flex-col gap-2 md:hidden p-3">
+          {rows.map((appointment, idx) => {
+            const isCurrent = appointment.status === 'InProgress';
+            const isNotDocumented = appointment.isDocumented === false;
+            const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id);
+            return (
+              <div
+                key={`m-${appointment.id}`}
+                className={`rounded-xl px-4 py-3 flex flex-col gap-2 ${
+                  isNotDocumented
+                    ? 'bg-red-50 border border-red-100'
+                    : isCurrent
+                    ? 'bg-blue-50 border border-blue-100'
+                    : idx % 2 === 0
+                    ? 'bg-sky-100 border border-sky-200'
+                    : 'bg-white border border-slate-100'
+                }`}
+              >
+                <div className="text-sm text-slate-700">
+                  <span className="text-slate-500">{t('appointments.table.client')}:</span>{' '}
+                  <span
+                    className={`font-semibold text-base cursor-pointer hover:underline ${
+                      isNotDocumented ? 'text-red-600' : 'text-slate-800'
+                    }`}
+                    onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}
+                  >
+                    {appointment.clientName}
+                  </span>
+                </div>
+
+                <div className="text-sm text-slate-700 font-mono">
+                  <span className="text-slate-500">{t('appointments.table.datetime')}:</span> {formatDate(appointment.startTime)} {formatTime(appointment.startTime)}
+                </div>
+
+                <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
+                  <span className="text-slate-500">שירות:</span>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-sm font-semibold">
+                    {appointment.serviceName}
+                  </span>
+                </div>
+
+                {appointment.staffName && (
+                  <>
+                    <div className="text-sm text-slate-700">
+                      <span className="text-slate-500">{t('appointments.table.staff')}:</span> {appointment.staffName}
+                    </div>
+                  </>
+                )}
+
+                <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
+                  <span className="text-slate-500">{t('appointments.table.status')}:</span>
+                  <span className={`px-2 py-0.5 rounded-full text-sm font-semibold ${
+                    getStatusBadgeClass(appointment.status)
+                  }`}>
+                    {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
+                  </span>
+                  {isNotDocumented && (
+                    <span className="px-2 py-0.5 rounded-full text-sm font-bold bg-red-100 text-red-700">לא מתועד</span>
+                  )}
+                  {hasConsent ? (
+                    <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                      <CheckCircle className="w-3 h-3" />נחתם
+                    </span>
+                  ) : (
+                    <span
+                      className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer hover:underline"
+                      onClick={() => setConsentAppointment(appointment)}
+                    >
+                      <FileSignature className="w-3 h-3" />חתום
+                    </span>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {appointment.status === 'Scheduled' && (
+                    <ActionButton type="arrived" onClick={() => updateStatus(appointment.id, 'Waiting')} />
+                  )}
+                  {appointment.status === 'Waiting' && (
+                    <ActionButton type="start" onClick={() => updateStatus(appointment.id, 'InProgress')} />
+                  )}
+                  {appointment.status === 'InProgress' && (
+                    <ActionButton type="complete" onClick={() => updateStatus(appointment.id, 'Completed')} />
+                  )}
+                  {appointment.status !== 'Cancelled' && appointment.status !== 'Completed' && (
+                    <ActionButton type="cancel" onClick={() => updateStatus(appointment.id, 'Cancelled')} />
+                  )}
+                  {appointment.status !== 'NoShow' && appointment.status !== 'Completed' && (
+                    <ActionButton type="noshow" onClick={() => updateStatus(appointment.id, 'NoShow')} />
+                  )}
+                  {appointment.status === 'Completed' && appointment.isDocumented !== false && (
+                    <ActionButton type="notDocumented" onClick={() => markNotDocumented(appointment)} />
+                  )}
+                  {appointment.isDocumented === false && (
+                    <button onClick={() => markDocumented(appointment)} className="px-2 py-1 rounded bg-green-100 text-green-700 text-sm">סמן כמתועד</button>
+                  )}
+                  <Edit
+                    className="w-4 h-4 cursor-pointer text-gray-500 hover:text-blue-600 ms-auto"
+                    onClick={() => setEditingAppointment(appointment)}
+                  />
+                  <Trash2
+                    className="w-4 h-4 cursor-pointer text-red-500 hover:text-red-700"
+                    onClick={() => handleDeleteAppointment(appointment.id)}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop: original table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
           <thead className="bg-slate-50 border-b">
             <tr>
               <th className="px-6 py-3 text-center text-sm">{t('appointments.table.client')}</th>
@@ -394,7 +507,8 @@ const historyAppointments = filteredAppointments.filter(a => {
             })}
           </tbody>
         </table>
-      </div>
+        </div>
+      </>
     )
   }
 
@@ -432,19 +546,24 @@ const historyAppointments = filteredAppointments.filter(a => {
         </div>
       </div>
 
-      <PageHeader
-        title={t('appointments.title')}
-        description={t('appointments.subtitle')}
-        action={
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="btn-primary btn-md gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            {t('appointments.new')}
-          </button>
-        }
-      />
+      <div className="mb-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-slate-900">{t('appointments.title')}</h1>
+            <p className="text-base text-slate-600 mt-2">{t('appointments.subtitle')}</p>
+          </div>
+
+          <div className="w-full md:w-auto">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="btn-primary btn-md gap-2 w-full justify-center md:w-auto"
+            >
+              <Plus className="w-4 h-4" />
+              {t('appointments.new')}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="flex items-center gap-4 flex-wrap">

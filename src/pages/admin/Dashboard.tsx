@@ -137,6 +137,7 @@ export default function AdminDashboard() {
         <PageHeader
           title={t('admin.dashboard.title', { name: user?.name })}
           description={t('admin.dashboard.subtitle')}
+          titleClassName="text-[21px] md:text-3xl font-bold text-slate-900"
         />
       </div>
 
@@ -214,43 +215,74 @@ export default function AdminDashboard() {
           {(!stats?.upcomingAppointmentsList || stats.upcomingAppointmentsList.length === 0) ? (
             <div className="text-slate-400 py-4 text-center">No upcoming appointments</div>
           ) : (
-            <div className="overflow-x-auto" dir={dir}>
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-100">
-                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.time')}</th>
-                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.client')}</th>
-                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.service')}</th>
-                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.staff')}</th>
-                    <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.status')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.upcomingAppointmentsList.slice(0, 5).map((apt: any, idx: number) => {
-                    const dateObj = new Date(apt.startTime);
-                    const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    return (
-                      <tr
-                        key={`${apt.id}-${idx}`}
-                        className={
-                          `${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`
-                        }
-                      >
-                        <td className={`px-4 py-2 font-mono ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{time}</td>
-                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.clientName}</td>
-                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.serviceName}</td>
-                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.staffName}</td>
-                        <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
-                          <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700 capitalize">
-                            {apt.status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Mobile: cards */}
+              <div className="flex flex-col gap-2 md:hidden" dir={dir}>
+                {stats.upcomingAppointmentsList.slice(0, 5).map((apt: any, idx: number) => {
+                  const time = new Date(apt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  return (
+                    <div
+                      key={`m-${apt.id}-${idx}`}
+                      className={`rounded-xl px-4 py-3 flex flex-col gap-1 ${
+                        idx % 2 === 0 ? 'bg-sky-100 border border-sky-200' : 'bg-white border border-slate-100'
+                      }`}
+                    >
+                      <div className="text-sm text-slate-700">
+                        <span className="text-slate-500">{t('dashboard.client')}:</span> {apt.clientName}
+                      </div>
+                      <div className="text-sm text-slate-700 font-mono">
+                        <span className="text-slate-500">{t('dashboard.time')}:</span> {time}
+                      </div>
+                      <div className="text-sm text-slate-700">
+                        <span className="text-slate-500">{t('dashboard.service')}:</span> {apt.serviceName}
+                      </div>
+                      {apt.staffName && (
+                        <div className="text-sm text-slate-700">
+                          <span className="text-slate-500">{t('dashboard.staff')}:</span> {apt.staffName}
+                        </div>
+                      )}
+                      <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
+                        <span className="text-slate-500">{t('dashboard.status')}:</span>
+                        <span className="inline-block px-2 py-0.5 rounded-full text-sm font-semibold bg-slate-100 text-slate-600 capitalize">
+                          {apt.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop: original table */}
+              <div className="hidden md:block overflow-x-auto" dir={dir}>
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-100">
+                      <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.time')}</th>
+                      <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.client')}</th>
+                      <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.service')}</th>
+                      <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.staff')}</th>
+                      <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.status')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.upcomingAppointmentsList.slice(0, 5).map((apt: any, idx: number) => {
+                      const time = new Date(apt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                      return (
+                        <tr key={`d-${apt.id}-${idx}`} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`}>
+                          <td className={`px-4 py-2 font-mono ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{time}</td>
+                          <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.clientName}</td>
+                          <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.serviceName}</td>
+                          <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.staffName}</td>
+                          <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                            <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700 capitalize">{apt.status}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -262,7 +294,61 @@ export default function AdminDashboard() {
           description={t('admin.dashboard.activity.subtitle')}
         />
         <CardContent>
-          <div className="overflow-x-auto">
+          {/* Mobile: activity cards */}
+          <div className="flex flex-col gap-2 md:hidden">
+            {recentActivity.map((activity, idx) => {
+              const action = getActionLabel(activity.type, t);
+              let entity = '';
+              if (activity.type === 'appointment_created') {
+                entity = [activity.clientName, activity.serviceName].filter(Boolean).join(' • ');
+              } else if (activity.type === 'client_created') {
+                entity = activity.clientName || '';
+              } else if (activity.type === 'staff_created') {
+                entity = activity.staffName || '';
+              } else if (activity.type === 'staff_deleted') {
+                entity = activity.staffName || activity.deletedStaffName || activity.deletedUserName || activity.targetName || activity.entityName || '';
+              } else if (activity.type === 'client_deleted') {
+                entity = activity.clientName || activity.entityName || '';
+              } else if (activity.type === 'user_deleted') {
+                entity = activity.staffName || activity.entityName || '';
+              }
+              const performedBy = activity.performedBy || [activity.performedByName, activity.performedByEmail].filter(Boolean).join(' • ') || [activity.actorName, activity.actorEmail].filter(Boolean).join(' • ') || '';
+              const time = formatRelativeTime(activity.timestamp);
+              const activityTitle = activity.title || action;
+              const config = activityConfig[activity.type] || {};
+              return (
+                <div
+                  key={`m-${activity.id}-${idx}`}
+                  onClick={() => setSelectedActivity({ ...activity, title: activityTitle, performedBy })}
+                  className={`rounded-xl px-4 py-3 flex flex-col gap-1 cursor-pointer ${
+                    idx % 2 === 0 ? 'bg-sky-100 border border-sky-200' : 'bg-white border border-slate-100'
+                  }`}
+                >
+                  <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
+                    <span className="text-slate-500">{t('dashboard.activity.action')}:</span>
+                    {getActivityIcon(activity.type)}
+                    <span className={`text-base font-semibold ${config.color || 'text-slate-900'}`}>{activityTitle}</span>
+                  </div>
+                  {entity && (
+                    <div className="text-xs text-slate-700">
+                      <span className="text-slate-500">{t('dashboard.activity.entity')}:</span> {entity}
+                    </div>
+                  )}
+                  {performedBy && (
+                    <div className="text-xs text-slate-700">
+                      <span className="text-slate-500">{t('dashboard.activity.performedBy')}:</span> {performedBy}
+                    </div>
+                  )}
+                  <div className="text-xs text-slate-700">
+                    <span className="text-slate-500">{t('dashboard.activity.time')}:</span> <span className="text-slate-400">{time}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop: original table */}
+          <div className="hidden md:block overflow-x-auto">
             <table dir={dir} className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-100">

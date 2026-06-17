@@ -19,6 +19,7 @@ export default function ClientDashboard() {
       <PageHeader
         title={t('client.dashboard.title', { name: user?.name })}
         description={t('client.dashboard.subtitle')}
+        titleClassName="text-[21px] md:text-3xl font-bold text-slate-900"
       />
 
       <Grid cols={4} gap="md">

@@ -17,7 +17,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-react'
-import NotificationsDropdown from '@/components/NotificationsDropdown'
 import ClientaLogo from '@/components/Logo'
 
 interface MenuItem {
@@ -280,8 +279,6 @@ export default function ClientLayout() {
 
           {/* Header Actions */}
           <div className="flex items-center gap-1 lg:gap-2">
-            <NotificationsDropdown />
-
             {/* User Menu */}
             <div className="hidden md:flex items-center gap-2">
               <label className="text-xs text-slate-500" htmlFor="lang-select-client">

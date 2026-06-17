@@ -355,15 +355,23 @@ else navigate('/', { replace: true });
             </svg>
           </div>
 
-          {/* Translucent panel cards - like a dashboard */}
-          <div className="absolute top-10 right-10 w-40 h-24 bg-white/40 backdrop-blur-sm border border-slate-200/50 rounded-lg shadow-sm"></div>
-          <div className="absolute top-32 right-28 w-32 h-20 bg-white/30 backdrop-blur-sm border border-slate-200/40 rounded-lg shadow-sm"></div>
-          <div className="absolute bottom-20 left-10 w-36 h-28 bg-white/40 backdrop-blur-sm border border-slate-200/50 rounded-lg shadow-sm"></div>
-          <div className="absolute bottom-40 left-32 w-28 h-20 bg-white/30 backdrop-blur-sm border border-slate-200/40 rounded-lg shadow-sm"></div>
+          {/* Mobile-only subtle accents */}
+          <div className="absolute top-12 right-8 w-44 h-44 rounded-full border border-slate-200/60 bg-white/10 blur-[1px] md:hidden"></div>
+          <div className="absolute top-20 right-16 w-28 h-28 rounded-full border border-slate-300/40 md:hidden"></div>
+          <div className="absolute bottom-16 left-6 w-48 h-32 rounded-[32px] border border-slate-200/60 bg-gradient-to-br from-white/20 to-transparent md:hidden"></div>
+          <div className="absolute bottom-32 left-20 w-24 h-24 rounded-full bg-white/20 blur-2xl md:hidden"></div>
+
+          {/* Desktop panel cards */}
+          <div className="hidden md:block absolute top-10 right-10 w-40 h-24 bg-white/40 backdrop-blur-sm border border-slate-200/50 rounded-lg shadow-sm"></div>
+          <div className="hidden md:block absolute top-32 right-28 w-32 h-20 bg-white/30 backdrop-blur-sm border border-slate-200/40 rounded-lg shadow-sm"></div>
+          <div className="hidden md:block absolute bottom-20 left-10 w-36 h-28 bg-white/40 backdrop-blur-sm border border-slate-200/50 rounded-lg shadow-sm"></div>
+          <div className="hidden md:block absolute bottom-40 left-32 w-28 h-20 bg-white/30 backdrop-blur-sm border border-slate-200/40 rounded-lg shadow-sm"></div>
           
           {/* Accent glow */}
-          <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-indigo-100/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-1/3 left-1/4 w-56 h-56 bg-purple-100/15 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-sky-100/20 rounded-full blur-3xl md:hidden"></div>
+          <div className="absolute bottom-1/3 left-1/4 w-56 h-56 bg-emerald-100/15 rounded-full blur-3xl md:hidden"></div>
+          <div className="hidden md:block absolute top-1/4 right-1/4 w-64 h-64 bg-indigo-100/20 rounded-full blur-3xl"></div>
+          <div className="hidden md:block absolute bottom-1/3 left-1/4 w-56 h-56 bg-purple-100/15 rounded-full blur-3xl"></div>
         </div>
 
         <div className="w-full max-w-md relative z-10">
@@ -575,11 +583,7 @@ else navigate('/', { replace: true });
             {t('login.noAccount')}{' '}
            <a
                   href="/register"
-                  style={{
-                    color: "#2563eb",
-                    textDecoration: "none",
-                    fontWeight: 500
-                  }}
+                    className="font-medium no-underline text-sky-700 md:text-blue-600"
                 >
               הצטרפות
           </a>

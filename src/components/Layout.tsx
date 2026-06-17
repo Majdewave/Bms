@@ -31,6 +31,7 @@ interface PageHeaderProps {
   description?: string
   action?: ReactNode
   className?: string
+  titleClassName?: string
 }
 
 export const PageHeader = ({
@@ -38,12 +39,13 @@ export const PageHeader = ({
   description,
   action,
   className = '',
+  titleClassName = 'text-3xl font-bold text-slate-900',
 }: PageHeaderProps) => {
   return (
     <div className={`mb-8 ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-slate-900">{title}</h1>
+          <h1 className={titleClassName}>{title}</h1>
           {description && <p className="text-base text-slate-600 mt-2">{description}</p>}
         </div>
         {action && <div className="ml-6">{action}</div>}

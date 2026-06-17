@@ -33,11 +33,11 @@ export default function LanguageSwitcher() {
     <div className="relative" ref={dropdownRef}>
       <button
         type="button"
-        className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 text-sm font-medium focus:outline-none"
+        className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 text-sm font-medium focus:outline-none"
         onClick={() => setOpen(v => !v)}
         aria-label="Language"
       >
-        <Globe className="w-4 h-4 text-gray-500" />
+        <Globe className="w-4 h-4 text-gray-500 hidden md:block" />
         {current.short}
         <ChevronDown className="w-3 h-3 text-gray-500" />
       </button>

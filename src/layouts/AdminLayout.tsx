@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { ComponentType } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -9,12 +9,14 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  Menu,
   Pill,
   Settings,
   Sliders,
   UserPlus,
   Users,
   CreditCard,
+  X,
 } from "lucide-react"
 
 import { useAuth, UserRole } from '@/contexts/AuthContext'
@@ -22,7 +24,6 @@ import { useFeatures } from '@/contexts/FeatureContext'
 import { useTenant } from '@/contexts/TenantContext'
 import type { Features } from '@/contexts/FeatureContext'
 import type { Permission } from '@/utils/permissions'
-import NotificationsDropdown from '@/components/NotificationsDropdown'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 interface MenuItem {
@@ -54,6 +55,8 @@ const allMenuItems: MenuItem[] = [
 ]
 
 export default function AdminLayout() {
+
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -187,6 +190,7 @@ export default function AdminLayout() {
   }
 
   const breadcrumbs = buildBreadcrumbs()
+  const currentPageLabel = breadcrumbs[breadcrumbs.length - 1]?.label ?? t('common.home')
 
   function getTenantLogo(tenant: any) {
     if (tenant?.logoUrl) {
@@ -201,13 +205,35 @@ export default function AdminLayout() {
 
     <div className="flex h-screen bg-slate-50 overflow-hidden">
 
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
 
       <aside
-        className={`${
-          'w-64'
-        } bg-white border-r border-slate-200 flex flex-col h-screen min-h-0`}
+        className={`
+          bg-white border-s border-slate-200 flex flex-col h-screen min-h-0
+          fixed inset-y-0 right-0 z-40 w-72 transform transition-transform duration-300
+          md:static md:w-64 md:translate-x-0 md:z-auto
+          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}
+        `}
       >
+
+        {/* Mobile close button */}
+        <div className="md:hidden flex justify-start p-3 border-b border-slate-100">
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="p-2 rounded-lg hover:bg-slate-100 transition"
+            aria-label="סגור תפריט"
+          >
+            <X className="w-5 h-5 text-slate-600" />
+          </button>
+        </div>
 
         <div className="p-6 sideBarTopBlock" style={{ padding: 0, borderBottom: 0 }}>
           <Link to={homePath} className="block BusinessLogoLink" style={{ padding: 0 }}>
@@ -239,6 +265,7 @@ export default function AdminLayout() {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm ${
                   isActive
                     ? 'bg-primary-50 text-primary-700'
@@ -293,15 +320,19 @@ export default function AdminLayout() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
 
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between">
+        <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-3 md:py-4 flex justify-between items-center gap-3">
 
-          <div>
+          <div className="min-w-0">
 
-            <h1 className="text-lg font-semibold">
+            <h1 className="text-[21px] md:text-lg font-semibold text-slate-900 leading-tight truncate">
               {t('layout.welcomeBack')} {getInitials(user?.name)}
             </h1>
 
-            <nav className="flex gap-2 text-xs text-slate-500">
+            <div className="mt-1 text-[11px] text-slate-500 leading-tight md:hidden truncate">
+              {currentPageLabel}
+            </div>
+
+            <nav className="hidden md:flex mt-1 gap-1.5 md:gap-2 text-[11px] md:text-xs text-slate-500 flex-wrap leading-tight">
 
               <Link to={homePath}>
                 {t('common.home')}
@@ -324,21 +355,29 @@ export default function AdminLayout() {
 
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5 md:gap-4 shrink-0">
             <LanguageSwitcher />
-            <NotificationsDropdown />
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition ml-2"
-              style={{ fontSize: '18px' }}
+              className="flex items-center justify-center md:justify-start gap-2 px-2.5 md:px-3 py-2 text-sm text-rose-700 bg-rose-50/70 border border-rose-100 hover:text-rose-800 hover:bg-rose-100/80 rounded-lg transition md:ml-2"
+              style={{ fontSize: '15px' }}
+              aria-label={t('header.logout')}
             >
               <LogOut className="w-4 h-4" />
-              {t('header.logout')}
+              <span className="hidden md:inline">{t('header.logout')}</span>
+            </button>
+            {/* Hamburger – mobile only */}
+            <button
+              className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="פתח תפריט"
+            >
+              <Menu className="w-6 h-6 text-slate-600" />
             </button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-2 md:p-6">
 
           <Outlet />
 

@@ -64,9 +64,14 @@ export default function CreateClientModal({ onClose, onCreated }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
-        <button className="absolute top-2 right-2 text-slate-400 hover:text-slate-600" onClick={onClose}>&times;</button>
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 md:p-0">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-5 md:p-6 relative">
+        <button
+          className="absolute top-3 left-3 text-2xl leading-none text-slate-400 hover:text-slate-600 p-1"
+          onClick={onClose}
+        >
+          &times;
+        </button>
         <h2 className="text-xl font-bold mb-4">{t('admin.clients.add')}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

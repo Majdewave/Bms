@@ -621,24 +621,24 @@ const saveClient = async () => {
 
   return (
     <div
-      className="max-w-4xl mx-auto p-8 space-y-8"
+      className="max-w-4xl mx-auto p-2 md:p-8 space-y-6 md:space-y-8"
       dir={isRTL ? "rtl" : "ltr"}
     >
 
       {/* HEADER */}
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
 
         <h1 className="text-2xl font-bold text-slate-800">
           {t("admin.clientProfile.title")}
         </h1>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 md:gap-3">
 
           {features?.prescriptionsEnabled === true && (
           <button
             onClick={() => setShowPrescriptionModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl shadow-md hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg"
+            className="flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl shadow-md hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg text-sm"
           >
             <FileText className="w-4 h-4" />
             <span>כתוב מרשם</span>
@@ -647,7 +647,7 @@ const saveClient = async () => {
 
           <button
             onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-slate-200 rounded-lg"
+            className="px-4 py-2 bg-slate-200 rounded-lg text-sm"
           >
             {t("common.back")}
           </button>
@@ -655,7 +655,7 @@ const saveClient = async () => {
           {!editingClient && (
             <button
               onClick={() => setEditingClient(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
             >
               {t("common.edit")}
             </button>
@@ -729,7 +729,7 @@ const saveClient = async () => {
 
       {/* CLIENT CARD */}
 
-      <div className="bg-white rounded-2xl shadow-md p-8 space-y-6">
+      <div className="bg-white rounded-2xl shadow-md p-3 md:p-8 space-y-6">
 
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2">
@@ -901,7 +901,7 @@ const saveClient = async () => {
           <button
             type="button"
             onClick={() => toggleSection("visitSummaries")}
-            className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+            className="w-full p-3 md:p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
           >
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-blue-400" />
@@ -984,7 +984,7 @@ const saveClient = async () => {
         <button
           type="button"
           onClick={() => toggleSection("notes")}
-          className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+          className="w-full p-3 md:p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
         >
           <div className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-blue-400" />
@@ -1051,7 +1051,7 @@ const saveClient = async () => {
         <button
           type="button"
           onClick={() => toggleSection("prescriptions")}
-          className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+          className="w-full p-3 md:p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
         >
           <div className="flex items-center gap-2">
             <Pill className="w-4 h-4 text-green-400" />
@@ -1070,68 +1070,70 @@ const saveClient = async () => {
         </button>
 
         {openSections.includes("prescriptions") && (
-          <div className="px-6 pb-6 space-y-4">
-        <table className="w-full border mt-4">
-          <thead>
-            <tr>
-              <th className="text-right p-2">תאריך</th>
-              <th className="text-right p-2">תרופות</th>
-              <th className="text-right p-2">רופא</th>
-              <th className="text-right p-2">פעולות</th>
-            </tr>
-          </thead>
+          <div className="px-3 md:px-6 pb-4 md:pb-6 space-y-4">
 
-          <tbody>
-            {prescriptions.map((p, index) => (
-              <tr key={`${p.id}-${index}`} className="border-t">
-                <td className="p-2 text-right">
-                  {new Date(p.date).toLocaleDateString()}
-                </td>
-
-                <td className="p-2 text-right">
-                  {p.drugs && p.drugs.length > 0 ? (
-                    <ul className="list-disc list-inside space-y-1">
-                      {p.drugs.map((drug, drugIndex) => (
-                        <li key={`${p.id}-drug-${drugIndex}`}>
-                        {typeof drug === 'string' ? drug : drug.display}
-                      </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    "-"
-                  )}
-                </td>
-
-                <td className="p-2 text-right">
-                  {p.doctorName}
-                </td>
-
-                <td className="p-2 text-right">
-                  <div className="flex items-center justify-end gap-3">
-                    <button
-                      onClick={() => downloadPrescription(p.id)}
-                      className="text-blue-600"
-                    >
-                      PDF
-                    </button>
-                    <button
-                      onClick={() => deletePrescription(p.id)}
-                      className="text-red-600"
-                    >
-                      מחק
-                    </button>
+            {/* Mobile: cards */}
+            <div className="flex flex-col gap-3 md:hidden">
+              {prescriptions.length === 0 ? (
+                <div className="text-gray-500">אין מרשמים</div>
+              ) : (
+                prescriptions.map((p, index) => (
+                  <div key={`${p.id}-${index}`} className="border border-slate-200 rounded-xl p-3 space-y-2 bg-slate-50">
+                    <div className="text-sm text-slate-500">תאריך: <span className="font-semibold text-slate-800">{new Date(p.date).toLocaleDateString()}</span></div>
+                    <div className="text-sm text-slate-500">תרופות:
+                      {p.drugs && p.drugs.length > 0 ? (
+                        <ul className="list-disc list-inside mt-1 space-y-0.5">
+                          {p.drugs.map((drug, drugIndex) => (
+                            <li key={`${p.id}-drug-${drugIndex}`} className="text-slate-800">{typeof drug === 'string' ? drug : drug.display}</li>
+                          ))}
+                        </ul>
+                      ) : <span className="text-slate-800"> -</span>}
+                    </div>
+                    <div className="text-sm text-slate-500">רופא: <span className="font-semibold text-slate-800">{p.doctorName}</span></div>
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={() => downloadPrescription(p.id)} className="px-3 py-1 rounded-lg bg-blue-600 text-white text-sm">PDF</button>
+                      <button onClick={() => deletePrescription(p.id)} className="px-3 py-1 rounded-lg bg-red-100 text-red-600 text-sm">מחק</button>
+                    </div>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                ))
+              )}
+            </div>
 
-        {prescriptions.length === 0 && (
-          <div className="mt-4 text-gray-500">
-            אין מרשמים
-          </div>
-        )}
+            {/* Desktop: table */}
+            <table className="hidden md:table w-full border mt-4">
+              <thead>
+                <tr>
+                  <th className="text-right p-2">תאריך</th>
+                  <th className="text-right p-2">תרופות</th>
+                  <th className="text-right p-2">רופא</th>
+                  <th className="text-right p-2">פעולות</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prescriptions.map((p, index) => (
+                  <tr key={`${p.id}-${index}`} className="border-t">
+                    <td className="p-2 text-right">{new Date(p.date).toLocaleDateString()}</td>
+                    <td className="p-2 text-right">
+                      {p.drugs && p.drugs.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1">
+                          {p.drugs.map((drug, drugIndex) => (
+                            <li key={`${p.id}-drug-${drugIndex}`}>{typeof drug === 'string' ? drug : drug.display}</li>
+                          ))}
+                        </ul>
+                      ) : "-"}
+                    </td>
+                    <td className="p-2 text-right">{p.doctorName}</td>
+                    <td className="p-2 text-right">
+                      <div className="flex items-center justify-end gap-3">
+                        <button onClick={() => downloadPrescription(p.id)} className="text-blue-600">PDF</button>
+                        <button onClick={() => deletePrescription(p.id)} className="text-red-600">מחק</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {prescriptions.length === 0 && <div className="hidden md:block mt-4 text-gray-500">אין מרשמים</div>}
           </div>
         )}
       </div>
@@ -1140,7 +1142,7 @@ const saveClient = async () => {
         <button
           type="button"
           onClick={() => toggleSection("consents")}
-          className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+          className="w-full p-3 md:p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
         >
           <div className="flex items-center gap-2">
             <FileCheck className="w-4 h-4 text-purple-400" />
@@ -1168,7 +1170,7 @@ const saveClient = async () => {
                   return (
                     <div
                       key={consent.id}
-                      className="border border-slate-200 rounded-xl p-4 flex items-center justify-between"
+                      className="border border-slate-200 rounded-xl p-3 md:p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2"
                     >
                       <div>
                         <div className="font-semibold text-slate-800">
@@ -1178,7 +1180,7 @@ const saveClient = async () => {
                           {t('signed_on')} {formatDate(consent.signedAt)}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <ActionButton
                           label={t('view')}
                           variant="secondary"
@@ -1209,7 +1211,7 @@ const saveClient = async () => {
           <button
             type="button"
             onClick={() => toggleSection('beforeAfterPhotos')}
-            className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+            className="w-full p-3 md:p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
           >
             <div className="flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-pink-400" />

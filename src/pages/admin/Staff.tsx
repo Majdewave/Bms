@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PageHeader, Badge } from '@/components'
+import { Badge } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
 import { staffService } from '@/api/staff'
 import type { StaffMember, StaffPermission, VisibleMenuItem } from '@/api'
@@ -18,7 +18,8 @@ import {
 
 export default function AdminStaff() {
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isRTL = i18n.dir() === 'rtl'
   const { hasPermission } = useAuth()
 
   const [staff, setStaff] = useState<StaffMember[]>([])
@@ -312,19 +313,24 @@ export default function AdminStaff() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={t('admin.staff.title')}
-        description={t('admin.staff.subtitle')}
-        action={
-          <button
-            onClick={() => setShowModal(true)}
-            className="btn-primary btn-md gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            {t('admin.staff.addNew')}
-          </button>
-        }
-      />
+      <div className="mb-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-slate-900">{t('admin.staff.title')}</h1>
+            <p className="text-base text-slate-600 mt-2">{t('admin.staff.subtitle')}</p>
+          </div>
+
+          <div className="w-full md:w-auto">
+            <button
+              onClick={() => setShowModal(true)}
+              className="btn-primary btn-md gap-2 w-full justify-center md:w-auto"
+            >
+              <Plus className="w-4 h-4" />
+              {t('admin.staff.addNew')}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Search */}
       <div className="card">
@@ -347,97 +353,197 @@ export default function AdminStaff() {
             <p className="text-slate-600">{t('admin.staff.noResults')}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="px-6 py-3 text-start text-xs font-semibold text-slate-600 uppercase">
-                    {t('admin.staff.table.name')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                    {t('admin.staff.table.email')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                    {t('admin.staff.table.role')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                    {t('admin.staff.table.status')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                    {t('admin.staff.table.lastLogin')}
-                  </th>
-                  <th className="px-6 py-3 text-end text-xs font-semibold text-slate-600 uppercase">
-                    {t('admin.staff.table.actions')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {filteredStaff.map((staffMember) => (
-                  <tr key={staffMember.id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium text-slate-900">{staffMember.fullName}</p>
-                          {staffMember.role?.toLowerCase() === 'admin' ? (
-                            <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">
-                              אדמין
-                            </span>
-                          ) : (
-                            <span className="text-sm text-slate-500">
-                              {staffMember.permissions.length} {t('admin.staff.permissionsLabel')}
-                            </span>
-                          )}
+          <>
+            <div className="flex flex-col gap-2 p-3 md:hidden">
+              {filteredStaff.map((staffMember, idx) => (
+                <div
+                  key={staffMember.id}
+                  className={`rounded-xl px-4 py-3 flex flex-col gap-2 ${
+                    idx % 2 === 0 ? 'bg-sky-100 border border-sky-200' : 'bg-white border border-slate-100'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm text-slate-700"><span className="text-slate-500">{t('admin.staff.table.name')}:</span> <span className="font-medium text-slate-900">{staffMember.fullName}</span></p>
+                      <div className="mt-1 flex items-center gap-2 flex-wrap">
+                        <span className="text-sm text-slate-500">{t('admin.staff.table.role')}:</span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                          {staffMember.roleLabel}
+                        </span>
+                        <span className="text-sm text-slate-500">{t('admin.staff.table.status')}:</span>
+                        <Badge variant={staffMember.isActive ? 'success' : 'slate'}>
+                          {staffMember.isActive ? t('admin.staff.status.active') : t('admin.staff.status.inactive')}
+                        </Badge>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-700">
-                      {staffMember.email}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                        {staffMember.roleLabel}
+                    </div>
+                    {staffMember.role?.toLowerCase() === 'admin' ? (
+                      <span className="px-2 py-1 text-sm font-semibold bg-purple-100 text-purple-700 rounded-full shrink-0">
+                        אדמין
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant={staffMember.isActive ? 'success' : 'slate'}>
-                        {staffMember.isActive ? t('admin.staff.status.active') : t('admin.staff.status.inactive')}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {staffMember.lastLogin ? formatDate(staffMember.lastLogin) : '—'}
-                    </td>
-                    <td className="px-6 py-4 text-end">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openEditModal(staffMember)}
-                          className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
-                          title={t('admin.staff.actions.edit')}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(staffMember)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            staffMember.isActive
-                              ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
-                              : 'text-slate-400 hover:text-green-600 hover:bg-green-50'
-                          }`}
-                          title={t(`admin.staff.actions.${staffMember.isActive ? 'block' : 'unblock'}`)}
-                        >
-                          <Ban className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(staffMember.id)}
-                          className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
-                          title={t('admin.staff.actions.delete')}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                    ) : (
+                      <span className="text-sm text-slate-500 shrink-0">
+                        {staffMember.permissions.length} {t('admin.staff.permissionsLabel')}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm text-slate-700 break-all">
+                    <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="text-sm"><span className="text-slate-500">{t('admin.staff.table.email')}:</span> {staffMember.email}</span>
+                  </div>
+
+                  <div className="text-sm text-slate-700">
+                    <span className="text-slate-500">{t('admin.staff.table.lastLogin')}:</span> {staffMember.lastLogin ? formatDate(staffMember.lastLogin) : '—'}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      onClick={() => openEditModal(staffMember)}
+                      className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
+                      title={t('admin.staff.actions.edit')}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(staffMember)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        staffMember.isActive
+                          ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                          : 'text-slate-400 hover:text-green-600 hover:bg-green-50'
+                      }`}
+                      title={t(`admin.staff.actions.${staffMember.isActive ? 'block' : 'unblock'}`)}
+                    >
+                      <Ban className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(staffMember.id)}
+                      className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
+                      title={t('admin.staff.actions.delete')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
+              <table dir={isRTL ? 'rtl' : 'ltr'} className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    {isRTL ? (
+                      <>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.name')}
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.email')}
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.role')}
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.status')}
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.lastLogin')}
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.actions')}
+                        </th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.name')}
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.email')}
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.role')}
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.status')}
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.lastLogin')}
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
+                          {t('admin.staff.table.actions')}
+                        </th>
+                      </>
+                    )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {filteredStaff.map((staffMember) => (
+                    <tr key={staffMember.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="font-medium text-slate-900">{staffMember.fullName}</p>
+                            {staffMember.role?.toLowerCase() === 'admin' ? (
+                              <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">
+                                אדמין
+                              </span>
+                            ) : (
+                              <span className="text-sm text-slate-500">
+                                {staffMember.permissions.length} {t('admin.staff.permissionsLabel')}
+                              </span>
+                            )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-700">
+                        {staffMember.email}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          {staffMember.roleLabel}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={staffMember.isActive ? 'success' : 'slate'}>
+                          {staffMember.isActive ? t('admin.staff.status.active') : t('admin.staff.status.inactive')}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {staffMember.lastLogin ? formatDate(staffMember.lastLogin) : '—'}
+                      </td>
+                      <td className={`px-6 py-4 ${isRTL ? 'text-left' : 'text-right'}`}>
+                        <div className={`flex items-center gap-2 ${isRTL ? 'justify-start' : 'justify-end'}`}>
+                          <button
+                            onClick={() => openEditModal(staffMember)}
+                            className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
+                            title={t('admin.staff.actions.edit')}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(staffMember)}
+                            className={`p-2 rounded-lg transition-colors ${
+                              staffMember.isActive
+                                ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                                : 'text-slate-400 hover:text-green-600 hover:bg-green-50'
+                            }`}
+                            title={t(`admin.staff.actions.${staffMember.isActive ? 'block' : 'unblock'}`)}
+                          >
+                            <Ban className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(staffMember.id)}
+                            className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
+                            title={t('admin.staff.actions.delete')}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
