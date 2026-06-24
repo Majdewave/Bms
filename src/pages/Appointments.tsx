@@ -1,336 +1,649 @@
 import { useState, useEffect } from 'react'
+import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature, ChevronDown, ChevronUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Container, PageHeader, Card, CardHeader, CardContent, Badge } from '@/components'
-import CreateClientModal from '@/components/CreateClientModal'
-import { clientsService } from '@/api'
-import type { Client } from '@/api'
-import { useTranslation } from 'react-i18next'
+import { CreateAppointmentModal, SignConsentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Filter, Plus, Mail, Phone, Users, Edit, ShieldOff, ShieldCheck, Trash2 } from 'lucide-react'
+import { connection } from '@/lib/signalr'
+import { appointmentsService, type Appointment } from '@/api/appointmentsService'
+import ActionButton from '@/components/ActionButton'
+import { useTranslation } from 'react-i18next'
 
-export default function Clients() {
+type AppointmentRow = Appointment
+
+export default function AdminAppointments() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { user, hasPermission } = useAuth()
+  const { hasPermission } = useAuth()
 
-  const [clients, setClients] = useState<Client[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
+  const [appointments, setAppointments] = useState<AppointmentRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showNotDocumentedOnly, setShowNotDocumentedOnly] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'Scheduled' | 'Waiting' | 'InProgress' | 'Completed' | 'Cancelled' | 'NoShow'>('all')
+  const [showHistory, setShowHistory] = useState(false)
+  // --- Queue Logic ---
+  const current = appointments.find(a => a.status === 'InProgress') || null;
+  const waitingList = appointments
+    .filter(a => a.status === 'Waiting')
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+  const next = waitingList[0] || null;
+  const waitingCount = waitingList.length;
 
-  const canView =
-    hasPermission?.('view_clients') ||
-    hasPermission?.('manage_clients')
+  
+  // --- Status Actions ---
+  const updateStatus = async (id: string, status: string) => {
+    try {
+      // If setting to inprogress, auto-complete any other inprogress
+      if (status === 'InProgress') {
+        const currentInProgress = appointments.find(a => a.status === 'InProgress' && a.id !== id);
+        if (currentInProgress) {
+          await appointmentsService.updateAppointment(currentInProgress.id, { status: 'Completed' });
+        }
+      }
+      const appointment = appointments.find(a => a.id === id)
+        if (!appointment) return
+
+        await appointmentsService.updateAppointment(id, {
+          ...appointment,
+          status
+        })
+      loadData();
+    } catch (e) {
+      // Optionally show error
+    }
+  };
+
+const markNotDocumented = async (appointment: Appointment) => {
+  try {
+    await appointmentsService.markNotDocumented(appointment)
+    await loadData()
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingAppointment, setEditingAppointment] = useState<AppointmentRow | null>(null)
+  const [consentAppointment, setConsentAppointment] = useState<AppointmentRow | null>(null)
 
   useEffect(() => {
-    if (!canView) {
-      setError('You do not have permission to view clients.')
-      setLoading(false)
+    if (!hasPermission('manage_appointments')) {
+      navigate('/unauthorized')
       return
     }
+    loadData()
+  }, [hasPermission, navigate])
 
+  // --- SignalR Real-time Updates ---
+
+    useEffect(() => {
+      let isMounted = true;
+
+      const startConnection = async () => {
+        if (connection.state === 'Disconnected') {
+          try {
+            await connection.start();
+          } catch (err) {
+            console.error('SignalR connection error:', err);
+          }
+        }
+      };
+
+      startConnection();
+
+      const handleAppointmentUpdated = () => {
+        if (isMounted) {
+          loadData();
+        }
+      };
+
+      connection.on('AppointmentUpdated', handleAppointmentUpdated);
+
+      return () => {
+        isMounted = false;
+        connection.off('AppointmentUpdated', handleAppointmentUpdated);
+      };
+    }, []);
+      
+  const loadData = async () => {
     setLoading(true)
+    try {
+      const result = await appointmentsService.getAppointments()
+      const rows = result?.data ?? []
+      setAppointments(rows)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    clientsService
-      .getClients()
-      .then((res: any) => {
-        const data = Array.isArray(res) ? res : res?.data ?? []
-        setClients(data)
-      })
-      .catch((err: any) => {
-        setError(err?.message ?? 'Failed to load clients')
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [canView])
+  const handleDeleteAppointment = async (id: string) => {
+    if (!confirm(t('appointments.confirmDelete'))) return
+    try {
+      await appointmentsService.deleteAppointment(id)
+      setAppointments(prev => prev.filter(a => a.id !== id))
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
-  const safeClients = Array.isArray(clients) ? clients : []
+const filteredAppointments = appointments
+  .filter(a => {
+    const matchesSearch =
+      a.clientName.toLowerCase().includes(searchQuery.toLowerCase())
 
-  const notDocumentedCount = safeClients.filter(c => c.isNotDocumented).length
+    const matchesStatus =
+      statusFilter === 'all' || a.status.toLowerCase() === statusFilter.toLowerCase()
 
-  const filteredClients = safeClients.filter((client) => {
-    if (showNotDocumentedOnly && !client.isNotDocumented) return false
-
-    if (!searchQuery) return true
-
-    const q = searchQuery.toLowerCase()
-
-    return (
-      client.fullName?.toLowerCase().includes(q) ||
-      client.email?.toLowerCase().includes(q) ||
-      client.phone?.toLowerCase().includes(q)
-    )
+    return matchesSearch && matchesStatus
   })
 
-  function getInitials(name?: string | null) {
-    if (!name) return 'U'
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
+const activeAppointments = filteredAppointments.filter(a => {
+  const appointmentDate = new Date(a.startTime)
+
+  return (
+    appointmentDate >= new Date() ||
+    a.status === 'Waiting' ||
+    a.status === 'InProgress'
+  )
+})
+
+const historyAppointments = filteredAppointments.filter(a => {
+  const appointmentDate = new Date(a.startTime)
+
+  return (
+    appointmentDate < new Date() &&
+    a.status !== 'Waiting' &&
+    a.status !== 'InProgress'
+  )
+})
+
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString()
+
+  const formatTime = (date: string) =>
+    new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  const getStatusBadgeClass = (status?: string) => {
+    switch ((status || '').toLowerCase()) {
+      case 'completed':
+        return 'bg-green-100 text-green-700'
+      case 'cancelled':
+      case 'noshow':
+        return 'bg-red-100 text-red-700'
+      case 'scheduled':
+      case 'waiting':
+      case 'inprogress':
+        return 'bg-yellow-100 text-yellow-700'
+      default:
+        return 'bg-slate-100 text-slate-700'
+    }
   }
 
-  function formatDate(dateString?: string | null) {
-    if (!dateString) return '-'
-    const date = new Date(dateString)
-    return date.toLocaleDateString()
-  }
 
-  if (!canView) {
+  const markDocumented = async (appointment: Appointment) => {
+  try {
+    await appointmentsService.updateAppointment(appointment.id, {
+      ...appointment,
+      isDocumented: true
+    })
+
+    await loadData()
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+  const renderAppointmentsTable = (rows: AppointmentRow[]) => {
+    if (loading) {
+      return (
+        <div className="p-12 text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        </div>
+      )
+    }
+
     return (
-      <div className="text-red-500">
-        You do not have permission to view clients.
-      </div>
+      <>
+        {/* Mobile: cards */}
+        <div className="flex flex-col gap-2 md:hidden p-3">
+          {rows.map((appointment, idx) => {
+            const isCurrent = appointment.status === 'InProgress';
+            const isNotDocumented = appointment.isDocumented === false;
+           // const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id);
+           const hasConsent = appointment.hasSignedConsent === true
+           console.log(
+  appointment.clientName,
+  appointment.id,
+  appointment.hasSignedConsent,
+  typeof appointment.hasSignedConsent
+)
+           return (
+              <div
+                key={`m-${appointment.id}`}
+                className={`rounded-xl px-4 py-3 flex flex-col gap-2 ${
+                  isNotDocumented
+                    ? 'bg-red-50 border border-red-100'
+                    : isCurrent
+                    ? 'bg-blue-50 border border-blue-100'
+                    : idx % 2 === 0
+                    ? 'bg-sky-100 border border-sky-200'
+                    : 'bg-white border border-slate-100'
+                }`}
+              >
+                <div className="text-sm text-slate-700">
+                  <span className="text-slate-500">{t('appointments.table.client')}:</span>{' '}
+                  <span
+                    className={`font-semibold text-base cursor-pointer hover:underline ${
+                      isNotDocumented ? 'text-red-600' : 'text-slate-800'
+                    }`}
+                    onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}
+                  >
+                    {appointment.clientName}
+                  </span>
+                </div>
+
+                <div className="text-sm text-slate-700 font-mono">
+                  <span className="text-slate-500">{t('appointments.table.datetime')}:</span> {formatDate(appointment.startTime)} {formatTime(appointment.startTime)}
+                </div>
+
+                <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
+                  <span className="text-slate-500">שירות:</span>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-sm font-semibold">
+                    {appointment.serviceName}
+                  </span>
+                </div>
+
+                {appointment.staffName && (
+                  <>
+                    <div className="text-sm text-slate-700">
+                      <span className="text-slate-500">{t('appointments.table.staff')}:</span> {appointment.staffName}
+                    </div>
+                  </>
+                )}
+
+                <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
+                  <span className="text-slate-500">{t('appointments.table.status')}:</span>
+                  <span className={`px-2 py-0.5 rounded-full text-sm font-semibold ${
+                    getStatusBadgeClass(appointment.status)
+                  }`}>
+                    {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
+                  </span>
+                  {isNotDocumented && (
+                    <span className="px-2 py-0.5 rounded-full text-sm font-bold bg-red-100 text-red-700">לא מתועד</span>
+                  )}
+                  {hasConsent ? (
+                    <span className="flex items-center gap-1 text-green-700 text-sm font-medium">
+                      <CheckCircle className="w-3 h-3" />נחתם
+                    </span>
+                  ) : (
+                    <span
+                      className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer hover:underline"
+                      onClick={() => setConsentAppointment(appointment)}
+                    >
+                      <FileSignature className="w-3 h-3" />חתום
+                    </span>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {appointment.status === 'Scheduled' && (
+                    <ActionButton type="arrived" onClick={() => updateStatus(appointment.id, 'Waiting')} />
+                  )}
+                  {appointment.status === 'Waiting' && (
+                    <ActionButton type="start" onClick={() => updateStatus(appointment.id, 'InProgress')} />
+                  )}
+                  {appointment.status === 'InProgress' && (
+                    <ActionButton type="complete" onClick={() => updateStatus(appointment.id, 'Completed')} />
+                  )}
+                  {appointment.status !== 'Cancelled' && appointment.status !== 'Completed' && (
+                    <ActionButton type="cancel" onClick={() => updateStatus(appointment.id, 'Cancelled')} />
+                  )}
+                  {appointment.status !== 'NoShow' && appointment.status !== 'Completed' && (
+                    <ActionButton type="noshow" onClick={() => updateStatus(appointment.id, 'NoShow')} />
+                  )}
+                  {appointment.status === 'Completed' && appointment.isDocumented !== false && (
+                    <ActionButton type="notDocumented" onClick={() => markNotDocumented(appointment)} />
+                  )}
+                  {appointment.isDocumented === false && (
+                    <button onClick={() => markDocumented(appointment)} className="px-2 py-1 rounded bg-green-100 text-green-700 text-sm">סמן כמתועד</button>
+                  )}
+                  <Edit
+                    className="w-4 h-4 cursor-pointer text-gray-500 hover:text-blue-600 ms-auto"
+                    onClick={() => setEditingAppointment(appointment)}
+                  />
+                  <Trash2
+                    className="w-4 h-4 cursor-pointer text-red-500 hover:text-red-700"
+                    onClick={() => handleDeleteAppointment(appointment.id)}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop: original table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
+          <thead className="bg-slate-50 border-b">
+            <tr>
+              <th className="px-6 py-3 text-center text-sm">{t('appointments.table.client')}</th>
+              <th className="px-6 py-3 text-center text-sm">{t('appointments.table.datetime')}</th>
+              <th className="px-6 py-3 text-center text-sm">{t('appointments.table.staff')}</th>
+              <th className="px-6 py-3 text-center text-sm bg-slate-50 border-x border-slate-100">{t('appointments.table.status')}</th>
+              <th className="px-6 py-3 text-center text-sm bg-slate-100/70 border-s border-slate-200">{t('common.actions')}</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.map(appointment => {
+              const isCurrent = appointment.status === 'InProgress';
+              const isNotDocumented = appointment.isDocumented === false;
+              const hasConsent = appointment.hasSignedConsent === true
+             const isSelected = consentAppointment?.id === appointment.id
+
+              return (
+                <tr
+                  key={appointment.id}
+                  className={`transition
+                    ${isSelected ? 'bg-blue-50 border border-blue-100' : ''}
+                    ${isCurrent ? 'bg-blue-50 border border-blue-100' : ''}
+                    ${isNotDocumented ? 'bg-red-50' : ''}
+                  `}
+                >
+                  <td className="px-4 py-3 cursor-pointer" onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}>
+                    <div className="flex items-center gap-3">
+                      <User className="w-5 h-5 text-primary" />
+                      <div className="flex flex-col">
+                        <span className={`font-semibold text-slate-800 ${isNotDocumented ? 'text-red-600' : ''}`}>{appointment.clientName}</span>
+                        <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">
+                          {appointment.serviceName}
+                        </span>
+                        <div className="mt-1 flex gap-2 items-center">
+                          {hasConsent ? (
+                            <span className="flex items-center gap-1 text-green-700 text-sm font-medium opacity-80" title="הסכמה כבר נחתמה">
+                              <CheckCircle className="w-3 h-3" />
+                              נחתם
+                            </span>
+                          ) : (
+                            <span
+                              className="flex items-center gap-1 text-blue-600 text-sm font-medium cursor-pointer hover:underline opacity-80 hover:opacity-100"
+                              title="לחץ לחתימה"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setConsentAppointment(appointment)
+                              }}
+                            >
+                              <FileSignature className="w-3 h-3" />
+                              חתום על הסכמה
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col text-sm">
+                      <span className="text-slate-800">
+                      {formatDate(appointment.startTime)}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                      {formatTime(appointment.startTime)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    {appointment.staffName || '-'}
+                  </td>
+                  <td className="px-4 py-3 text-center bg-slate-50 border-x border-slate-200">
+                    <span
+                      className={`px-2 py-1 text-sm rounded-full font-medium ${getStatusBadgeClass(appointment.status)}`}
+                    >
+                      {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
+                    </span>
+                    {isNotDocumented && (
+                      <span className="ml-2 px-2 py-1 rounded-full text-sm font-bold bg-red-100 text-red-700">לא מתועד</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-end bg-slate-100/70 border-s border-slate-200">
+                    <div className="flex items-center gap-2 justify-end flex-wrap">
+                      {appointment.status === 'Scheduled' && (
+                        <ActionButton
+                          type="arrived"
+                          onClick={() => updateStatus(appointment.id, 'Waiting')}
+                        />
+                      )}
+                      {appointment.status === 'Waiting' && (
+                        <ActionButton
+                          type="start"
+                          onClick={() => updateStatus(appointment.id, 'InProgress')}
+                        />
+                      )}
+                      {appointment.status === 'InProgress' && (
+                        <ActionButton
+                          type="complete"
+                          onClick={() => updateStatus(appointment.id, 'Completed')}
+                        />
+                      )}
+                      {appointment.status !== 'Cancelled' && appointment.status !== 'Completed' && (
+                        <ActionButton
+                          type="cancel"
+                          onClick={() => updateStatus(appointment.id, 'Cancelled')}
+                        />
+                      )}
+                      {appointment.status !== 'NoShow' && appointment.status !== 'Completed' && (
+                        <ActionButton
+                          type="noshow"
+                          onClick={() => updateStatus(appointment.id, 'NoShow')}
+                        />
+                      )}
+                      {appointment.status === 'Completed' && appointment.isDocumented !== false && (
+                        <ActionButton
+                          type="notDocumented"
+                          onClick={() => markNotDocumented(appointment)}
+                        />
+                      )}
+                      {appointment.isDocumented === false && (
+                      <button
+                        onClick={() => markDocumented(appointment)}
+                        className="px-2 py-1 rounded bg-green-100 text-green-700 text-sm"
+                      >
+                        סמן כמתועד
+                      </button>
+                    )}
+                      <div className="flex gap-2 opacity-70 hover:opacity-100">
+                        <Edit
+                          className="w-4 h-4 cursor-pointer text-gray-600 hover:text-blue-600"
+                          onClick={() => setEditingAppointment(appointment)}
+                        />
+                        <Trash2
+                          className="w-4 h-4 cursor-pointer text-red-600 hover:text-red-800"
+                          onClick={() => handleDeleteAppointment(appointment.id)}
+                        />
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        </div>
+      </>
     )
   }
 
-  if (loading) {
-    return <div className="p-6">Loading...</div>
-  }
-
-  if (error) {
-    return <div className="text-red-500 p-6">{error}</div>
-  }
 
   return (
-    <Container maxWidth="xl">
-      {user?.role === 'staff' && (
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-blue-900">
-              {t('staff.clients.viewTitle')}
-            </h3>
+    <div className="space-y-6">
+
+      {/* Queue Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
+          <div className="text-sm text-gray-500 mb-1">{t('currentPatient')}</div>
+          {current ? (
+            <div className="flex items-center gap-2 font-semibold text-purple-700">
+              <CheckCircle className="w-5 h-5 text-purple-500" />
+              {current.clientName}
+            </div>
+          ) : (
+            <div className="text-gray-400">{t('none')}</div>
+          )}
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
+          <div className="text-sm text-gray-500 mb-1">{t('nextPatient')}</div>
+          {next ? (
+            <div className="flex items-center gap-2 font-semibold text-yellow-700">
+              <ArrowRight className="w-5 h-5 text-yellow-500" />
+              {next.clientName}
+            </div>
+          ) : (
+            <div className="text-gray-400">{t('none')}</div>
+          )}
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col items-center justify-center">
+          <div className="text-sm text-gray-500 mb-1">{t('waitingCount')}</div>
+          <div className="font-bold text-lg text-yellow-700">{waitingCount}</div>
+        </div>
+      </div>
+
+      <div className="mb-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-slate-900">{t('appointments.title')}</h1>
+            <p className="text-base text-slate-600 mt-2">{t('appointments.subtitle')}</p>
+          </div>
+
+          <div className="w-full md:w-auto">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="btn-primary btn-md gap-2 w-full justify-center md:w-auto"
+            >
+              <Plus className="w-4 h-4" />
+              {t('appointments.new')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="relative">
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            placeholder={t('appointments.searchPlaceholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input ps-10 w-64"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Filter className="w-5 h-5 text-slate-400" />
+         <select
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as any)
+              }
+              className="input"
+            >
+              <option value="all">
+                {t('appointments.filters.all')}
+              </option>
+
+              <option value="Scheduled">
+                {t('appointments.status.scheduled')}
+              </option>
+              <option value="Waiting">
+                {t('appointments.status.waiting')}
+              </option>
+              <option value="InProgress">
+                {t('appointments.status.inprogress')}
+              </option>
+              <option value="Completed">
+                {t('appointments.status.completed')}
+              </option>
+              <option value="Cancelled">
+                {t('appointments.status.cancelled')}
+              </option>
+              <option value="NoShow">
+                {t('appointments.status.noshow')}
+              </option>
+            </select>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="card overflow-hidden">
+        {renderAppointmentsTable(activeAppointments)}
+      </div>
+
+      <div className="flex justify-center">
+        <button
+          onClick={() => setShowHistory(!showHistory)}
+          className="
+flex items-center gap-2
+px-4 py-2
+bg-slate-100 hover:bg-slate-200
+border border-slate-200
+rounded-lg
+font-medium
+transition
+"
+        >
+          {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {showHistory
+            ? `▼ היסטוריה (${historyAppointments.length})`
+            : `▶ היסטוריה (${historyAppointments.length})`}
+        </button>
+      </div>
+
+      {showHistory && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-slate-800">היסטוריה</h3>
+          <div className="card overflow-hidden">
+            {renderAppointmentsTable(historyAppointments)}
           </div>
         </div>
       )}
 
-      <PageHeader
-        title={t('admin.clients.title')}
-        description={t('admin.clients.subtitle')}
-        action={
-          hasPermission?.('manage_clients') && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg"
-            >
-              <Plus className="w-4 h-4" />
-              {t('admin.clients.add')}
-            </button>
-          )
-        }
-      />
-
       {showCreateModal && (
-        <CreateClientModal
+        <CreateAppointmentModal
           onClose={() => setShowCreateModal(false)}
-          onCreated={(client) => {
-            setShowCreateModal(false)
-            navigate(`/admin/clients/${client.id}`)
+          onSuccess={loadData}
+        />
+      )}
+
+      {editingAppointment && (
+        <CreateAppointmentModal
+          mode="edit"
+          appointment={editingAppointment}
+          onClose={() => setEditingAppointment(null)}
+          onSuccess={() => {
+            loadData()
+            setEditingAppointment(null)
           }}
         />
       )}
 
-      <Card>
-        <CardHeader title={t('admin.clients.directoryTitle')} />
+      {consentAppointment && (
+        <SignConsentModal
+          isOpen={Boolean(consentAppointment)}
+          appointmentId={consentAppointment.id}
+          clientId={consentAppointment.clientId}
+          clientName={consentAppointment.clientName}
+          serviceId={consentAppointment.serviceId}
+          serviceName={consentAppointment.serviceName}
+          onClose={() => setConsentAppointment(null)}
+          onSigned={() => {
+            setConsentAppointment(null)
+            loadData()
+          }}
+        />
+      )}
 
-        <CardContent>
-
-          <div className="mb-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-red-600">
-                {t('notDocumentedClients', { count: notDocumentedCount })}
-              </div>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={showNotDocumentedOnly}
-                  onChange={(e) => setShowNotDocumentedOnly(e.target.checked)}
-                  className="h-4 w-4"
-                />
-                <span className="text-sm font-medium">{t('showOnlyNotDocumented')}</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-
-              <input
-                type="text"
-                placeholder={t('admin.clients.searchPlaceholder')}
-                value={searchQuery ?? ''}
-                onChange={(e) => setSearchQuery(e.target.value ?? '')}
-                className="input ps-10"
-              />
-            </div>
-
-            <button className="btn btn-secondary btn-md">
-              <Filter className="w-4 h-4" />
-              {t('admin.clients.filter')}
-            </button>
-          </div>
-
-          {filteredClients.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-900">
-                {t('admin.clients.noClients')}
-              </h3>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <th className="text-start py-3 px-4">
-                      {t('admin.clients.table.client')}
-                    </th>
-
-                    <th className="text-start py-3 px-4">
-                      {t('admin.clients.table.contact')}
-                    </th>
-
-                    <th className="text-start py-3 px-4">
-                      {t('common.status')}
-                    </th>
-
-                    <th className="text-start py-3 px-4">
-                      {t('admin.clients.table.lastVisit')}
-                    </th>
-                    <th className="text-start py-3 px-4">
-                      {t('common.actions')}
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y">
-                  {filteredClients.map((client) => {
-                    const clientId = client?.id ?? ''
-                    const isBlocked = client?.isActive === false || client?.status === 'blocked' || client?.status === 'inactive';
-                    const handleBlock = async (e: React.MouseEvent) => {
-                      e.stopPropagation();
-                      await clientsService.updateClient(clientId, {
-                        ...client,
-                        isActive: !client.isActive
-                      });
-                      // Refresh list
-                      const data = await clientsService.getClients();
-                      setClients(Array.isArray(data) ? data : data?.data ?? []);
-                    };
-                    const handleDelete = async (e: React.MouseEvent) => {
-                      e.stopPropagation();
-                      if (window.confirm(t('admin.clients.confirmDelete') || 'Are you sure you want to delete this client?')) {
-                        await clientsService.deleteClient(clientId);
-                        // Refresh list
-                        const data = await clientsService.getClients();
-                        setClients(Array.isArray(data) ? data : data?.data ?? []);
-                      }
-                    };
-                    return (
-                      <tr
-                        key={clientId}
-                        className={`border-b cursor-pointer ${
-                          client.isNotDocumented ? 'bg-red-50 text-red-600' : 'hover:bg-slate-50'
-                        }`}
-                        onClick={() => clientId && navigate(`/admin/clients/${clientId}`)}
-                      >
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-primary-600 text-white rounded-lg flex items-center justify-center text-sm font-semibold">
-                              {getInitials(client?.fullName)}
-                            </div>
-                            <div>
-                              <p className="font-semibold">
-                                {client?.fullName ?? 'Unnamed'}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                {clientId.substring(0, 8)}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Mail className="w-4 h-4 text-slate-400" />
-                              {client?.email ?? '-'}
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <Phone className="w-4 h-4 text-slate-400" />
-                              {client?.phone ?? '-'}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span
-                            className={
-                              isBlocked
-                                ? 'inline-block px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700'
-                                : 'inline-block px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700'
-                            }
-                          >
-                            {isBlocked ? t('admin.clients.blocked', 'Blocked') : t('admin.clients.active', 'Active')}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4">
-                          {formatDate(client?.lastVisit)}
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex gap-3 items-center">
-                            <Edit
-                              className="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer"
-                              aria-label={t('common.edit')}
-                              title={t('common.edit')}
-                              role="button"
-                              onClick={e => {
-                                e.stopPropagation();
-                                navigate(`/admin/clients/${clientId}`);
-                              }}
-                            />
-                            {isBlocked ? (
-                              <ShieldCheck
-                                className="w-5 h-5 text-green-500 hover:text-green-700 cursor-pointer"
-                                aria-label={t('admin.clients.activate', 'Activate')}
-                                title={t('admin.clients.activate', 'Activate')}
-                                role="button"
-                                onClick={handleBlock}
-                              />
-                            ) : (
-                              <ShieldOff
-                                className="w-5 h-5 text-yellow-500 hover:text-yellow-700 cursor-pointer"
-                                aria-label={t('admin.clients.block', 'Block')}
-                                title={t('admin.clients.block', 'Block')}
-                                role="button"
-                                onClick={handleBlock}
-                              />
-                            )}
-                            <Trash2
-                              className="w-5 h-5 text-red-500 hover:text-red-700 cursor-pointer"
-                              aria-label={t('common.delete')}
-                              title={t('common.delete')}
-                              role="button"
-                              onClick={handleDelete}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-
-              </table>
-            </div>
-          )}
-
-        </CardContent>
-      </Card>
-    </Container>
+    </div>
   )
 }

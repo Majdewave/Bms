@@ -5,7 +5,6 @@ import { CreateAppointmentModal, SignConsentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
 import { connection } from '@/lib/signalr'
 import { appointmentsService, type Appointment } from '@/api/appointmentsService'
-import { consentsApi, type SignedConsent } from '@/api/consents'
 import ActionButton from '@/components/ActionButton'
 import { useTranslation } from 'react-i18next'
 
@@ -17,7 +16,6 @@ export default function AdminAppointments() {
   const { hasPermission } = useAuth()
 
   const [appointments, setAppointments] = useState<AppointmentRow[]>([])
-  const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'Scheduled' | 'Waiting' | 'InProgress' | 'Completed' | 'Cancelled' | 'NoShow'>('all')
@@ -30,47 +28,6 @@ export default function AdminAppointments() {
   const next = waitingList[0] || null;
   const waitingCount = waitingList.length;
 
-  const loadSignedConsents = async (rows: AppointmentRow[]) => {
-    const clientIds = [...new Set(rows.map(r => r.clientId).filter(Boolean))]
-
-    if (clientIds.length === 0) {
-      setSignedConsents([])
-      return
-    }
-
-    try {
-      const responses = await Promise.all(clientIds.map(clientId => consentsApi.getSignedByClient(clientId)))
-      setSignedConsents(responses.flat())
-    } catch (error) {
-      console.error('Failed loading signed consents:', error)
-      setSignedConsents([])
-    }
-  }
-
-
-    const loadAppointments = async () => {
-    setLoading(true)
-
-    try {
-       const result = await appointmentsService.getAppointments()
-
-      if (!result || !result.data) {
-        setAppointments([])
-        setSignedConsents([])
-        return
-      }
-
-      setAppointments(result.data)
-      await loadSignedConsents(result.data)
-    } catch (error) {
-      console.error('Failed loading appointments:', error)
-      setAppointments([])
-      setSignedConsents([])
-    } finally {
-      setLoading(false)
-    }
-  }
-  
   
   // --- Status Actions ---
   const updateStatus = async (id: string, status: string) => {
@@ -98,7 +55,7 @@ export default function AdminAppointments() {
 const markNotDocumented = async (appointment: Appointment) => {
   try {
     await appointmentsService.markNotDocumented(appointment)
-    await loadAppointments()
+    await loadData()
   } catch (error) {
     console.error(error)
   }
@@ -153,10 +110,8 @@ const markNotDocumented = async (appointment: Appointment) => {
       const result = await appointmentsService.getAppointments()
       const rows = result?.data ?? []
       setAppointments(rows)
-      await loadSignedConsents(rows)
     } catch (error) {
       console.error(error)
-      setSignedConsents([])
     } finally {
       setLoading(false)
     }
@@ -233,7 +188,7 @@ const historyAppointments = filteredAppointments.filter(a => {
       isDocumented: true
     })
 
-    await loadAppointments()
+    await loadData()
   } catch (error) {
     console.error(error)
   }
@@ -255,8 +210,15 @@ const historyAppointments = filteredAppointments.filter(a => {
           {rows.map((appointment, idx) => {
             const isCurrent = appointment.status === 'InProgress';
             const isNotDocumented = appointment.isDocumented === false;
-            const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id);
-            return (
+           // const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id);
+           const hasConsent = appointment.hasSignedConsent === true
+           console.log(
+  appointment.clientName,
+  appointment.id,
+  appointment.hasSignedConsent,
+  typeof appointment.hasSignedConsent
+)
+           return (
               <div
                 key={`m-${appointment.id}`}
                 className={`rounded-xl px-4 py-3 flex flex-col gap-2 ${
@@ -311,7 +273,7 @@ const historyAppointments = filteredAppointments.filter(a => {
                     <span className="px-2 py-0.5 rounded-full text-sm font-bold bg-red-100 text-red-700">לא מתועד</span>
                   )}
                   {hasConsent ? (
-                    <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                    <span className="flex items-center gap-1 text-green-700 text-sm font-medium">
                       <CheckCircle className="w-3 h-3" />נחתם
                     </span>
                   ) : (
@@ -378,8 +340,8 @@ const historyAppointments = filteredAppointments.filter(a => {
             {rows.map(appointment => {
               const isCurrent = appointment.status === 'InProgress';
               const isNotDocumented = appointment.isDocumented === false;
-              const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id)
-              const isSelected = consentAppointment?.id === appointment.id
+              const hasConsent = appointment.hasSignedConsent === true
+             const isSelected = consentAppointment?.id === appointment.id
 
               return (
                 <tr
@@ -400,7 +362,7 @@ const historyAppointments = filteredAppointments.filter(a => {
                         </span>
                         <div className="mt-1 flex gap-2 items-center">
                           {hasConsent ? (
-                            <span className="flex items-center gap-1 text-green-600 text-sm font-medium opacity-80" title="הסכמה כבר נחתמה">
+                            <span className="flex items-center gap-1 text-green-700 text-sm font-medium opacity-80" title="הסכמה כבר נחתמה">
                               <CheckCircle className="w-3 h-3" />
                               נחתם
                             </span>

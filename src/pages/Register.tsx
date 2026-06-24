@@ -126,7 +126,7 @@ export default function Register() {
         {/* RIGHT: Registration Form */}
         <div className="flex-1 flex flex-col justify-center p-8 sm:p-12 bg-white text-left">
           <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto space-y-7 text-left">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Start your 7-day free trial</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Start your 7-days free trial</h2>
             <div className="space-y-6">
               <input
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-200 text-gray-900 bg-gray-50 shadow-sm text-left"
