@@ -19,7 +19,7 @@ export default function AdminAppointments() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'Scheduled' | 'Waiting' | 'InProgress' | 'Completed' | 'Cancelled' | 'NoShow'>('all')
-  const [showHistory, setShowHistory] = useState(false)
+  const [showHistory, setShowHistory] = useState(true)
   // --- Queue Logic ---
   const current = appointments.find(a => a.status === 'InProgress') || null;
   const waitingList = appointments
@@ -138,25 +138,25 @@ const filteredAppointments = appointments
     return matchesSearch && matchesStatus
   })
 
-const activeAppointments = filteredAppointments.filter(a => {
-  const appointmentDate = new Date(a.startTime)
 
-  return (
-    appointmentDate >= new Date() ||
-    a.status === 'Waiting' ||
-    a.status === 'InProgress'
+const activeAppointments = filteredAppointments.filter(a =>
+  a.status !== 'Completed' &&
+  a.status !== 'Cancelled' &&
+  a.status !== 'NoShow'
+);
+
+
+const historyAppointments = filteredAppointments
+  .filter(a =>
+    a.status === 'Completed' ||
+    a.status === 'Cancelled' ||
+    a.status === 'NoShow'
   )
-})
+  .sort((a, b) =>
+    new Date(b.endTime).getTime() -
+    new Date(a.endTime).getTime()
+  );
 
-const historyAppointments = filteredAppointments.filter(a => {
-  const appointmentDate = new Date(a.startTime)
-
-  return (
-    appointmentDate < new Date() &&
-    a.status !== 'Waiting' &&
-    a.status !== 'InProgress'
-  )
-})
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString()
@@ -212,12 +212,6 @@ const historyAppointments = filteredAppointments.filter(a => {
             const isNotDocumented = appointment.isDocumented === false;
            // const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id);
            const hasConsent = appointment.hasSignedConsent === true
-           console.log(
-  appointment.clientName,
-  appointment.id,
-  appointment.hasSignedConsent,
-  typeof appointment.hasSignedConsent
-)
            return (
               <div
                 key={`m-${appointment.id}`}
@@ -233,14 +227,24 @@ const historyAppointments = filteredAppointments.filter(a => {
               >
                 <div className="text-sm text-slate-700">
                   <span className="text-slate-500">{t('appointments.table.client')}:</span>{' '}
-                  <span
-                    className={`font-semibold text-base cursor-pointer hover:underline ${
-                      isNotDocumented ? 'text-red-600' : 'text-slate-800'
-                    }`}
-                    onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}
-                  >
-                    {appointment.clientName}
-                  </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`font-semibold text-base cursor-pointer hover:underline ${
+                          isNotDocumented ? 'text-red-600' : 'text-slate-800'
+                        }`}
+                        onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}
+                      >
+                        {appointment.clientName}
+                      </span>
+
+                      {showHistory &&
+                        appointment.status === 'Completed' &&
+                        idx === 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                            🟢 חדש
+                          </span>
+                      )}
+                    </div>
                 </div>
 
                 <div className="text-sm text-slate-700 font-mono">
@@ -328,6 +332,7 @@ const historyAppointments = filteredAppointments.filter(a => {
           <table className="w-full">
           <thead className="bg-slate-50 border-b">
             <tr>
+              <th className="w-12 px-3 py-3 text-center text-sm">#</th>
               <th className="px-6 py-3 text-center text-sm">{t('appointments.table.client')}</th>
               <th className="px-6 py-3 text-center text-sm">{t('appointments.table.datetime')}</th>
               <th className="px-6 py-3 text-center text-sm">{t('appointments.table.staff')}</th>
@@ -337,7 +342,7 @@ const historyAppointments = filteredAppointments.filter(a => {
           </thead>
 
           <tbody>
-            {rows.map(appointment => {
+             {rows.map((appointment, index) => {
               const isCurrent = appointment.status === 'InProgress';
               const isNotDocumented = appointment.isDocumented === false;
               const hasConsent = appointment.hasSignedConsent === true
@@ -352,11 +357,31 @@ const historyAppointments = filteredAppointments.filter(a => {
                     ${isNotDocumented ? 'bg-red-50' : ''}
                   `}
                 >
+
+                  <td className="px-3 py-3 text-center text-slate-500 font-medium">
+                      {index + 1}
+                  </td>
                   <td className="px-4 py-3 cursor-pointer" onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}>
                     <div className="flex items-center gap-3">
                       <User className="w-5 h-5 text-primary" />
                       <div className="flex flex-col">
-                        <span className={`font-semibold text-slate-800 ${isNotDocumented ? 'text-red-600' : ''}`}>{appointment.clientName}</span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`font-semibold text-slate-800 ${
+                            isNotDocumented ? 'text-red-600' : ''
+                          }`}
+                        >
+                          {appointment.clientName}
+                        </span>
+
+                        {showHistory &&
+                          appointment.status === 'Completed' &&
+                          index === 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                              🟢 חדש
+                            </span>
+                        )}
+                      </div>
                         <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">
                           {appointment.serviceName}
                         </span>
@@ -397,14 +422,19 @@ const historyAppointments = filteredAppointments.filter(a => {
                     {appointment.staffName || '-'}
                   </td>
                   <td className="px-4 py-3 text-center bg-slate-50 border-x border-slate-200">
-                    <span
-                      className={`px-2 py-1 text-sm rounded-full font-medium ${getStatusBadgeClass(appointment.status)}`}
-                    >
-                      {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
-                    </span>
-                    {isNotDocumented && (
-                      <span className="ml-2 px-2 py-1 rounded-full text-sm font-bold bg-red-100 text-red-700">לא מתועד</span>
-                    )}
+                      <span
+                          className={`px-2 py-1 text-sm rounded-full font-medium ${getStatusBadgeClass(
+                              appointment.status
+                          )}`}
+                      >
+                          {t(`appointments.status.${appointment.status?.toLowerCase()}`)}
+                      </span>
+
+                      {isNotDocumented && (
+                          <span className="ml-2 px-2 py-1 rounded-full text-sm font-bold bg-red-100 text-red-700">
+                              לא מתועד
+                          </span>
+                      )}
                   </td>
                   <td className="px-4 py-3 text-end bg-slate-100/70 border-s border-slate-200">
                     <div className="flex items-center gap-2 justify-end flex-wrap">

@@ -28,15 +28,22 @@ const DrugAutocomplete: React.FC<DrugAutocompleteProps> = ({
 
   /* ================= SEARCH ================= */
 
-  const handleCustomDrug = () => {
-  const customDrug: Drug = {
-    id: 'custom',
-    name: query.trim(),
-  };
+const handleCustomDrug = () => {
+  const text = query.trim();
 
-  setShowDropdown(false);
-  onSelect(customDrug);
-};
+  if (!text) return;
+
+  const customDrug: Drug = {
+      id: 'custom',
+      name: text,
+      dosage: ''
+    };
+
+    setQuery(text);
+    setShowDropdown(false);
+
+    onSelect(customDrug);
+  };
 
 
   useEffect(() => {

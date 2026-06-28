@@ -82,9 +82,9 @@ export default function ClientProfile() {
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
   const [savingPrescription, setSavingPrescription] = useState(false)
   const [instructions, setInstructions] = useState("")
+  // drugs input validation state
   const [errors, setErrors] = useState({
-    drugs: false,
-    instructions: false,
+    drugs: false
   })
   const [openSections, setOpenSections] = useState<string[]>([])
   const [visitSummaries, setVisitSummaries] = useState<VisitSummary[]>([])
@@ -194,14 +194,6 @@ export default function ClientProfile() {
   }
 }, [currentStaff])
 
-  useEffect(() => {
-  if (currentStaff && !prescriptionForm.doctorName) {
-    setPrescriptionForm(prev => ({
-      ...prev,
-      doctorName: user?.name || "", // או currentStaff.fullName אם יש לך
-    }))
-  }
-}, [currentStaff])
 
   useEffect(() => {
     const loadCurrentStaff = async () => {
@@ -227,7 +219,20 @@ export default function ClientProfile() {
   }
 
   const removeDrug = (index: number) => {
-    setDrugs(prev => prev.length === 1 ? [{ drugId: '', name: '', dosage: '', display: '' }] : prev.filter((_, i) => i !== index));
+    setDrugs(prev => {
+      const updated =
+        prev.length === 1
+          ? [{ drugId: '', name: '', dosage: '', display: '' }]
+          : prev.filter((_, i) => i !== index);
+
+      const hasDrug = updated.some(d => d.display.trim() !== '');
+
+      if (hasDrug) {
+        setErrors({ drugs: false });
+      }
+
+      return updated;
+    });
   }
 
   const updateDrug = (index: number, drugObj: { drugId: string; name: string; dosage: string; display: string }) => {
@@ -347,35 +352,23 @@ const saveClient = async () => {
   }
 
   const closePrescriptionModal = () => {
-    setShowPrescriptionModal(false)
-   setDrugs([{ drugId: '', name: '', dosage: '', display: '' }])
-    setInstructions("")
-    setErrors({
-      drugs: false,
-      instructions: false,
-    })
-    setPrescriptionForm({
-      date: new Date().toISOString().split('T')[0],
-      nationalId: '',
-      doctorName: '',
-      signature: '',
-    })
+    setShowPrescriptionModal(false);
   }
 
   const savePrescription = async () => {
     if (!client) return
 
-    // Validation: at least one of drugs or instructions must be filled
-    const hasDrugs = drugs.some(d => (d.display || '').trim().length > 0)
-    const hasInstructions = instructions.trim().length > 0
-
-    if (!hasDrugs && !hasInstructions) {
+    // Validation: drugs must be filled
+      const hasDrugs = drugs.some(d => (d.display || '').trim().length > 0);
+      if (!hasDrugs) {
+        setErrors({
+          drugs: true,
+        });
+        return;
+      }
       setErrors({
-        drugs: true,
-        instructions: true,
-      })
-      return
-    }
+        drugs: false,
+      });
 
     setSavingPrescription(true)
     try {
@@ -419,16 +412,6 @@ const saveClient = async () => {
     }
   }
 
-  const handleInstructionsChange = (value: string) => {
-    setInstructions(value)
-    if (errors.instructions) {
-      const hasDrugs = drugs.some(d => (d.display || '').trim().length > 0)
-      const hasInstructions = value.trim().length > 0
-      if (hasDrugs || hasInstructions) {
-        setErrors(prev => ({ ...prev, instructions: false }))
-      }
-    }
-  }
 
   const updateNote = async (id: string, content: string) => {
     await apiClient.put(`/api/notes/${id}`, { content })
@@ -637,7 +620,20 @@ const saveClient = async () => {
 
           {features?.prescriptionsEnabled === true && (
           <button
-            onClick={() => setShowPrescriptionModal(true)}
+            onClick={() => {
+              setPrescriptionForm({
+                date: new Date().toISOString().split('T')[0],
+                nationalId: client.idNumber ?? '',
+                doctorName: currentStaff?.fullName ?? '',
+                signature: '',
+              });
+
+              setDrugs([{ drugId: '', name: '', dosage: '', display: '' }]);
+              setInstructions('');
+              setErrors({ drugs: false });
+
+              setShowPrescriptionModal(true);
+            }}
             className="flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl shadow-md hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg text-sm"
           >
             <FileText className="w-4 h-4" />
@@ -1305,6 +1301,10 @@ const saveClient = async () => {
                           dosage: drugData.dosage || '',
                           display
                         });
+                         setErrors(prev => ({
+                          ...prev,
+                          drugs: false,
+                         }));
                       }}
                       placeholder={t('drugs.searchPlaceholder')}
                       className="w-full"
@@ -1332,17 +1332,19 @@ const saveClient = async () => {
                 >
                   +
                 </button>
+                  {errors.drugs && (
+                    <p className="text-red-500 text-sm mt-2">
+                      שדה חובה: יש לבחור תרופה מתוך הרשימה או להוסיף כטקסט חופשי.
+                    </p>
+                 )}
               </div>
 
               <label className="mt-4 block text-sm mb-1">הוראות שימוש</label>
               <textarea
                 value={instructions}
-                onChange={(e) => handleInstructionsChange(e.target.value)}
-                className={`w-full border p-2 rounded h-24 ${errors.instructions ? 'border-red-500 border-2' : ''}`}
+                onChange={(e) => setInstructions(e.target.value)}
+                className="w-full border p-2 rounded h-24"
               />
-              {(errors.drugs || errors.instructions) && (
-                <p className="text-red-500 text-sm mt-2">יש להזין לפחות תרופה אחת או הוראות שימוש</p>
-              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1350,7 +1352,7 @@ const saveClient = async () => {
                 <label className="block text-sm mb-1">שם הרופא </label>
                 <input
                   type="text"
-                  value={prescriptionForm.doctorName || currentStaff?.fullName || ""}
+                  value={prescriptionForm.doctorName}
                   onChange={(e) =>
                     setPrescriptionForm(prev => ({
                       ...prev,
@@ -1384,7 +1386,7 @@ const saveClient = async () => {
               <button
                 onClick={savePrescription}
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white"
-                disabled={savingPrescription || (!drugs.some(d => (d.display || '').trim()) && !instructions.trim()) || !prescriptionForm.doctorName.trim()}
+                disabled={savingPrescription || !prescriptionForm.doctorName.trim()}
               >
                 {savingPrescription ? 'שומר...' : 'שמירה'}
               </button>

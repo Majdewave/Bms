@@ -36,9 +36,9 @@ export default function ActionButton({ type, onClick }: Props) {
       className: 'bg-gray-100 text-gray-600 hover:bg-gray-200',
     },
     notDocumented: {
-      label: 'לא מתועד',
+      label: 'לא לתעד',
       icon: <X size={16} />,
-      className: 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+      className: 'bg-red-300 text-gray-800 hover:bg-red-500',
     },
   }
 
