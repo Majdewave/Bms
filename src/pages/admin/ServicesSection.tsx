@@ -102,48 +102,56 @@ export default function ServicesSection({ isAdmin }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 mt-8" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
-        <h2 className="w-full text-xl font-semibold text-gray-800">
-          {t('services.title')}
-        </h2>
+<div
+  className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg mt-8"
+  dir={isRTL ? 'rtl' : 'ltr'}
+>
 
-        {isAdmin && (
-          <div className="w-full md:w-auto grid grid-cols-1 gap-2 md:flex md:flex-row md:items-center">
-            <input
-              type="text"
-              placeholder={t('services.serviceName')}
-              value={newService.name}
-              onChange={(e) =>
-                setNewService((s) => ({ ...s, name: e.target.value }))
-              }
-              className="w-full px-3 py-2 border rounded-lg md:w-auto"
-            />
+  <div className="px-6 py-4 flex items-center bg-[#F6A27B]">
+    <h2 className="text-lg font-semibold text-white">
+      {t('services.title')}
+    </h2>
+  </div>
 
-            <input
-              type="number"
-              min={1}
-              value={newService.defaultDurationMinutes}
-              onChange={(e) =>
-                setNewService((s) => ({
-                  ...s,
-                  defaultDurationMinutes: Number(e.target.value) || 60
-                }))
-              }
-              className="w-full px-3 py-2 border rounded-lg md:w-24"
-            />
+  <div className="p-6 border-b border-slate-200">
+    {isAdmin && (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
 
-            <button
-              type="button"
-              onClick={handleAdd}
-              disabled={saving}
-              className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 md:w-auto"
-            >
-              {saving ? t('common.saving') || 'Saving...' : t('services.add')}
-            </button>
-          </div>
-        )}
+        <input
+          type="text"
+          placeholder={t('services.serviceName')}
+          value={newService.name}
+          onChange={(e) =>
+            setNewService((s) => ({ ...s, name: e.target.value }))
+          }
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+        />
+
+        <input
+          type="number"
+          min={1}
+          value={newService.defaultDurationMinutes}
+          onChange={(e) =>
+            setNewService((s) => ({
+              ...s,
+              defaultDurationMinutes: Number(e.target.value) || 60
+            }))
+          }
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+        />
+
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={saving}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 transition disabled:opacity-50"
+        >
+          {saving ? t('common.saving') : t('services.add')}
+        </button>
+
       </div>
+    )}
+  </div>
 
       <div className="p-6">
         {services.length === 0 ? (
@@ -256,7 +264,7 @@ export default function ServicesSection({ isAdmin }: Props) {
 
             <div className="hidden md:block overflow-x-auto">
               <table dir={isRTL ? 'rtl' : 'ltr'} className="w-full text-sm">
-                <thead className="text-gray-600 border-b">
+                <thead className="bg-slate-50 text-slate-700 border-b">
                   <tr>
                     {isRTL ? (
                       <>
@@ -275,7 +283,7 @@ export default function ServicesSection({ isAdmin }: Props) {
                 </thead>
                 <tbody>
                   {services.map((service) => (
-                    <tr key={service.id} className="border-b">
+                    <tr key={service.id} className="border-b hover:bg-slate-50 transition-colors">
                       {isRTL ? (
                         <>
                           <td className="px-4 py-2 text-right">

@@ -29,7 +29,12 @@ export const clientPhotosService = clientPhotosApi
 export type { LoginRequest, LoginResponse, AuthUser } from './auth'
 export type { DashboardData, AdminDashboardStats, RecentActivity } from './dashboard'
 export type { Appointment, AppointmentClient } from './appointments'
-export type { Invoice } from './invoices'
+export type {
+  CreateInvoiceLineItemRequest,
+  CreateInvoiceRequest,
+  Invoice,
+  InvoiceLineItem,
+} from './invoices'
 export type { StorageFile } from './files'
 export type { UserProfile, PasswordChangeRequest } from './profile'
 export type {

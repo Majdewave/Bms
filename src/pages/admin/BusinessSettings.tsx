@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Building2, Upload, CheckCircle, X } from 'lucide-react'
+import { Building2, Upload, CheckCircle, X, FileText } from 'lucide-react'
 import { Container, PageHeader } from '@/components/Layout'
 import { Card, CardContent } from '@/components'
-import { getBusinessSettings, updateBusinessSettings, uploadTenantLogo } from '@/api/businessSettings'
+import { getBusinessSettings, updateBusinessSettings, deleteBusinessStamp, uploadTenantLogo,  uploadBusinessStamp} from '@/api/businessSettings'
 import ServicesSection from './ServicesSection'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
@@ -15,6 +15,8 @@ interface TenantContactSettings {
   phone?: string | null
   whatsApp?: string | null
   logoUrl?: string | null
+  defaultVatRate?: number | null
+  currency?: 'ILS' | 'USD' | 'EUR' | string | null
   autoDeleteNotDocumentedAfterDays?: number | null
   enableAutoDeleteNotDocumented?: boolean | null
 }
@@ -29,13 +31,25 @@ export default function BusinessSettings() {
     name: string
     phone: string
     whatsApp: string
+    defaultVatRate: string
+    currency: 'ILS' | 'USD' | 'EUR'
+      invoicePrefix: string
+    nextInvoiceNumber: string
   }>({
     name: '',
     phone: '',
     whatsApp: '',
+    defaultVatRate: '18',
+    currency: 'ILS',
+    invoicePrefix: 'INV-',
+    nextInvoiceNumber: '1',
   })
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [businessStampUrl, setBusinessStampUrl] = useState<string | null>(null)
+  const [stampPreview, setStampPreview] = useState<string | null>(null)
+  const [uploadingStamp, setUploadingStamp] = useState(false)
+  const [deletingStamp, setDeletingStamp] = useState(false)
   const [logoVersion, setLogoVersion] = useState<number>(Date.now())
   const [pageLoading, setPageLoading] = useState(false)
   const [autoDeleteDays, setAutoDeleteDays] = useState(1)
@@ -87,28 +101,46 @@ export default function BusinessSettings() {
         name: settings.name,
         phone: tenant?.phone ?? '',
         whatsApp: tenant?.whatsApp ?? '',
+        defaultVatRate: String(tenant?.defaultVatRate ?? settings.defaultVatRate ?? 18),
+        currency: (tenant?.currency ?? settings.currency ?? 'ILS') as 'ILS' | 'USD' | 'EUR',
+        invoicePrefix: settings.invoicePrefix ?? 'INV-',
+        nextInvoiceNumber: String(settings.nextInvoiceNumber ?? 1),
       })
 
       if (settings.logoUrl) {
         setLogoUrl(settings.logoUrl)
         setLogoPreview(settings.logoUrl)
         setLogoVersion(Date.now())
+
+        if (settings.businessStampUrl) {
+          setBusinessStampUrl(settings.businessStampUrl)
+          setStampPreview(settings.businessStampUrl)
+        }
         setTenant((prev) => ({
           ...prev,
           name: settings.name,
           phone: tenant?.phone ?? '',
           whatsApp: tenant?.whatsApp ?? '',
           logoUrl: settings.logoUrl,
+          defaultVatRate: tenant?.defaultVatRate ?? settings.defaultVatRate ?? 18,
+          currency: tenant?.currency ?? settings.currency ?? 'ILS',
           autoDeleteNotDocumentedAfterDays: tenant?.autoDeleteNotDocumentedAfterDays ?? 1,
           enableAutoDeleteNotDocumented: tenant?.enableAutoDeleteNotDocumented ?? true,
         }))
       } else {
+            if (settings.businessStampUrl) {
+                setBusinessStampUrl(settings.businessStampUrl)
+                setStampPreview(settings.businessStampUrl)
+            }
+
         setTenant((prev) => ({
           ...prev,
           name: settings.name,
           phone: tenant?.phone ?? '',
           whatsApp: tenant?.whatsApp ?? '',
           logoUrl: null,
+          defaultVatRate: tenant?.defaultVatRate ?? settings.defaultVatRate ?? 18,
+          currency: tenant?.currency ?? settings.currency ?? 'ILS',
           autoDeleteNotDocumentedAfterDays: tenant?.autoDeleteNotDocumentedAfterDays ?? 1,
           enableAutoDeleteNotDocumented: tenant?.enableAutoDeleteNotDocumented ?? true,
         }))
@@ -120,6 +152,63 @@ export default function BusinessSettings() {
       setPageLoading(false)
     }
   }
+
+
+  const handleStampDelete = async () => {
+    if (!window.confirm('האם למחוק את חתימת העסק?')) {
+      return
+    }
+
+    setDeletingStamp(true)
+
+    try {
+      await deleteBusinessStamp()
+
+      setBusinessStampUrl(null)
+      setStampPreview(null)
+
+      setTenant(prev => ({
+        ...prev,
+        businessStampUrl: null
+      }))
+
+      showToastNotification('חתימת העסק הוסרה')
+    } catch (err) {
+      console.error(err)
+      showToastNotification('אירעה שגיאה')
+    } finally {
+      setDeletingStamp(false)
+    }
+  }
+
+
+  
+  const handleStampUpload = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+
+  setUploadingStamp(true)
+
+  try {
+    const result = await uploadBusinessStamp(file)
+
+    if (result.businessStampUrl) {
+      setBusinessStampUrl(result.businessStampUrl)
+      setStampPreview(result.businessStampUrl)
+    }
+
+    showToastNotification(t('admin.settings.saveSuccess'))
+  } catch (err) {
+    console.error(err)
+    showToastNotification(t('admin.settings.saveError'))
+  } finally {
+    setUploadingStamp(false)
+    e.target.value = ''
+  }
+}
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -203,8 +292,13 @@ export default function BusinessSettings() {
       await apiClient.put('/api/tenant/me', {
         name: formData.name,
         logoUrl: logoUrl,
+        businessStampUrl: businessStampUrl,
         phone: formData.phone,
         whatsApp: formData.whatsApp,
+        defaultVatRate: Number(formData.defaultVatRate) || 18,
+        currency: formData.currency,
+        invoicePrefix: formData.invoicePrefix,
+        nextInvoiceNumber: Number(formData.nextInvoiceNumber),
       })
 
       await put('/api/tenant/auto-delete-setting', {
@@ -256,10 +350,10 @@ export default function BusinessSettings() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">
+        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
+          <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">          
+              <div className="px-6 py-3 rounded-t-xl bg-[#5B8DEF]">
+              <h2 className="text-lg font-semibold text-white">
                 {t('admin.settings.businessDetails')}
               </h2>
             </div>
@@ -304,15 +398,111 @@ export default function BusinessSettings() {
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                   />
                 </div>
+
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">
-                {t('admin.settings.branding')}
-              </h2>
+          <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">          
+            <div className="px-6 py-4 flex items-center rounded-t-xl bg-[#14B8A6]">          
+                <h2 className="text-lg font-semibold text-white">
+              הגדרות חשבונית
+            </h2>
+          </div>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Currency */}
+            <div>
+              <label className="block text-sm mb-1">מטבע</label>
+              <select
+                name="currency"
+                value={formData.currency}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    currency: e.target.value as 'ILS' | 'USD' | 'EUR'
+                  }))
+                }
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="ILS">ILS (₪)</option>
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+              </select>
+            </div>
+
+            {/* VAT */}
+            <div>
+              <label className="block text-sm mb-1">
+                {t('admin.settings.defaultVatRate')}
+              </label>
+
+              <div className="relative">
+                <input
+                  name="defaultVatRate"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.defaultVatRate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 pr-8 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">
+                  %
+                </span>
+              </div>
+            </div>
+
+            {/* Prefix */}
+            <div>
+              <label className="block text-sm mb-1">
+                קידומת חשבונית
+              </label>
+
+              <input
+                name="invoicePrefix"
+                value={formData.invoicePrefix}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* Next Number */}
+            <div>
+              <label className="block text-sm mb-1">
+                מספר חשבונית הבא
+              </label>
+
+              <input
+                name="nextInvoiceNumber"
+                type="number"
+                min="1"
+                value={formData.nextInvoiceNumber}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+          </div>
+          <div className="md:col-span-2">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="text-xs text-slate-500 mb-1">
+              <FileText className="w-4 h-4 text-indigo-600" />
+              תצוגה מקדימה
+            </div>
+            <div className="text-lg font-bold text-indigo-600 tracking-wide">
+              {formData.invoicePrefix}{formData.nextInvoiceNumber}
+            </div>
+          </div>
+        </div>
+      </div>
+
+          <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">         
+            <div className="px-6 py-4 flex items-center bg-[#B89CF8]">
+                <h2 className="text-lg font-semibold text-white">
+                    {t('admin.settings.branding')}
+                </h2>
             </div>
             <div className="p-6">
               <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -329,7 +519,7 @@ export default function BusinessSettings() {
                       <img
                         src={getCacheBustedLogoUrl(logoPreview)}
                         alt="Business logo"
-                        className="max-w-full object-contain"
+                        className="max-w-full max-h-48 object-contain transition-transform duration-300 hover:scale-105"
                         style={{ maxHeight: '220px', borderBottom: 0 }}
                       />
                     </div>
@@ -343,14 +533,14 @@ export default function BusinessSettings() {
                     type="button"
                     onClick={handleLogoDelete}
                     disabled={deletingLogo || uploadingLogo || !logoPreview}
-                    className="px-3 py-1 text-sm bg-red-100 text-red-600 rounded-md hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 rounded-lg text-sm bg-red-100 text-red-600 rounded-md hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {deletingLogo ? t('common.deleting') : t('settings.deleteLogo')}
                   </button>
 
                   <label
                     htmlFor="logo-upload"
-                    className={`px-3 py-1 text-sm bg-indigo-600 text-white rounded-md cursor-pointer hover:bg-indigo-700 ${
+                    className={`px-4 py-2 rounded-lg text-sm bg-indigo-600 text-white rounded-md cursor-pointer hover:bg-indigo-700 ${
                       uploadingLogo || deletingLogo ? 'opacity-50 pointer-events-none' : ''
                     }`}
                   >
@@ -370,25 +560,85 @@ export default function BusinessSettings() {
               <p className="mt-3 text-xs text-slate-500">
                 {t('admin.settings.logoHelper')}
               </p>
+
+              <hr className="my-8" />
+
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+                <FileText className="w-4 h-4 text-indigo-600" />
+                חתימת העסק
+              </label>
+
+                <div className="flex flex-col items-center gap-3">
+
+                  {stampPreview ? (
+                    <div className="w-full p-4 bg-slate-50 rounded-lg border">
+                      <div className="flex justify-center bg-white p-6 rounded-lg">
+                      <img
+                          src={getAbsoluteLogoUrl(stampPreview)}
+                          alt="Business Stamp"
+                          className="max-h-28 object-contain"
+                      />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-gray-400 text-sm">
+                      לא הועלתה חתימה
+                    </div>
+                  )}
+
+
+                  <div className="flex items-center justify-center gap-3 mt-2">
+                    <label
+                      htmlFor="stamp-upload"
+                      className={`px-4 py-2 bg-indigo-600 text-white rounded-lg cursor-pointer hover:bg-indigo-700 ${
+                        uploadingStamp || deletingStamp
+                          ? 'opacity-50 pointer-events-none'
+                          : ''
+                      }`}
+                    >
+                      {uploadingStamp ? 'מעלה...' : 'העלה חתימה'}
+
+                      <input
+                        id="stamp-upload"
+                        type="file"
+                        hidden
+                        accept="image/png,image/jpeg,image/jpg"
+                        onChange={handleStampUpload}
+                        disabled={uploadingStamp || deletingStamp}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={handleStampDelete}
+                      disabled={!stampPreview || deletingStamp || uploadingStamp}
+                      className="px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {deletingStamp ? 'מוחק...' : 'מחק חתימה'}
+                    </button>
+
+                  </div>
+                </div>
+
             </div>
           </div>
 
           <ServicesSection isAdmin={isAdmin} />
-
-          <Card>
-            <CardContent>
+              <Card className="overflow-hidden">
+              <div className="px-6 py-3 bg-[#64748B] text-white rounded-t-xl">
+                  <h2 className="text-lg font-semibold text-white">
+                      {t('settings.autoDeleteTitle')}
+                  </h2>
+              </div>
+              <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold">
-                    {t('settings.autoDeleteTitle')}
-                  </h3>
+                <div className="flex justify-end">
                   {!enabled && (
                     <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">
                       {t('common.off')}
                     </span>
                   )}
                 </div>
-
                 <p className="text-sm text-slate-500">
                   {t('settings.autoDeleteDescription')}
                 </p>
@@ -443,9 +693,9 @@ export default function BusinessSettings() {
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={saving || uploadingLogo || deletingLogo}
-              className={`px-8 py-3 rounded-lg font-medium transition-all ${
-                saving || uploadingLogo || deletingLogo
+              disabled={saving ||uploadingLogo ||deletingLogo || uploadingStamp}
+              className={`px-10 py-3 rounded-xlfont-medium transition-all ${
+                saving || uploadingLogo || deletingLogo || uploadingStamp
                   ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
                   : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white shadow-md hover:shadow-lg'
               }`}

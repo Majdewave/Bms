@@ -421,6 +421,8 @@
       "issued": "Issued",
       "due": "Due",
       "items": "Items",
+      "subtotal": "Subtotal",
+      "vat": "VAT",
       "downloadPDF": "Download PDF"
     },
     "files": {
@@ -612,6 +614,7 @@
       "branding": "Branding",
       "businessName": "Business Name",
       "businessNamePlaceholder": "Enter your business name",
+      "defaultVatRate": "Default VAT %",
       "phone": "Phone Number",
       "phonePlaceholder": "+1 (555) 000-0000",
       "email": "Email Address",
@@ -636,6 +639,7 @@
       "description": "Manage invoices and payments for all clients",
       "create": "Create Invoice",
       "createNew": "Create New Invoice",
+      "editTitle": "Edit Invoice",
       "list": "Invoice List",
       "search": "Search by invoice number or client...",
       "filter": "Filter",
@@ -656,6 +660,7 @@
       "form": {
         "client": "Client",
         "selectClient": "Select a client",
+        "invoiceNumber": "Invoice Number",
         "date": "Invoice Date",
         "dueDate": "Due Date",
         "lineItems": "Line Items",
@@ -663,10 +668,23 @@
         "description": "Description",
         "quantity": "Qty",
         "price": "Price",
+        "lineTotal": "Line Total",
         "total": "Total",
+        "subtotal": "Subtotal",
+        "vatRate": "VAT %",
+        "vatAmount": "VAT",
+        "totalAmount": "Total",
+        "removeItem": "Remove item",
         "notes": "Notes",
         "notesPlaceholder": "Add any notes or payment terms...",
-        "submit": "Create Invoice"
+        "submit": "Save Invoice",
+        "defaultDescription": "Service",
+        "validationClient": "Select a client.",
+        "validationInvoiceNumber": "Enter an invoice number.",
+        "validationLineItems": "Add at least one line item.",
+        "validationDescription": "Each line item needs a description.",
+        "validationQuantity": "Each line item quantity must be greater than 0.",
+        "validationPrice": "Each line item price must be 0 or higher."
       }
     },
     "reports": {

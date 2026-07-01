@@ -1,4 +1,9 @@
-// Invoices API
+import { del, get, getBlob, post, put } from './apiClient'
+
+export const DEFAULT_VAT_RATE = 18
+
+export type InvoiceStatus = 'paid' | 'pending' | 'overdue'
+
 export interface InvoiceLineItem {
   id: string
   description: string
@@ -14,163 +19,147 @@ export interface Invoice {
   clientName: string
   clientEmail: string
   amount: number
+  subtotal: number
+  vatRate: number
+  vatAmount: number
+  totalAmount: number
   invoiceDate: string
   date: string
   dueDate: string
-  status: 'paid' | 'pending' | 'overdue'
+  status: InvoiceStatus
   lineItems: InvoiceLineItem[]
   notes?: string
 }
 
+export interface CreateInvoiceLineItemRequest {
+  description: string
+  quantity: number
+  price: number
+}
+
 export interface CreateInvoiceRequest {
   clientId: string
-  invoiceNumber: string
-  amount: number
   invoiceDate?: string
   dueDate?: string
   notes?: string
+  vatRate?: number
+  lineItems: CreateInvoiceLineItemRequest[]
 }
 
-const mockInvoices: Invoice[] = [
-  {
-    id: '1',
-    number: 'INV-2024-001',
-    clientId: '1',
-    clientName: 'Sarah Johnson',
-    clientEmail: 'sarah.j@example.com',
-    amount: 2500.0,
-    invoiceDate: '2024-02-01',
-    date: '2024-02-01',
-    dueDate: '2024-02-15',
-    status: 'paid',
-    lineItems: [
-      { id: '1', description: 'Consultation Session', quantity: 5, price: 500, total: 2500 }
-    ],
-  },
-  {
-    id: '2',
-    number: 'INV-2024-002',
-    clientId: '2',
-    clientName: 'Michael Chen',
-    clientEmail: 'mchen@example.com',
-    amount: 3750.5,
-    invoiceDate: '2024-02-05',
-    date: '2024-02-05',
-    dueDate: '2024-02-20',
-    status: 'pending',
-    lineItems: [
-      { id: '1', description: 'Training Package', quantity: 1, price: 3750.5, total: 3750.5 }
-    ],
-  },
-  {
-    id: '3',
-    number: 'INV-2024-003',
-    clientId: '3',
-    clientName: 'Emma Davis',
-    clientEmail: 'emma.d@example.com',
-    amount: 1200.0,
-    invoiceDate: '2024-01-20',
-    date: '2024-01-20',
-    dueDate: '2024-02-03',
-    status: 'overdue',
-    lineItems: [
-      { id: '1', description: 'Support Services', quantity: 2, price: 600, total: 1200 }
-    ],
-  },
-]
-
-export const getInvoices = async (): Promise<Invoice[]> => {
-  const res = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/invoices`, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
-  })
-
-  if (!res.ok) {
-    throw new Error('Failed to load invoices')
+const roundCurrency = (value: number): number => {
+  if (!Number.isFinite(value)) {
+    return 0
   }
 
-  const data = await res.json()
-
-  return (data as any[]).map((invoice) => {
-    const rawStatus = String(invoice.status ?? 'pending').toLowerCase()
-    const status: Invoice['status'] = rawStatus === 'paid' || rawStatus === 'overdue' ? rawStatus : 'pending'
-    const invoiceDate = invoice.invoiceDate ?? invoice.date ?? invoice.createdAt ?? new Date().toISOString()
-
-    return {
-      id: String(invoice.id ?? ''),
-      number: String(invoice.number ?? invoice.invoiceNumber ?? ''),
-      clientId: String(invoice.clientId ?? ''),
-      clientName: String(invoice.clientName ?? ''),
-      clientEmail: String(invoice.clientEmail ?? ''),
-      amount: Number(invoice.amount ?? 0),
-      invoiceDate: String(invoiceDate),
-      date: String(invoiceDate),
-      dueDate: String(invoice.dueDate ?? invoiceDate),
-      status,
-      lineItems: Array.isArray(invoice.lineItems) ? invoice.lineItems : [],
-      notes: invoice.notes,
-    }
-  })
+  return Math.round((value + Number.EPSILON) * 100) / 100
 }
 
-export const getInvoice = (id: string): Promise<Invoice | null> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const invoice = mockInvoices.find((inv) => inv.id === id)
-      resolve(invoice || null)
-    }, 300)
-  })
+const toNumber = (value: unknown, fallback = 0): number => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const normalizeVatRate = (value: unknown): number => {
+  const parsed = toNumber(value, DEFAULT_VAT_RATE)
+
+  if (parsed <= 0 || parsed > 100) {
+    return DEFAULT_VAT_RATE
+  }
+
+  return roundCurrency(parsed)
+}
+
+const normalizeInvoiceLineItem = (lineItem: any, index: number): InvoiceLineItem => {
+  const quantity = toNumber(lineItem?.quantity, 0)
+  const price = roundCurrency(toNumber(lineItem?.price, 0))
+  const total = roundCurrency(toNumber(lineItem?.total, quantity * price))
+
+  return {
+    id: String(lineItem?.id ?? `line-item-${index}`),
+    description: String(lineItem?.description ?? ''),
+    quantity,
+    price,
+    total,
+  }
+}
+
+export const calculateInvoiceTotals = (
+  lineItems: Array<Pick<CreateInvoiceLineItemRequest, 'quantity' | 'price'>>,
+  vatRate?: number
+) => {
+  const normalizedVatRate = normalizeVatRate(vatRate)
+  const subtotal = roundCurrency(
+    lineItems.reduce((sum, item) => sum + toNumber(item.quantity) * toNumber(item.price), 0)
+  )
+  const vatAmount = roundCurrency(subtotal * normalizedVatRate / 100)
+  const totalAmount = roundCurrency(subtotal + vatAmount)
+
+  return {
+    subtotal,
+    vatRate: normalizedVatRate,
+    vatAmount,
+    totalAmount,
+  }
+}
+
+const normalizeInvoice = (invoice: any): Invoice => {
+  const lineItems = Array.isArray(invoice?.lineItems)
+    ? invoice.lineItems.map(normalizeInvoiceLineItem)
+    : []
+  const fallbackVatRate = normalizeVatRate(invoice?.vatRate)
+  const fallbackTotals = calculateInvoiceTotals(lineItems, fallbackVatRate)
+  const totalAmount = roundCurrency(toNumber(invoice?.totalAmount, toNumber(invoice?.amount, fallbackTotals.totalAmount)))
+  const subtotal = roundCurrency(toNumber(invoice?.subtotal, fallbackTotals.subtotal))
+  const vatRate = normalizeVatRate(invoice?.vatRate ?? fallbackTotals.vatRate)
+  const vatAmount = roundCurrency(toNumber(invoice?.vatAmount, fallbackTotals.vatAmount))
+  const rawStatus = String(invoice?.status ?? 'pending').toLowerCase()
+  const status: InvoiceStatus = rawStatus === 'paid' || rawStatus === 'overdue' ? rawStatus : 'pending'
+  const invoiceDate = String(invoice?.invoiceDate ?? invoice?.date ?? invoice?.createdAt ?? new Date().toISOString())
+
+  return {
+    id: String(invoice?.id ?? ''),
+    number: String(invoice?.number ?? invoice?.invoiceNumber ?? ''),
+    clientId: String(invoice?.clientId ?? ''),
+    clientName: String(invoice?.clientName ?? ''),
+    clientEmail: String(invoice?.clientEmail ?? ''),
+    amount: totalAmount,
+    subtotal,
+    vatRate,
+    vatAmount,
+    totalAmount,
+    invoiceDate,
+    date: invoiceDate,
+    dueDate: invoice?.dueDate ? String(invoice.dueDate) : '',
+    status,
+    lineItems,
+    notes: invoice?.notes ?? undefined,
+  }
+}
+
+export const getInvoices = async (): Promise<Invoice[]> => {
+  const invoices = await get<any[]>('/api/invoices')
+  return invoices.map(normalizeInvoice)
+}
+
+export const getInvoice = async (id: string): Promise<Invoice | null> => {
+  const invoice = await get<any>(`/api/invoices/${id}`)
+  return invoice ? normalizeInvoice(invoice) : null
 }
 
 export const createInvoice = async (data: CreateInvoiceRequest): Promise<Invoice> => {
-  const res = await fetch(`${(import.meta as any).env.VITE_API_URL}/api/invoices`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify(data),
-  })
-
-  if (!res.ok) throw new Error('Failed to create invoice')
-
-  return await res.json()
+  const invoice = await post<any>('/api/invoices', data)
+  return normalizeInvoice(invoice)
 }
 
-export const updateInvoiceStatus = (id: string, status: 'paid' | 'pending' | 'overdue'): Promise<Invoice> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const invoice = mockInvoices.find((inv) => inv.id === id)
-      if (!invoice) {
-        reject(new Error('Invoice not found'))
-        return
-      }
-      invoice.status = status
-      resolve(invoice)
-    }, 500)
-  })
+export const updateInvoice = async (id: string, data: CreateInvoiceRequest): Promise<Invoice> => {
+  const invoice = await put<any>(`/api/invoices/${id}`, data)
+  return normalizeInvoice(invoice)
 }
 
-export const downloadInvoice = (id: string): Promise<Blob> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(new Blob([`Invoice PDF content for ${id}`], { type: 'application/pdf' }))
-    }, 500)
-  })
+export const deleteInvoice = async (id: string): Promise<void> => {
+  await del<void>(`/api/invoices/${id}`)
 }
 
-export const payInvoice = (id: string): Promise<Invoice> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const invoice = mockInvoices.find((inv) => inv.id === id)
-      if (!invoice) {
-        reject(new Error('Invoice not found'))
-        return
-      }
-
-      const paidInvoice = { ...invoice, status: 'paid' as const }
-      resolve(paidInvoice)
-    }, 1000)
-  })
+export const downloadInvoice = async (id: string): Promise<Blob> => {
+  return getBlob(`/api/invoices/${id}/pdf`)
 }

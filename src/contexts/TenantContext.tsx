@@ -9,6 +9,8 @@ export interface Tenant {
   phone?: string | null
   whatsApp?: string | null
   logoUrl?: string | null
+  defaultVatRate?: number | null
+  currency?: 'ILS' | 'USD' | 'EUR' | string | null
   autoDeleteNotDocumentedAfterDays?: number | null
   enableAutoDeleteNotDocumented?: boolean | null
 }

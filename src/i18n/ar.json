@@ -422,6 +422,8 @@
       "issued": "تم الإصدار",
       "due": "مستحق",
       "items": "العناصر",
+      "subtotal": "المجموع الفرعي",
+      "vat": "ضريبة القيمة المضافة",
       "downloadPDF": "تحميل PDF"
     },
     "files": {
@@ -610,6 +612,7 @@
       "branding": "العلامة التجارية",
       "businessName": "اسم العمل",
       "businessNamePlaceholder": "أدخل اسم عملك",
+      "defaultVatRate": "نسبة ضريبة القيمة المضافة الافتراضية %",
       "phone": "رقم الهاتف",
       "phonePlaceholder": "+1 (555) 000-0000",
       "email": "البريد الإلكتروني",
@@ -634,6 +637,7 @@
       "description": "إدارة الفواتير والمدفوعات لجميع العملاء",
       "create": "إنشاء فاتورة",
       "createNew": "إنشاء فاتورة جديدة",
+      "editTitle": "تعديل الفاتورة",
       "list": "قائمة الفواتير",
       "search": "ابحث حسب رقم الفاتورة أو العميل...",
       "filter": "تصفية",
@@ -654,17 +658,31 @@
       "form": {
         "client": "العميل",
         "selectClient": "اختر العميل",
+        "invoiceNumber": "رقم الفاتورة",
         "date": "تاريخ الفاتورة",
         "dueDate": "تاريخ الاستحقاق",
-        "lineItems": "تفاصيل البند",
+        "lineItems": "بنود الفاتورة",
         "addItem": "أضف بند",
         "description": "الوصف",
         "quantity": "الكمية",
         "price": "السعر",
+        "lineTotal": "إجمالي البند",
         "total": "الإجمالي",
+        "subtotal": "المجموع الفرعي",
+        "vatRate": "ضريبة القيمة المضافة %",
+        "vatAmount": "ضريبة القيمة المضافة",
+        "totalAmount": "الإجمالي النهائي",
+        "removeItem": "إزالة البند",
         "notes": "ملاحظات",
         "notesPlaceholder": "أضف ملاحظات أو شروط الدفع...",
-        "submit": "إنشاء فاتورة"
+        "submit": "حفظ الفاتورة",
+        "defaultDescription": "خدمة",
+        "validationClient": "يرجى اختيار عميل.",
+        "validationInvoiceNumber": "يرجى إدخال رقم الفاتورة.",
+        "validationLineItems": "أضف بنداً واحداً على الأقل.",
+        "validationDescription": "كل بند يحتاج إلى وصف.",
+        "validationQuantity": "يجب أن تكون كمية كل بند أكبر من 0.",
+        "validationPrice": "يجب أن يكون سعر كل بند 0 أو أكثر."
       }
     },
     "reports": {
