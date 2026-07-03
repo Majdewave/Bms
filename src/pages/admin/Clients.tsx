@@ -6,7 +6,7 @@ import { clientsService } from '@/api'
 import type { Client } from '@/api'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Filter, Plus, Mail, Phone, Users, Edit, ShieldOff, ShieldCheck, Trash2 } from 'lucide-react'
+import { Search, Filter, Plus, Mail, Phone, Users, Edit, ShieldOff, ShieldCheck, Trash2, ChevronDown, ChevronUp, User } from 'lucide-react'
 
 export default function Clients() {
   const navigate = useNavigate()
@@ -19,6 +19,7 @@ export default function Clients() {
   const [error, setError] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showNotDocumentedOnly, setShowNotDocumentedOnly] = useState(false)
+  const [openMobileCards, setOpenMobileCards] = useState<Record<string, boolean>>({})
 
   const canView =
     hasPermission?.('view_clients') ||
@@ -196,10 +197,12 @@ export default function Clients() {
           ) : (
             <>
               {/* Mobile: cards */}
-              <div className="flex flex-col gap-2 md:hidden">
+              <div className="hidden max-[540px]:flex flex-col gap-2">
                 {filteredClients.map((client, idx) => {
                   const clientId = client?.id ?? ''
                   const isBlocked = client?.isActive === false || client?.status === 'blocked' || client?.status === 'inactive';
+                  const isNotDocumented = Boolean(client?.isNotDocumented || (client as any)?.isDocumented === false);
+                  const isOpen = Boolean(openMobileCards[clientId]);
                   const handleBlock = async (e: React.MouseEvent) => {
                     e.stopPropagation();
                     await clientsService.updateClient(clientId, { ...client, isActive: !client.isActive });
@@ -214,60 +217,79 @@ export default function Clients() {
                       setClients(Array.isArray(data) ? data : data?.data ?? []);
                     }
                   };
+
+                  const toggleMobileCard = () => {
+                    setOpenMobileCards((current) => ({
+                      ...current,
+                      [clientId]: !current[clientId],
+                    }));
+                  };
+
                   return (
                     <div
                       key={clientId}
-                      onClick={() => clientId && navigate(`/admin/clients/${clientId}`)}
-                      className={`rounded-xl px-4 py-3 flex flex-col gap-2 cursor-pointer ${
-                        client.isNotDocumented
-                          ? 'bg-red-50 border border-red-100'
-                          : idx % 2 === 0
-                          ? 'bg-sky-100 border border-sky-200'
-                          : 'bg-white border border-slate-100'
-                      }`}
+                      className="rounded-xl border border-slate-200 shadow-md overflow-hidden"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-primary-600 text-white rounded-lg flex items-center justify-center text-sm font-semibold shrink-0">
-                            {getInitials(client?.fullName)}
+                      <button
+                        type="button"
+                        onClick={toggleMobileCard}
+                        className={`w-full px-4 py-3 transition-colors ${
+                          isNotDocumented ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex items-center gap-2 text-white font-semibold">
+                            <User className="w-4 h-4 shrink-0" />
+                            <span className="truncate text-right">{client?.fullName ?? 'Unnamed'}</span>
+                            <span className={isBlocked
+                              ? 'inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 ms-2'
+                              : 'inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 ms-2'}>
+                              {isBlocked ? t('admin.clients.blocked', 'Blocked') : t('admin.clients.active', 'Active')}
+                            </span>
                           </div>
-                          <span className="text-sm text-slate-700">
-                            <span className="text-slate-500">{t('admin.clients.table.client')}:</span> <span className="font-semibold text-slate-800">{client?.fullName ?? 'Unnamed'}</span>
+                          <span className={`text-white transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                           </span>
                         </div>
-                        <span className={isBlocked
-                          ? 'px-2 py-0.5 rounded-full text-sm font-semibold bg-red-100 text-red-700'
-                          : 'px-2 py-0.5 rounded-full text-sm font-semibold bg-green-100 text-green-700'}>
-                          {isBlocked ? t('admin.clients.blocked', 'Blocked') : t('admin.clients.active', 'Active')}
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-1 text-sm text-slate-500">
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-3.5 h-3.5" /><span className="text-slate-700"><span className="text-slate-500">Email:</span> {client?.email ?? '-'}</span>
+                      </button>
+
+                      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[520px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <div className={`px-4 py-3 space-y-3 ${
+                          client.isNotDocumented
+                            ? 'bg-red-50 border-t border-red-100'
+                            : idx % 2 === 0
+                            ? 'bg-sky-100 border-t border-sky-200'
+                            : 'bg-white border-t border-slate-100'
+                        }`}>
+                          <div className="flex flex-col gap-1 text-sm text-slate-500">
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-3.5 h-3.5" /><span className="text-slate-700"><span className="text-slate-500">Email:</span> {client?.email ?? '-'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-3.5 h-3.5" /><span className="text-slate-700"><span className="text-slate-500">Phone:</span> {client?.phone ?? '-'}</span>
+                            </div>
+                            <div className="text-slate-700"><span className="text-slate-500">{t('admin.clients.table.lastVisit')}:</span> {formatDate(client?.lastVisit)}</div>
+                          </div>
+                          <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
+                            <span className="text-slate-500">{t('common.status')}:</span>
+                            <span className={isBlocked
+                              ? 'px-2 py-0.5 rounded-full text-sm font-semibold bg-red-100 text-red-700'
+                              : 'px-2 py-0.5 rounded-full text-sm font-semibold bg-green-100 text-green-700'}>
+                              {isBlocked ? t('admin.clients.blocked', 'Blocked') : t('admin.clients.active', 'Active')}
+                            </span>
+                          </div>
+                          <div className="flex gap-3 items-center" onClick={e => e.stopPropagation()}>
+                            <Edit
+                              className="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer"
+                              onClick={e => { e.stopPropagation(); navigate(`/admin/clients/${clientId}`); }}
+                            />
+                            {isBlocked
+                              ? <ShieldCheck className="w-5 h-5 text-green-500 hover:text-green-700 cursor-pointer" onClick={handleBlock} />
+                              : <ShieldOff className="w-5 h-5 text-yellow-500 hover:text-yellow-700 cursor-pointer" onClick={handleBlock} />
+                            }
+                            <Trash2 className="w-5 h-5 text-red-500 hover:text-red-700 cursor-pointer" onClick={handleDelete} />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3.5 h-3.5" /><span className="text-slate-700"><span className="text-slate-500">Phone:</span> {client?.phone ?? '-'}</span>
-                        </div>
-                        <div className="text-slate-700"><span className="text-slate-500">{t('admin.clients.table.lastVisit')}:</span> {formatDate(client?.lastVisit)}</div>
-                      </div>
-                      <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
-                        <span className="text-slate-500">{t('common.status')}:</span>
-                        <span className={isBlocked
-                          ? 'px-2 py-0.5 rounded-full text-sm font-semibold bg-red-100 text-red-700'
-                          : 'px-2 py-0.5 rounded-full text-sm font-semibold bg-green-100 text-green-700'}>
-                          {isBlocked ? t('admin.clients.blocked', 'Blocked') : t('admin.clients.active', 'Active')}
-                        </span>
-                      </div>
-                      <div className="flex gap-3 items-center" onClick={e => e.stopPropagation()}>
-                        <Edit
-                          className="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer"
-                          onClick={e => { e.stopPropagation(); navigate(`/admin/clients/${clientId}`); }}
-                        />
-                        {isBlocked
-                          ? <ShieldCheck className="w-5 h-5 text-green-500 hover:text-green-700 cursor-pointer" onClick={handleBlock} />
-                          : <ShieldOff className="w-5 h-5 text-yellow-500 hover:text-yellow-700 cursor-pointer" onClick={handleBlock} />
-                        }
-                        <Trash2 className="w-5 h-5 text-red-500 hover:text-red-700 cursor-pointer" onClick={handleDelete} />
                       </div>
                     </div>
                   );
@@ -275,7 +297,7 @@ export default function Clients() {
               </div>
 
               {/* Desktop: original table */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="max-[540px]:hidden overflow-x-auto">
                 <table className="w-full text-sm">
 
                   <thead className="bg-slate-50 border-b">

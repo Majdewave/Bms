@@ -10,7 +10,7 @@ import type {
 } from '@/api'
 import { DEFAULT_VAT_RATE, calculateInvoiceTotals } from '@/api/invoices'
 import { useTranslation } from 'react-i18next'
-import { Check, Download, Filter, Package, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Download, Filter, Package, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 
 type InvoiceFormLineItem = {
   id: string
@@ -83,8 +83,19 @@ export default function AdminInvoices() {
   const [saving, setSaving] = useState(false)
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null)
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(() => createDefaultInvoiceForm())
+  const [openMobileCards, setOpenMobileCards] = useState<Record<string, boolean>>({})
 
   const isRtl = isRtlLanguage(i18n.language)
+
+  const paymentMethodLabelMap: Record<string, string> = {
+    cash: 'מזומן',
+    credit: 'אשראי',
+    bank_transfer: 'העברה בנקאית',
+    check: "צ'ק",
+    bit: 'BIT',
+    paybox: 'PayBox',
+    other: 'אחר',
+  }
 
   useEffect(() => {
     loadData()
@@ -279,6 +290,13 @@ export default function AdminInvoices() {
       invoice.clientName.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const toggleMobileCard = (invoiceId: string) => {
+    setOpenMobileCards((current) => ({
+      ...current,
+      [invoiceId]: !current[invoiceId],
+    }))
+  }
+
   const formatCurrency = (amount: number) => {
     const configuredCurrency = (tenant?.currency ?? 'ILS').toUpperCase()
     const currency = configuredCurrency === 'USD' || configuredCurrency === 'EUR' || configuredCurrency === 'ILS'
@@ -317,7 +335,7 @@ export default function AdminInvoices() {
           action={
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
+              className="inline-flex max-[540px]:hidden items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
             >
               <Plus className="w-4 h-4" />
               {t('admin.invoices.create')}
@@ -325,10 +343,20 @@ export default function AdminInvoices() {
           }
         />
 
+        <div dir="ltr" className="hidden max-[540px]:flex mb-6">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            {t('admin.invoices.create')}
+          </button>
+        </div>
+
         <Card>
           <CardHeader title={t('admin.invoices.list')} />
           <CardContent>
-            <div className="flex gap-4 mb-6">
+            <div className="flex gap-4 mb-6 max-[540px]:flex-col">
               <div className="flex-1 relative">
                 <Search className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
                 <input
@@ -341,7 +369,7 @@ export default function AdminInvoices() {
               </div>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors max-[540px]:w-full max-[540px]:justify-center"
               >
                 <Filter className="w-4 h-4" />
                 {t('admin.invoices.filter')}
@@ -353,7 +381,114 @@ export default function AdminInvoices() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+                <div className="hidden max-[540px]:block space-y-4">
+                  {filteredInvoices.map((invoice) => {
+                    const isOpen = Boolean(openMobileCards[invoice.id])
+                    const paymentMethod = invoice.paymentMethod ? paymentMethodLabelMap[invoice.paymentMethod] ?? invoice.paymentMethod : null
+                    const withholdingTax = typeof invoice.withholdingTaxRate === 'number' && invoice.withholdingTaxRate > 0
+                      ? `${invoice.withholdingTaxRate}%`
+                      : null
+
+                    return (
+                      <div key={invoice.id} className="rounded-xl border border-slate-200 shadow-md overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => toggleMobileCard(invoice.id)}
+                          className="w-full px-4 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white flex items-center justify-between hover:from-blue-600 hover:to-indigo-600 transition-colors"
+                        >
+                          <div className="text-start">
+                            <p className="font-mono text-sm font-semibold">{invoice.number}</p>
+                            <p className="text-sm text-blue-100 mt-1">{invoice.clientName}</p>
+                          </div>
+                          <span className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                          </span>
+                        </button>
+
+                        <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[520px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                          <div className="p-4 bg-white space-y-3">
+                            <div className="border-b border-slate-100 pb-2">
+                              <p className="text-xs text-slate-500">תאריך חשבונית:</p>
+                              <p className="text-sm font-medium text-slate-900">{formatDate(invoice.invoiceDate)}</p>
+                            </div>
+                            <div className="border-b border-slate-100 pb-2">
+                              <p className="text-xs text-slate-500">תאריך יעד:</p>
+                              <p className="text-sm font-medium text-slate-900">{formatDate(invoice.dueDate)}</p>
+                            </div>
+                            <div className="border-b border-slate-100 pb-2">
+                              <p className="text-xs text-slate-500">סכום:</p>
+                              <p className="text-sm font-semibold text-slate-900">{formatCurrency(invoice.totalAmount)}</p>
+                            </div>
+                            <div className="border-b border-slate-100 pb-2">
+                              <p className="text-xs text-slate-500">סטטוס:</p>
+                              <span
+                                className={`inline-flex px-2.5 py-1 mt-1 rounded-full text-xs font-semibold ${
+                                  invoice.status === 'paid'
+                                    ? 'bg-green-100 text-green-800'
+                                    : invoice.status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                {t(`admin.invoices.status.${invoice.status}`)}
+                              </span>
+                            </div>
+
+                            {paymentMethod && (
+                              <div className="border-b border-slate-100 pb-2">
+                                <p className="text-xs text-slate-500">אופן תשלום:</p>
+                                <p className="text-sm font-medium text-slate-900">{paymentMethod}</p>
+                              </div>
+                            )}
+
+                            {withholdingTax && (
+                              <div className="border-b border-slate-100 pb-2">
+                                <p className="text-xs text-slate-500">ניכוי מס:</p>
+                                <p className="text-sm font-medium text-slate-900">{withholdingTax}</p>
+                              </div>
+                            )}
+
+                            <div className="pt-1 flex items-center justify-between gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteInvoice(invoice.id)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-red-700 bg-red-50 rounded-lg"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                מחיקה
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(invoice)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                עריכה
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadInvoice(invoice)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 rounded-lg"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                הורדת PDF
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  {filteredInvoices.length === 0 && (
+                    <div className="text-center py-12">
+                      <p className="text-slate-500">{t('common.noResults')}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto max-[540px]:hidden">
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
@@ -441,7 +576,8 @@ export default function AdminInvoices() {
                     <p className="text-slate-500">{t('common.noResults')}</p>
                   </div>
                 )}
-              </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -534,7 +670,7 @@ export default function AdminInvoices() {
                         <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                           <Package className="w-4 h-4 text-primary-600" />
                           <span className="max-[540px]:hidden">{t('admin.invoices.form.lineItems')}</span>
-                          <span className="hidden max-[540px]:inline">פרטים</span>
+                          <span className="hidden max-[540px]:inline">פריטים</span>
                         </h3>
                         <button
                           type="button"
@@ -602,7 +738,7 @@ export default function AdminInvoices() {
 
                                 <div>
                                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    {t('admin.invoices.form.price')}
+                                    מחיר יחידה
                                   </label>
                                   <input
                                     type="number"

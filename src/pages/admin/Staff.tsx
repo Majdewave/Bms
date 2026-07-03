@@ -12,6 +12,9 @@ import {
   Ban,
   Trash2,
   Mail,
+  User,
+  ChevronDown,
+  ChevronUp,
   Check,
   X,
 } from 'lucide-react'
@@ -30,6 +33,7 @@ export default function AdminStaff() {
   const [savingStaff, setSavingStaff] = useState(false)
   const [sendingLink, setSendingLink] = useState<string | null>(null)
   const [role, setRole] = useState('Staff')
+  const [openMobileCards, setOpenMobileCards] = useState<Record<string, boolean>>({})
   
 
   // Form state
@@ -354,80 +358,123 @@ export default function AdminStaff() {
           </div>
         ) : (
           <>
-            <div className="flex flex-col gap-2 p-3 md:hidden">
-              {filteredStaff.map((staffMember, idx) => (
+            <div className="hidden max-[540px]:flex flex-col gap-2 p-3">
+              {filteredStaff.map((staffMember, idx) => {
+                const isOpen = Boolean(openMobileCards[staffMember.id])
+                return (
                 <div
                   key={staffMember.id}
-                  className={`rounded-xl px-4 py-3 flex flex-col gap-2 ${
-                    idx % 2 === 0 ? 'bg-sky-100 border border-sky-200' : 'bg-white border border-slate-100'
-                  }`}
+                  className="rounded-xl border border-slate-200 shadow-md overflow-hidden"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm text-slate-700"><span className="text-slate-500">{t('admin.staff.table.name')}:</span> <span className="font-medium text-slate-900">{staffMember.fullName}</span></p>
-                      <div className="mt-1 flex items-center gap-2 flex-wrap">
-                        <span className="text-sm text-slate-500">{t('admin.staff.table.role')}:</span>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
-                          {staffMember.roleLabel}
-                        </span>
-                        <span className="text-sm text-slate-500">{t('admin.staff.table.status')}:</span>
-                        <Badge variant={staffMember.isActive ? 'success' : 'slate'}>
-                          {staffMember.isActive ? t('admin.staff.status.active') : t('admin.staff.status.inactive')}
-                        </Badge>
+                  <button
+                    type="button"
+                    onClick={() => setOpenMobileCards((current) => ({ ...current, [staffMember.id]: !current[staffMember.id] }))}
+                    className="w-full px-4 py-3 bg-indigo-500 hover:bg-indigo-600 transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 text-start">
+                        <div className="flex items-center gap-2 text-white font-bold">
+                          <User className="w-4 h-4 shrink-0" />
+                          <p className="truncate">{staffMember.fullName}</p>
+                        </div>
+                        <p className="mt-1 text-xs text-white/90 truncate">{staffMember.roleLabel}</p>
+                      </div>
+                      <span className={`text-white transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                        {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      </span>
+                    </div>
+                  </button>
+
+                  <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[640px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className={`px-4 py-3 flex flex-col gap-2 ${
+                      idx % 2 === 0 ? 'bg-sky-100 border-t border-sky-200' : 'bg-white border-t border-slate-100'
+                    }`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="mt-1 flex items-center gap-2 flex-wrap">
+                            <span className="text-sm text-slate-500">{t('admin.staff.table.role')}:</span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                              {staffMember.roleLabel}
+                            </span>
+                            <span className="text-sm text-slate-500">{t('admin.staff.table.status')}:</span>
+                            <Badge variant={staffMember.isActive ? 'success' : 'slate'}>
+                              {staffMember.isActive ? t('admin.staff.status.active') : t('admin.staff.status.inactive')}
+                            </Badge>
+                          </div>
+                        </div>
+                        {staffMember.role?.toLowerCase() === 'admin' ? (
+                          <span className="px-2 py-1 text-sm font-semibold bg-purple-100 text-purple-700 rounded-full shrink-0">
+                            אדמין
+                          </span>
+                        ) : (
+                          <span className="text-sm text-slate-500 shrink-0">
+                            {staffMember.permissions.length} {t('admin.staff.permissionsLabel')}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm text-slate-700 break-all">
+                        <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="text-sm"><span className="text-slate-500">{t('admin.staff.table.email')}:</span> {staffMember.email}</span>
+                      </div>
+
+                      <div className="text-sm text-slate-700">
+                        <span className="text-slate-500">{t('admin.staff.table.phone', 'Phone')}:</span> {(staffMember as any).phone || '—'}
+                      </div>
+
+                      <div className="text-sm text-slate-700">
+                        <span className="text-slate-500">{t('admin.staff.table.lastLogin')}:</span> {staffMember.lastLogin ? formatDate(staffMember.lastLogin) : '—'}
+                      </div>
+
+                      <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
+                        <span className="text-slate-500">{t('admin.staff.form.stamp', 'Stamp')}:</span>
+                        {staffMember.useStamp ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Enabled</span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Disabled</span>
+                        )}
+                      </div>
+
+                      {staffMember.useStamp && staffMember.stampUrl && (
+                        <div className="border border-slate-200 rounded-lg bg-white p-3 w-fit">
+                          <img src={staffMember.stampUrl} alt="Staff stamp" className="max-h-14 object-contain" />
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          onClick={() => openEditModal(staffMember)}
+                          className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
+                          title={t('admin.staff.actions.edit')}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(staffMember)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            staffMember.isActive
+                              ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                              : 'text-slate-400 hover:text-green-600 hover:bg-green-50'
+                          }`}
+                          title={t(`admin.staff.actions.${staffMember.isActive ? 'block' : 'unblock'}`)}
+                        >
+                          <Ban className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(staffMember.id)}
+                          className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
+                          title={t('admin.staff.actions.delete')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                    {staffMember.role?.toLowerCase() === 'admin' ? (
-                      <span className="px-2 py-1 text-sm font-semibold bg-purple-100 text-purple-700 rounded-full shrink-0">
-                        אדמין
-                      </span>
-                    ) : (
-                      <span className="text-sm text-slate-500 shrink-0">
-                        {staffMember.permissions.length} {t('admin.staff.permissionsLabel')}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 text-sm text-slate-700 break-all">
-                    <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span className="text-sm"><span className="text-slate-500">{t('admin.staff.table.email')}:</span> {staffMember.email}</span>
-                  </div>
-
-                  <div className="text-sm text-slate-700">
-                    <span className="text-slate-500">{t('admin.staff.table.lastLogin')}:</span> {staffMember.lastLogin ? formatDate(staffMember.lastLogin) : '—'}
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-1">
-                    <button
-                      onClick={() => openEditModal(staffMember)}
-                      className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
-                      title={t('admin.staff.actions.edit')}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleToggleStatus(staffMember)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        staffMember.isActive
-                          ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
-                          : 'text-slate-400 hover:text-green-600 hover:bg-green-50'
-                      }`}
-                      title={t(`admin.staff.actions.${staffMember.isActive ? 'block' : 'unblock'}`)}
-                    >
-                      <Ban className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(staffMember.id)}
-                      className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
-                      title={t('admin.staff.actions.delete')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
 
-            <div className="hidden md:block overflow-x-auto">
+            <div className="max-[540px]:hidden overflow-x-auto">
               <table dir={isRTL ? 'rtl' : 'ltr'} className="w-full">
                 <thead>
                   <tr className="border-b border-slate-200">

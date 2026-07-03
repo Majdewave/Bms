@@ -16,6 +16,7 @@ import {
   UserPlus,
   Users,
   CreditCard,
+  Loader,
   X,
 } from "lucide-react"
 
@@ -57,6 +58,7 @@ const allMenuItems: MenuItem[] = [
 export default function AdminLayout() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -130,7 +132,11 @@ export default function AdminLayout() {
       .toUpperCase()
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+
+    setIsLoggingOut(true)
+    await new Promise((resolve) => setTimeout(resolve, 600))
 
     logout()
     navigate('/')
@@ -204,6 +210,15 @@ export default function AdminLayout() {
   return (
 
     <div className="flex h-screen bg-slate-50 overflow-hidden">
+
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/25 backdrop-blur-[1px] flex items-center justify-center pointer-events-auto">
+          <div className="flex flex-col items-center gap-3">
+            <Loader className="w-9 h-9 text-white animate-spin" />
+            <p className="text-white text-base font-medium">מתנתק...</p>
+          </div>
+        </div>
+      )}
 
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -288,6 +303,7 @@ export default function AdminLayout() {
 
           <button
             onClick={handleLogout}
+            disabled={isLoggingOut}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors"
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
@@ -359,6 +375,7 @@ export default function AdminLayout() {
             <LanguageSwitcher />
             <button
               onClick={handleLogout}
+              disabled={isLoggingOut}
               className="flex items-center justify-center md:justify-start gap-2 px-2.5 md:px-3 py-2 text-sm text-rose-700 bg-rose-50/70 border border-rose-100 hover:text-rose-800 hover:bg-rose-100/80 rounded-lg transition md:ml-2"
               style={{ fontSize: '15px' }}
               aria-label={t('header.logout')}

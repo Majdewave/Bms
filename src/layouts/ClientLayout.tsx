@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   ChevronsLeft,
   ChevronsRight,
+  Loader,
 } from 'lucide-react'
 import ClientaLogo from '@/components/Logo'
 
@@ -37,6 +38,7 @@ export default function ClientLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
@@ -72,7 +74,12 @@ export default function ClientLayout() {
     )
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (isLoggingOut) return
+
+    setIsLoggingOut(true)
+    await new Promise((resolve) => setTimeout(resolve, 600))
+
     logout()
     navigate('/')
   }
@@ -103,6 +110,15 @@ export default function ClientLayout() {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/25 backdrop-blur-[1px] flex items-center justify-center pointer-events-auto">
+          <div className="flex flex-col items-center gap-3">
+            <Loader className="w-9 h-9 text-white animate-spin" />
+            <p className="text-white text-base font-medium">מתנתק...</p>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
@@ -208,6 +224,7 @@ export default function ClientLayout() {
 
           <button
             onClick={handleLogout}
+            disabled={isLoggingOut}
             className={`w-full flex items-center ${
               sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-4'
             } py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors`}
@@ -332,6 +349,7 @@ export default function ClientLayout() {
                       setUserMenuOpen(false)
                       handleLogout()
                     }}
+                    disabled={isLoggingOut}
                     className="w-full text-left px-4 py-2.5 hover:bg-red-50 flex items-center gap-2 text-sm font-medium text-red-600 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />

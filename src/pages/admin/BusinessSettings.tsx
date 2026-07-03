@@ -61,11 +61,11 @@ function SectionCard({ title, icon, headerClassName, isOpen, onToggle, children 
       <button
         type="button"
         onClick={onToggle}
-        className={`w-full px-6 py-4 flex items-center justify-between ${headerClassName}`}
+        className={`w-full px-6 py-4 flex items-center justify-between transition-colors ${headerClassName}`}
         aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3 text-start">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+          <span className="inline-flex h-9 w-9 items-center justify-center text-white">
             {icon}
           </span>
           <h2 className="text-lg font-semibold text-white">{title}</h2>
@@ -562,11 +562,11 @@ export default function BusinessSettings() {
             <button
               type="button"
               onClick={() => toggleCard('business')}
-              className="w-full px-6 py-4 bg-[#5B8DEF] flex items-center justify-between"
+              className="w-full px-6 py-4 bg-blue-700 hover:bg-blue-800 transition-colors flex items-center justify-between"
               aria-expanded={openCards.business}
             >
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+                <span className="inline-flex h-9 w-9 items-center justify-center text-white">
                   <Building2 className="w-5 h-5" />
                 </span>
                 <h2 className="text-lg font-semibold text-white">
@@ -638,11 +638,11 @@ export default function BusinessSettings() {
             <button
               type="button"
               onClick={() => toggleCard('invoice')}
-              className="w-full px-6 py-4 bg-emerald-600 flex items-center justify-between"
+              className="w-full px-6 py-4 bg-emerald-700 hover:bg-emerald-800 transition-colors flex items-center justify-between"
               aria-expanded={openCards.invoice}
             >
               <div className="flex items-center gap-3 text-start">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+                <span className="inline-flex h-9 w-9 items-center justify-center text-white">
                   <Receipt className="w-5 h-5" />
                 </span>
                 <div>
@@ -954,11 +954,11 @@ export default function BusinessSettings() {
             <button
               type="button"
               onClick={() => toggleCard('branding')}
-              className="w-full px-6 py-4 flex items-center justify-between bg-[#B89CF8]"
+              className="w-full px-6 py-4 flex items-center justify-between bg-violet-700 hover:bg-violet-800 transition-colors"
               aria-expanded={openCards.branding}
             >
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+                <span className="inline-flex h-9 w-9 items-center justify-center text-white">
                   <Palette className="w-5 h-5" />
                 </span>
                 <h2 className="text-lg font-semibold text-white">
@@ -1110,7 +1110,7 @@ export default function BusinessSettings() {
             <SectionCard
               title={t('settings.autoDeleteTitle')}
               icon={<ShieldAlert className="w-5 h-5" />}
-              headerClassName="bg-slate-700"
+              headerClassName="bg-slate-700 hover:bg-slate-800"
               isOpen={openCards.autoDelete}
               onToggle={() => toggleCard('autoDelete')}
             >

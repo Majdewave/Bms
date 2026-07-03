@@ -17,10 +17,13 @@ import {
 import { useTranslation } from 'react-i18next'
 import {
   Check,
+  ChevronDown,
+  ChevronUp,
   CircleDollarSign,
   CreditCard,
   Download,
   Filter,
+  Package,
   Pencil,
   Percent,
   Plus,
@@ -157,6 +160,7 @@ export default function AdminInvoices() {
   const [saving, setSaving] = useState(false)
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null)
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(() => createDefaultInvoiceForm(tenant))
+  const [openMobileCards, setOpenMobileCards] = useState<Record<string, boolean>>({})
 
   const isRtl = isRtlLanguage(i18n.language)
 
@@ -368,6 +372,17 @@ export default function AdminInvoices() {
       invoice.clientName.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const toggleMobileCard = (invoiceId: string) => {
+    setOpenMobileCards((current) => ({
+      ...current,
+      [invoiceId]: !current[invoiceId],
+    }))
+  }
+
+  const paymentMethodLabelMap: Record<string, string> = Object.fromEntries(
+    PAYMENT_METHOD_OPTIONS.map((option) => [option.value, option.label])
+  )
+
   const formatCurrency = (amount: number) => {
     const configuredCurrency = (tenant?.currency ?? 'ILS').toUpperCase()
     const currency = configuredCurrency === 'USD' || configuredCurrency === 'EUR' || configuredCurrency === 'ILS'
@@ -410,7 +425,7 @@ export default function AdminInvoices() {
                 setInvoiceForm(createDefaultInvoiceForm(tenant))
                 setShowCreateModal(true)
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
+              className="inline-flex max-[540px]:hidden items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
             >
               <Plus className="w-4 h-4" />
               {t('admin.invoices.create')}
@@ -418,10 +433,24 @@ export default function AdminInvoices() {
           }
         />
 
+        <div dir="ltr" className="hidden max-[540px]:flex mb-6">
+          <button
+            onClick={() => {
+              setEditingInvoiceId(null)
+              setInvoiceForm(createDefaultInvoiceForm(tenant))
+              setShowCreateModal(true)
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            {t('admin.invoices.create')}
+          </button>
+        </div>
+
         <Card>
           <CardHeader title={t('admin.invoices.list')} />
           <CardContent>
-            <div className="flex gap-4 mb-6">
+            <div className="flex gap-4 mb-6 max-[540px]:flex-col">
               <div className="flex-1 relative">
                 <Search className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
                 <input
@@ -434,7 +463,7 @@ export default function AdminInvoices() {
               </div>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors max-[540px]:w-full max-[540px]:justify-center"
               >
                 <Filter className="w-4 h-4" />
                 {t('admin.invoices.filter')}
@@ -446,7 +475,108 @@ export default function AdminInvoices() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+                <div className="hidden max-[540px]:block space-y-4">
+                  {filteredInvoices.map((invoice) => {
+                    const isOpen = Boolean(openMobileCards[invoice.id])
+                    const paymentMethod = invoice.paymentMethod ? paymentMethodLabelMap[invoice.paymentMethod] ?? invoice.paymentMethod : null
+                    const withholdingTax = typeof invoice.withholdingTaxRate === 'number' && invoice.withholdingTaxRate > 0
+                      ? `${invoice.withholdingTaxRate}%`
+                      : null
+
+                    return (
+                      <div key={invoice.id} className="rounded-xl border border-slate-200 shadow-md overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => toggleMobileCard(invoice.id)}
+                          className="w-full px-4 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white flex items-center justify-between hover:from-blue-600 hover:to-indigo-600 transition-colors"
+                        >
+                          <div className="text-start">
+                            <p className="font-mono text-sm font-semibold">{invoice.number}</p>
+                            <p className="text-sm text-blue-100 mt-1">{invoice.clientName}</p>
+                          </div>
+                          <span className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                          </span>
+                        </button>
+
+                        <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[520px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                          <div className="p-4 bg-white space-y-3">
+                            <div className="border-b border-slate-100 pb-2">
+                              <p className="text-xs text-slate-500">תאריך חשבונית:</p>
+                              <p className="text-sm font-medium text-slate-900">{formatDate(invoice.invoiceDate)}</p>
+                            </div>
+                            <div className="border-b border-slate-100 pb-2">
+                              <p className="text-xs text-slate-500">תאריך יעד:</p>
+                              <p className="text-sm font-medium text-slate-900">{formatDate(invoice.dueDate)}</p>
+                            </div>
+                            <div className="border-b border-slate-100 pb-2">
+                              <p className="text-xs text-slate-500">סכום:</p>
+                              <p className="text-sm font-semibold text-slate-900">{formatCurrency(invoice.totalAmount)}</p>
+                            </div>
+                            <div className="border-b border-slate-100 pb-2">
+                              <p className="text-xs text-slate-500">סטטוס:</p>
+                              <span
+                                className={`inline-flex px-2.5 py-1 mt-1 rounded-full text-xs font-semibold ${STATUS_META[normalizeInvoiceStatus(invoice.status)].badgeClass}`}
+                              >
+                                {STATUS_META[normalizeInvoiceStatus(invoice.status)].label}
+                              </span>
+                            </div>
+
+                            {paymentMethod && (
+                              <div className="border-b border-slate-100 pb-2">
+                                <p className="text-xs text-slate-500">אופן תשלום:</p>
+                                <p className="text-sm font-medium text-slate-900">{paymentMethod}</p>
+                              </div>
+                            )}
+
+                            {withholdingTax && (
+                              <div className="border-b border-slate-100 pb-2">
+                                <p className="text-xs text-slate-500">ניכוי מס:</p>
+                                <p className="text-sm font-medium text-slate-900">{withholdingTax}</p>
+                              </div>
+                            )}
+
+                            <div className="pt-1 flex items-center justify-between gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteInvoice(invoice.id)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-red-700 bg-red-50 rounded-lg"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                מחיקה
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(invoice)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                עריכה
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadInvoice(invoice)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 rounded-lg"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                הורדת PDF
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  {filteredInvoices.length === 0 && (
+                    <div className="text-center py-12">
+                      <p className="text-slate-500">{t('common.noResults')}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto max-[540px]:hidden">
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
@@ -509,6 +639,7 @@ export default function AdminInvoices() {
                   </div>
                 )}
               </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -656,19 +787,106 @@ export default function AdminInvoices() {
 
                   <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
                     <div className="border border-slate-200 rounded-xl overflow-hidden">
-                      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
-                        <h3 className="text-sm font-semibold text-slate-900">{t('admin.invoices.form.lineItems')}</h3>
+                      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200 max-[540px]:rounded-t-2xl">
+                        <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                          <Package className="w-4 h-4 text-primary-600" />
+                          <span className="max-[540px]:hidden">{t('admin.invoices.form.lineItems')}</span>
+                          <span className="hidden max-[540px]:inline">פריטים</span>
+                        </h3>
                         <button
                           type="button"
                           onClick={addLineItem}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+                          className="inline-flex max-[540px]:hidden items-center gap-2 px-3 py-1.5 text-sm font-semibold text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
                         >
                           <Plus className="w-4 h-4" />
                           {t('admin.invoices.form.addItem')}
                         </button>
                       </div>
 
-                      <div className="overflow-x-auto">
+                      <div className="hidden max-[540px]:block px-4 pt-4">
+                        <button
+                          type="button"
+                          onClick={addLineItem}
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-primary-600 rounded-xl shadow-sm hover:bg-primary-700 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                          הוסף פריט חדש
+                        </button>
+                      </div>
+
+                      <div className="hidden max-[540px]:block px-4 py-4 space-y-4 bg-white">
+                        {invoiceForm.lineItems.map((lineItem, index) => {
+                          const lineTotal = toCurrency(toNumber(lineItem.quantity) * toNumber(lineItem.price))
+
+                          return (
+                            <div
+                              key={lineItem.id}
+                              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                            >
+                              <div className="mb-4 flex items-center justify-between gap-3">
+                                <div className="text-sm font-semibold text-slate-900">
+                                  📦 פריט {index + 1}
+                                </div>
+                                <div className="text-xs text-slate-500 font-medium">{formatCurrency(lineTotal)}</div>
+                              </div>
+
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    {t('admin.invoices.form.description')}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={lineItem.description}
+                                    onChange={(event) => updateLineItem(lineItem.id, 'description', event.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    {t('admin.invoices.form.quantity')}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={lineItem.quantity}
+                                    onChange={(event) => updateLineItem(lineItem.id, 'quantity', event.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    מחיר יחידה
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={lineItem.price}
+                                    onChange={(event) => updateLineItem(lineItem.id, 'price', event.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                                  />
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => removeLineItem(lineItem.id)}
+                                className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors"
+                                aria-label={t('admin.invoices.form.removeItem')}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                מחק פריט
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      <div className="overflow-x-auto max-[540px]:hidden">
                         <table className="w-full min-w-[720px]">
                           <thead>
                             <tr className="border-b border-slate-200 bg-white">
@@ -736,7 +954,39 @@ export default function AdminInvoices() {
                       </div>
                     </div>
 
-                    <div className="border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4">
+                    <div className="hidden max-[540px]:block border border-slate-200 rounded-2xl p-5 bg-slate-50 shadow-sm space-y-4">
+                      <p className="text-sm text-slate-600">VAT: <span className="font-semibold text-slate-900">{totals.vatRate}%</span></p>
+                      <p className="text-sm text-slate-600">Currency: <span className="font-semibold text-slate-900">{(tenant?.currency ?? 'ILS').toUpperCase()}</span></p>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm text-slate-600">
+                          <span>ניכוי מס (%)</span>
+                          <span className="font-semibold text-slate-900">{totals.withholdingTaxRate}%</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm text-slate-600">
+                          <span>{t('admin.invoices.form.subtotal')}</span>
+                          <span className="font-semibold text-slate-900">{formatCurrency(totals.subtotal)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm text-slate-600">
+                          <span>{`${t('admin.invoices.form.vatAmount')} (${totals.vatRate}%)`}</span>
+                          <span className="font-semibold text-slate-900">{formatCurrency(totals.vatAmount)}</span>
+                        </div>
+                        <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+                          <span className="text-base font-semibold text-slate-900">{t('admin.invoices.form.totalAmount')}</span>
+                          <span className="text-xl font-bold text-slate-900">{formatCurrency(totals.totalAmount)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm text-slate-600">
+                          <span>ניכוי מס (₪)</span>
+                          <span className="font-semibold text-slate-900">{formatCurrency(totals.withholdingTaxAmount)}</span>
+                        </div>
+                        <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+                          <span className="text-base font-semibold text-slate-900">לתשלום בפועל</span>
+                          <span className="text-2xl font-bold text-primary-700">{formatCurrency(totals.finalAmountToPay)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4 max-[540px]:hidden">
                       <p className="text-sm text-slate-600">VAT: <span className="font-semibold text-slate-900">{totals.vatRate}%</span></p>
                       <p className="text-sm text-slate-600">Currency: <span className="font-semibold text-slate-900">{(tenant?.currency ?? 'ILS').toUpperCase()}</span></p>
 

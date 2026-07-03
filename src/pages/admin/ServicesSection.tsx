@@ -115,11 +115,11 @@ export default function ServicesSection({ isAdmin, isOpen = true, onToggle }: Pr
     <button
       type="button"
       onClick={onToggle}
-      className="w-full px-6 py-4 flex items-center justify-between bg-[#F6A27B]"
+      className="w-full px-6 py-4 flex items-center justify-between bg-orange-600 hover:bg-orange-700 transition-colors"
       aria-expanded={isOpen}
     >
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+        <span className="inline-flex h-9 w-9 items-center justify-center text-white">
           <Briefcase className="w-5 h-5" />
         </span>
         <h2 className="text-lg font-semibold text-white">

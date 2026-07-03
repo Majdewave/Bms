@@ -652,7 +652,7 @@
         "invoiceNumber": "מספר חשבונית",
         "date": "תאריך חשבונית",
         "dueDate": "תאריך יעד",
-        "lineItems": "שורות חשבונית",
+        "lineItems": "פרטי חשבונית",
         "addItem": "הוסף פריט",
         "description": "תיאור",
         "quantity": "כמות",
