@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ComponentType } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -26,6 +26,14 @@ import { useTenant } from '@/contexts/TenantContext'
 import type { Features } from '@/contexts/FeatureContext'
 import type { Permission } from '@/utils/permissions'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { TeamChatEntry } from '@/team-chat/components'
+
+const TEAM_CHAT_OPEN_STORAGE_KEY = 'teamChat:isOpen'
+
+const readInitialChatOpenState = () => {
+  if (typeof window === 'undefined') return false
+  return window.localStorage.getItem(TEAM_CHAT_OPEN_STORAGE_KEY) === 'true'
+}
 
 interface MenuItem {
   icon: ComponentType<{ className?: string }>
@@ -59,6 +67,8 @@ export default function AdminLayout() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isChatPanelOpen, setIsChatPanelOpen] = useState(readInitialChatOpenState)
+  const chatBellButtonRef = useRef<HTMLButtonElement | null>(null)
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -138,9 +148,33 @@ export default function AdminLayout() {
     setIsLoggingOut(true)
     await new Promise((resolve) => setTimeout(resolve, 600))
 
+    setIsChatPanelOpen(false)
     logout()
     navigate('/')
   }
+
+  const closeChatPanel = useCallback(() => {
+    setIsChatPanelOpen(false)
+  }, [])
+
+  const toggleChatPanel = useCallback(() => {
+    setIsChatPanelOpen((prev) => !prev)
+  }, [])
+
+  useEffect(() => {
+    if (!features?.teamChatEnabled) {
+      window.localStorage.removeItem(TEAM_CHAT_OPEN_STORAGE_KEY)
+      return
+    }
+
+    window.localStorage.setItem(TEAM_CHAT_OPEN_STORAGE_KEY, isChatPanelOpen ? 'true' : 'false')
+  }, [features?.teamChatEnabled, isChatPanelOpen])
+
+  useEffect(() => {
+    if (!features?.teamChatEnabled && isChatPanelOpen) {
+      setIsChatPanelOpen(false)
+    }
+  }, [features?.teamChatEnabled, isChatPanelOpen])
 
   if (!user) return null
 
@@ -373,6 +407,14 @@ export default function AdminLayout() {
 
           <div className="flex items-center gap-1.5 md:gap-4 shrink-0">
             <LanguageSwitcher />
+            {(user.role === 'admin' || user.role === 'staff') && features?.teamChatEnabled && (
+              <TeamChatEntry
+                bellButtonRef={chatBellButtonRef}
+                isOpen={isChatPanelOpen}
+                onToggle={toggleChatPanel}
+                onClose={closeChatPanel}
+              />
+            )}
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}

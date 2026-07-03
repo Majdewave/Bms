@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react'
 import { authService } from '@/api'
 import { Permission } from '@/utils/permissions'
 
@@ -19,6 +19,7 @@ export interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null
   loading: boolean
+  getAccessToken: () => string
   login: (email: string, password: string) => Promise<void>
   logout: () => void
   refreshUser: () => Promise<void>
@@ -42,6 +43,7 @@ export const useAuth = () => {
       return {
         user: null,
         loading: true,
+        getAccessToken: () => '',
         login: async () => {},
         logout: () => {},
         refreshUser: async () => {},
@@ -75,6 +77,14 @@ const normalizeUser = (user: any): AuthUser | null => {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [accessToken, setAccessToken] = useState('')
+  const accessTokenRef = useRef('')
+
+  useEffect(() => {
+    accessTokenRef.current = accessToken
+  }, [accessToken])
+
+  const getAccessToken = useCallback(() => accessTokenRef.current, [])
 
   const refreshUser = useCallback(async () => {
     setLoading(true)
@@ -83,6 +93,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(normalizeUser(updatedUser))
     } catch (error) {
       localStorage.removeItem('token')
+      setAccessToken('')
       setUser(null)
     } finally {
       setLoading(false)
@@ -93,14 +104,18 @@ useEffect(() => {
   const token = localStorage.getItem('token');
 
   if (!token) {
+    setAccessToken('');
     setLoading(false);
     return; // ⛔ לא קורא /auth/me בלי token
   }
+
+  setAccessToken(token);
 
   authService.getCurrentUser()
     .then(user => setUser(normalizeUser(user)))
     .catch(() => {
       localStorage.removeItem('token');
+      setAccessToken('');
       setUser(null);
     })
     .finally(() => setLoading(false));
@@ -110,12 +125,14 @@ useEffect(() => {
   const login = useCallback(async (email: string, password: string) => {
     const response = await authService.login({ email, password })
     localStorage.setItem('token', response.token)
+    setAccessToken(response.token)
     setUser(normalizeUser(response.user))
   }, [])
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('rememberedEmail')
+    setAccessToken('')
     setUser(null)
   }, [])
 
@@ -135,6 +152,7 @@ useEffect(() => {
     () => ({
       user,
       loading,
+      getAccessToken,
       login,
       logout,
       refreshUser,
@@ -145,7 +163,7 @@ useEffect(() => {
       isStaff: user?.role === 'staff',
       isClient: user?.role === 'client',
     }),
-    [user, loading, login, logout, refreshUser, hasRole, checkPermission]
+    [user, loading, getAccessToken, login, logout, refreshUser, hasRole, checkPermission]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

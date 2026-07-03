@@ -1,11 +1,14 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { ReactNode } from 'react'
+import { useFeatures } from '@/contexts/FeatureContext'
+import { TeamChatProvider } from '@/team-chat/context/TeamChatProvider'
 
 interface ProtectedRouteProps {
   children: ReactNode
 }
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+  const { features } = useFeatures()
   const token = localStorage.getItem('token')
   const location = useLocation()
 
@@ -21,5 +24,15 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/" state={{ from: location }} replace />
   }
 
-  return <>{children}</>
+  const isTeamChatEnabled = features?.teamChatEnabled === true
+
+  if (!isTeamChatEnabled) {
+    return <>{children}</>
+  }
+
+  return (
+    <TeamChatProvider>
+      {children}
+    </TeamChatProvider>
+  )
 }

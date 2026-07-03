@@ -10,6 +10,7 @@ export interface Features {
   drugsEnabled: boolean
   beforeAfterPhotosEnabled: boolean
   visitSummariesEnabled: boolean
+  teamChatEnabled: boolean
 }
 
 interface FeatureContextType {
@@ -32,7 +33,8 @@ const areFeaturesEqual = (a: Features | null, b: Features) => {
     a.prescriptionsEnabled === b.prescriptionsEnabled &&
     a.drugsEnabled === b.drugsEnabled &&
     a.beforeAfterPhotosEnabled === b.beforeAfterPhotosEnabled &&
-    a.visitSummariesEnabled === b.visitSummariesEnabled
+    a.visitSummariesEnabled === b.visitSummariesEnabled &&
+    a.teamChatEnabled === b.teamChatEnabled
   )
 }
 

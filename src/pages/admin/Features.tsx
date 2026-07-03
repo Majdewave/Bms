@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Sliders, CheckCircle, X, BarChart2, Receipt, Pill, Database, Image as ImageIcon, FileText } from 'lucide-react'
+import { Sliders, CheckCircle, X, BarChart2, Receipt, Pill, Database, Image as ImageIcon, FileText, MessageCircle } from 'lucide-react'
 import * as apiClient from '@/api/apiClient'
 import type { Features } from '@/contexts/FeatureContext'
 import { useFeatures } from '@/contexts/FeatureContext'
@@ -12,6 +12,7 @@ const defaultFeatures: Features = {
   drugsEnabled: false,
   beforeAfterPhotosEnabled: false,
   visitSummariesEnabled: true,
+  teamChatEnabled: false,
 }
 
 interface ToggleRowProps {
@@ -84,6 +85,7 @@ export default function AdminFeatures() {
       beforeAfterPhotosEnabled:
         key === 'beforeAfterPhotosEnabled' ? value : settings.beforeAfterPhotosEnabled,
       visitSummariesEnabled: key === 'visitSummariesEnabled' ? value : settings.visitSummariesEnabled,
+      teamChatEnabled: key === 'teamChatEnabled' ? value : settings.teamChatEnabled,
     }
 
     setSettings(updated)
@@ -198,6 +200,15 @@ export default function AdminFeatures() {
           onChange={(val) => handleToggle('visitSummariesEnabled', val)}
           disabled={saving}
           icon={<FileText className="w-5 h-5 text-blue-400" />}
+        />
+
+        <ToggleRow
+          label="צ'אט צוות (Team Chat)"
+          description="מאפשר לאנשי הצוות המחוברים לנהל שיחות פנימיות בזמן אמת. ההודעות זמניות ואינן נשמרות לאחר יציאה או רענון הדף."
+          checked={settings.teamChatEnabled}
+          onChange={(val) => handleToggle('teamChatEnabled', val)}
+          disabled={saving}
+          icon={<MessageCircle className="w-5 h-5 text-indigo-500" />}
         />
       </div>
     </div>
