@@ -10,7 +10,7 @@ import type {
 } from '@/api'
 import { DEFAULT_VAT_RATE, calculateInvoiceTotals } from '@/api/invoices'
 import { useTranslation } from 'react-i18next'
-import { Check, Download, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { Check, Download, Filter, Package, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 
 type InvoiceFormLineItem = {
   id: string
@@ -530,19 +530,106 @@ export default function AdminInvoices() {
 
                   <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
                     <div className="border border-slate-200 rounded-xl overflow-hidden">
-                      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
-                        <h3 className="text-sm font-semibold text-slate-900">{t('admin.invoices.form.lineItems')}</h3>
+                      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200 max-[540px]:rounded-t-2xl">
+                        <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                          <Package className="w-4 h-4 text-primary-600" />
+                          <span className="max-[540px]:hidden">{t('admin.invoices.form.lineItems')}</span>
+                          <span className="hidden max-[540px]:inline">פרטים</span>
+                        </h3>
                         <button
                           type="button"
                           onClick={addLineItem}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+                          className="inline-flex max-[540px]:hidden items-center gap-2 px-3 py-1.5 text-sm font-semibold text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
                         >
                           <Plus className="w-4 h-4" />
                           {t('admin.invoices.form.addItem')}
                         </button>
                       </div>
 
-                      <div className="overflow-x-auto">
+                      <div className="hidden max-[540px]:block px-4 pt-4">
+                        <button
+                          type="button"
+                          onClick={addLineItem}
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-primary-600 rounded-xl shadow-sm hover:bg-primary-700 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                          הוסף פריט חדש
+                        </button>
+                      </div>
+
+                      <div className="hidden max-[540px]:block px-4 py-4 space-y-4 bg-white">
+                        {invoiceForm.lineItems.map((lineItem, index) => {
+                          const lineTotal = toCurrency(toNumber(lineItem.quantity) * toNumber(lineItem.price))
+
+                          return (
+                            <div
+                              key={lineItem.id}
+                              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                            >
+                              <div className="mb-4 flex items-center justify-between gap-3">
+                                <div className="text-sm font-semibold text-slate-900">
+                                  📦 פריט {index + 1}
+                                </div>
+                                <div className="text-xs text-slate-500 font-medium">{formatCurrency(lineTotal)}</div>
+                              </div>
+
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    {t('admin.invoices.form.description')}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={lineItem.description}
+                                    onChange={(event) => updateLineItem(lineItem.id, 'description', event.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    {t('admin.invoices.form.quantity')}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={lineItem.quantity}
+                                    onChange={(event) => updateLineItem(lineItem.id, 'quantity', event.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                    {t('admin.invoices.form.price')}
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={lineItem.price}
+                                    onChange={(event) => updateLineItem(lineItem.id, 'price', event.target.value)}
+                                    className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                                  />
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => removeLineItem(lineItem.id)}
+                                className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors"
+                                aria-label={t('admin.invoices.form.removeItem')}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                מחק פריט
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      <div className="overflow-x-auto max-[540px]:hidden">
                         <table className="w-full min-w-[720px]">
                           <thead>
                             <tr className="border-b border-slate-200 bg-white">
@@ -618,7 +705,35 @@ export default function AdminInvoices() {
                       </div>
                     </div>
 
-                    <div className="border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4">
+                    <div className="hidden max-[540px]:block border border-slate-200 rounded-2xl p-5 bg-slate-50 shadow-sm space-y-4">
+                      <p className="text-sm text-slate-600">
+                        VAT: <span className="font-semibold text-slate-900">{totals.vatRate}%</span>
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        Currency: <span className="font-semibold text-slate-900">{(tenant?.currency ?? 'ILS').toUpperCase()}</span>
+                      </p>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm text-slate-600">
+                          <span>{t('admin.invoices.form.subtotal')}</span>
+                          <span className="font-semibold text-slate-900">{formatCurrency(totals.subtotal)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm text-slate-600">
+                          <span>{`${t('admin.invoices.form.vatAmount')} (${totals.vatRate}%)`}</span>
+                          <span className="font-semibold text-slate-900">{formatCurrency(totals.vatAmount)}</span>
+                        </div>
+                        <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+                          <span className="text-base font-semibold text-slate-900">
+                            {t('admin.invoices.form.totalAmount')}
+                          </span>
+                          <span className="text-2xl font-bold text-slate-900">
+                            {formatCurrency(totals.totalAmount)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4 max-[540px]:hidden">
                       <p className="text-sm text-slate-600">
                         VAT: <span className="font-semibold text-slate-900">{totals.vatRate}%</span>
                       </p>

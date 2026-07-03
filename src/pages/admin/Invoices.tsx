@@ -8,9 +8,27 @@ import type {
   CreateInvoiceRequest,
   Invoice,
 } from '@/api'
-import { DEFAULT_VAT_RATE, calculateInvoiceTotals } from '@/api/invoices'
+import {
+  DEFAULT_VAT_RATE,
+  calculateInvoiceTotals,
+  type InvoicePaymentMethod,
+  type InvoiceStatus,
+} from '@/api/invoices'
 import { useTranslation } from 'react-i18next'
-import { Check, Download, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import {
+  Check,
+  CircleDollarSign,
+  CreditCard,
+  Download,
+  Filter,
+  Pencil,
+  Percent,
+  Plus,
+  Search,
+  Trash2,
+  Wallet,
+  X,
+} from 'lucide-react'
 
 type InvoiceFormLineItem = {
   id: string
@@ -24,8 +42,53 @@ type InvoiceFormState = {
   invoiceNumber: string
   invoiceDate: string
   dueDate: string
+  status: InvoiceStatus
+  paymentMethod: InvoicePaymentMethod
+  installments: string
+  withholdingTaxRate: string
   notes: string
   lineItems: InvoiceFormLineItem[]
+}
+
+const STATUS_META: Record<InvoiceStatus, { label: string; badgeClass: string }> = {
+  pending: { label: 'ממתין לתשלום', badgeClass: 'bg-yellow-100 text-yellow-800' },
+  paid: { label: 'שולם', badgeClass: 'bg-green-100 text-green-800' },
+  partially_paid: { label: 'שולם חלקית', badgeClass: 'bg-orange-100 text-orange-800' },
+  cancelled: { label: 'בוטל', badgeClass: 'bg-red-100 text-red-800' },
+}
+
+const PAYMENT_METHOD_OPTIONS: Array<{ value: InvoicePaymentMethod; label: string }> = [
+  { value: 'cash', label: 'מזומן' },
+  { value: 'credit', label: 'אשראי' },
+  { value: 'bank_transfer', label: 'העברה בנקאית' },
+  { value: 'check', label: "צ'ק" },
+  { value: 'bit', label: 'BIT' },
+  { value: 'paybox', label: 'PayBox' },
+  { value: 'other', label: 'אחר' },
+]
+
+const normalizeInvoiceStatus = (value: unknown): InvoiceStatus => {
+  const normalized = String(value ?? '').toLowerCase().replace(/\s+/g, '_')
+  if (normalized === 'paid') return 'paid'
+  if (normalized === 'partially_paid' || normalized === 'partial' || normalized === 'partiallypaid') return 'partially_paid'
+  if (normalized === 'cancelled' || normalized === 'canceled') return 'cancelled'
+  return 'pending'
+}
+
+const normalizePaymentMethod = (value: unknown): InvoicePaymentMethod => {
+  const normalized = String(value ?? '').toLowerCase().replace(/\s+/g, '_')
+  if (
+    normalized === 'cash' ||
+    normalized === 'credit' ||
+    normalized === 'bank_transfer' ||
+    normalized === 'check' ||
+    normalized === 'bit' ||
+    normalized === 'paybox' ||
+    normalized === 'other'
+  ) {
+    return normalized
+  }
+  return 'cash'
 }
 
 const createLineItemId = () => {
@@ -43,11 +106,22 @@ const createEmptyLineItem = (): InvoiceFormLineItem => ({
   price: '0',
 })
 
-const createDefaultInvoiceForm = (): InvoiceFormState => ({
+const createDefaultInvoiceForm = (tenant?: {
+  defaultWithholdingTaxRate?: number | null
+  defaultPaymentMethod?: string | null
+  defaultInstallments?: number | null
+  defaultInvoiceStatus?: string | null
+  invoicePrefix?: string | null
+  nextInvoiceNumber?: number | null
+} | null): InvoiceFormState => ({
   clientId: '',
-  invoiceNumber: `INV-${Date.now()}`,
+  invoiceNumber: `${tenant?.invoicePrefix ?? 'INV-'}${tenant?.nextInvoiceNumber ?? Date.now()}`,
   invoiceDate: new Date().toISOString().split('T')[0],
   dueDate: '',
+  status: normalizeInvoiceStatus(tenant?.defaultInvoiceStatus),
+  paymentMethod: normalizePaymentMethod(tenant?.defaultPaymentMethod),
+  installments: String(tenant?.defaultInstallments ?? 1),
+  withholdingTaxRate: String(tenant?.defaultWithholdingTaxRate ?? 0),
   notes: '',
   lineItems: [createEmptyLineItem()],
 })
@@ -82,7 +156,7 @@ export default function AdminInvoices() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null)
-  const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(() => createDefaultInvoiceForm())
+  const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(() => createDefaultInvoiceForm(tenant))
 
   const isRtl = isRtlLanguage(i18n.language)
 
@@ -109,7 +183,7 @@ export default function AdminInvoices() {
   const closeModal = () => {
     setShowCreateModal(false)
     setEditingInvoiceId(null)
-    setInvoiceForm(createDefaultInvoiceForm())
+    setInvoiceForm(createDefaultInvoiceForm(tenant))
   }
 
   const updateInvoiceField = <K extends keyof InvoiceFormState>(field: K, value: InvoiceFormState[K]) => {
@@ -151,14 +225,15 @@ export default function AdminInvoices() {
 
   const normalizedVatRate = (() => {
     const parsedVatRate = Number(tenant?.defaultVatRate)
-    if (!Number.isFinite(parsedVatRate) || parsedVatRate <= 0 || parsedVatRate > 100) {
+    if (!Number.isFinite(parsedVatRate) || parsedVatRate < 0 || parsedVatRate > 100) {
       return DEFAULT_VAT_RATE
     }
 
     return toCurrency(parsedVatRate)
   })()
+
   const lineItemPayload = invoiceForm.lineItems.map(buildLineItemPayload)
-  const totals = calculateInvoiceTotals(lineItemPayload, normalizedVatRate)
+  const totals = calculateInvoiceTotals(lineItemPayload, normalizedVatRate, toNumber(invoiceForm.withholdingTaxRate, 0))
 
   const validationMessages = [
     !invoiceForm.clientId ? t('admin.invoices.form.validationClient') : null,
@@ -173,6 +248,12 @@ export default function AdminInvoices() {
     invoiceForm.lineItems.some((lineItem) => toNumber(lineItem.price, -1) < 0)
       ? t('admin.invoices.form.validationPrice')
       : null,
+    toNumber(invoiceForm.withholdingTaxRate, -1) < 0 || toNumber(invoiceForm.withholdingTaxRate, 101) > 100
+      ? 'ניכוי מס במקור חייב להיות בין 0 ל-100'
+      : null,
+    invoiceForm.paymentMethod === 'credit' && (toNumber(invoiceForm.installments, 0) < 1 || toNumber(invoiceForm.installments, 37) > 36)
+      ? 'מספר תשלומים חייב להיות בין 1 ל-36'
+      : null,
   ].filter((message): message is string => Boolean(message))
 
   const isFormValid = validationMessages.length === 0
@@ -182,6 +263,10 @@ export default function AdminInvoices() {
     invoiceNumber: invoiceForm.invoiceNumber.trim(),
     invoiceDate: toIsoDate(invoiceForm.invoiceDate),
     dueDate: invoiceForm.dueDate ? toIsoDate(invoiceForm.dueDate) : undefined,
+    status: normalizeInvoiceStatus(invoiceForm.status),
+    paymentMethod: normalizePaymentMethod(invoiceForm.paymentMethod),
+    installments: invoiceForm.paymentMethod === 'credit' ? Math.max(1, Math.min(36, toNumber(invoiceForm.installments, 1))) : undefined,
+    withholdingTaxRate: Math.max(0, Math.min(100, toCurrency(toNumber(invoiceForm.withholdingTaxRate, 0)))),
     notes: invoiceForm.notes.trim() || undefined,
     lineItems: lineItemPayload,
   })
@@ -253,6 +338,10 @@ export default function AdminInvoices() {
       invoiceNumber: invoice.number,
       invoiceDate: invoice.invoiceDate ? invoice.invoiceDate.split('T')[0] : new Date().toISOString().split('T')[0],
       dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : '',
+      status: normalizeInvoiceStatus(invoice.status),
+      paymentMethod: normalizePaymentMethod(invoice.paymentMethod ?? tenant?.defaultPaymentMethod),
+      installments: String(invoice.installments ?? tenant?.defaultInstallments ?? 1),
+      withholdingTaxRate: String(invoice.withholdingTaxRate ?? tenant?.defaultWithholdingTaxRate ?? 0),
       notes: invoice.notes ?? '',
       lineItems: nextLineItems,
     })
@@ -316,7 +405,11 @@ export default function AdminInvoices() {
           description={t('admin.invoices.description')}
           action={
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => {
+                setEditingInvoiceId(null)
+                setInvoiceForm(createDefaultInvoiceForm(tenant))
+                setShowCreateModal(true)
+              }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -357,82 +450,56 @@ export default function AdminInvoices() {
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">
-                        {t('admin.invoices.table.number')}
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">
-                        {t('admin.invoices.table.client')}
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">
-                        {t('admin.invoices.table.amount')}
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">
-                        {t('admin.invoices.table.date')}
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">
-                        {t('admin.invoices.table.dueDate')}
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">
-                        {t('admin.invoices.table.status')}
-                      </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">
-                        {t('common.actions')}
-                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.number')}</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.client')}</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.amount')}</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.date')}</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.dueDate')}</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.status')}</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('common.actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredInvoices.map((invoice) => (
-                      <tr key={invoice.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-4 px-4">
-                          <span className="font-mono text-sm font-semibold text-slate-900">
-                            {invoice.number}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div>
-                            <p className="font-medium text-slate-900">{invoice.clientName}</p>
-                            <p className="text-sm text-slate-500">{invoice.clientEmail}</p>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className="font-semibold text-slate-900">
-                            {formatCurrency(invoice.totalAmount)}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-sm text-slate-600">
-                          {formatDate(invoice.invoiceDate)}
-                        </td>
-                        <td className="py-4 px-4 text-sm text-slate-600">
-                          {formatDate(invoice.dueDate)}
-                        </td>
-                        <td className="py-4 px-4">
-                          <span
-                            className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                              invoice.status === 'paid'
-                                ? 'bg-green-100 text-green-800'
-                                : invoice.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {t(`admin.invoices.status.${invoice.status}`)}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            <button type="button" onClick={() => handleDownloadInvoice(invoice)}>
-                              <Download className="w-4 h-4 text-blue-600" />
-                            </button>
-                            <button type="button" onClick={() => handleEdit(invoice)}>
-                              <Pencil className="w-4 h-4 text-green-600" />
-                            </button>
-                            <button type="button" onClick={() => handleDeleteInvoice(invoice.id)}>
-                              <Trash2 className="w-4 h-4 text-red-600" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredInvoices.map((invoice) => {
+                      const statusMeta = STATUS_META[normalizeInvoiceStatus(invoice.status)]
+
+                      return (
+                        <tr key={invoice.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-4 px-4">
+                            <span className="font-mono text-sm font-semibold text-slate-900">{invoice.number}</span>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div>
+                              <p className="font-medium text-slate-900">{invoice.clientName}</p>
+                              <p className="text-sm text-slate-500">{invoice.clientEmail}</p>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className="font-semibold text-slate-900">{formatCurrency(invoice.totalAmount)}</span>
+                          </td>
+                          <td className="py-4 px-4 text-sm text-slate-600">{formatDate(invoice.invoiceDate)}</td>
+                          <td className="py-4 px-4 text-sm text-slate-600">{formatDate(invoice.dueDate)}</td>
+                          <td className="py-4 px-4">
+                            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${statusMeta.badgeClass}`}>
+                              {statusMeta.label}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex items-center gap-3">
+                              <button type="button" onClick={() => handleDownloadInvoice(invoice)}>
+                                <Download className="w-4 h-4 text-blue-600" />
+                              </button>
+                              <button type="button" onClick={() => handleEdit(invoice)}>
+                                <Pencil className="w-4 h-4 text-green-600" />
+                              </button>
+                              <button type="button" onClick={() => handleDeleteInvoice(invoice.id)}>
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
 
@@ -449,21 +516,14 @@ export default function AdminInvoices() {
         {showCreateModal && (
           <div className="fixed inset-0 z-50 overflow-y-auto" dir={isRtl ? 'rtl' : 'ltr'}>
             <div className="flex min-h-screen items-center justify-center p-4">
-              <div
-                className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-                onClick={closeModal}
-              ></div>
+              <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={closeModal}></div>
 
               <div className="relative bg-white rounded-xl shadow-xl max-w-6xl w-full p-6 z-10 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-slate-900">
                     {editingInvoiceId ? t('admin.invoices.editTitle') : t('admin.invoices.createNew')}
                   </h2>
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="text-slate-400 hover:text-slate-600 transition-colors"
-                  >
+                  <button type="button" onClick={closeModal} className="text-slate-400 hover:text-slate-600 transition-colors">
                     <X className="w-6 h-6" />
                   </button>
                 </div>
@@ -471,9 +531,7 @@ export default function AdminInvoices() {
                 <form onSubmit={handleCreateInvoice} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        {t('admin.invoices.form.client')} *
-                      </label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.client')} *</label>
                       <select
                         required
                         value={invoiceForm.clientId}
@@ -490,9 +548,7 @@ export default function AdminInvoices() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        {t('admin.invoices.form.invoiceNumber')} *
-                      </label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.invoiceNumber')} *</label>
                       <input
                         type="text"
                         required
@@ -503,9 +559,7 @@ export default function AdminInvoices() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        {t('admin.invoices.form.date')} *
-                      </label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.date')} *</label>
                       <input
                         type="date"
                         required
@@ -516,15 +570,87 @@ export default function AdminInvoices() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        {t('admin.invoices.form.dueDate')}
-                      </label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.dueDate')}</label>
                       <input
                         type="date"
                         value={invoiceForm.dueDate}
                         onChange={(event) => updateInvoiceField('dueDate', event.target.value)}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                       />
+                    </div>
+
+                    <div className="md:col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50/80">
+                      <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-orange-600" />
+                        פרטי תשלום
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                            <CircleDollarSign className="w-4 h-4 text-green-700" />
+                            סטטוס חשבונית
+                          </label>
+                          <select
+                            value={invoiceForm.status}
+                            onChange={(event) => updateInvoiceField('status', normalizeInvoiceStatus(event.target.value))}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                          >
+                            <option value="pending">ממתין לתשלום</option>
+                            <option value="paid">שולם</option>
+                            <option value="partially_paid">שולם חלקית</option>
+                            <option value="cancelled">בוטל</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                            <Wallet className="w-4 h-4 text-green-600" />
+                            אופן תשלום
+                          </label>
+                          <select
+                            value={invoiceForm.paymentMethod}
+                            onChange={(event) => updateInvoiceField('paymentMethod', normalizePaymentMethod(event.target.value))}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                          >
+                            {PAYMENT_METHOD_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {invoiceForm.paymentMethod === 'credit' && (
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                              <CreditCard className="w-4 h-4 text-purple-600" />
+                              מספר תשלומים
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="36"
+                              value={invoiceForm.installments}
+                              onChange={(event) => updateInvoiceField('installments', event.target.value)}
+                              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                            <Percent className="w-4 h-4 text-orange-500" />
+                            ניכוי מס במקור (%)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={invoiceForm.withholdingTaxRate}
+                            onChange={(event) => updateInvoiceField('withholdingTaxRate', event.target.value)}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -546,18 +672,10 @@ export default function AdminInvoices() {
                         <table className="w-full min-w-[720px]">
                           <thead>
                             <tr className="border-b border-slate-200 bg-white">
-                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                {t('admin.invoices.form.description')}
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 w-28">
-                                {t('admin.invoices.form.quantity')}
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 w-36">
-                                {t('admin.invoices.form.price')}
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 w-36">
-                                {t('admin.invoices.form.lineTotal')}
-                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('admin.invoices.form.description')}</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 w-28">{t('admin.invoices.form.quantity')}</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 w-36">{t('admin.invoices.form.price')}</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 w-36">{t('admin.invoices.form.lineTotal')}</th>
                               <th className="px-4 py-3 w-20"></th>
                             </tr>
                           </thead>
@@ -619,14 +737,14 @@ export default function AdminInvoices() {
                     </div>
 
                     <div className="border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4">
-                      <p className="text-sm text-slate-600">
-                        VAT: <span className="font-semibold text-slate-900">{totals.vatRate}%</span>
-                      </p>
-                      <p className="text-sm text-slate-600">
-                        Currency: <span className="font-semibold text-slate-900">{(tenant?.currency ?? 'ILS').toUpperCase()}</span>
-                      </p>
+                      <p className="text-sm text-slate-600">VAT: <span className="font-semibold text-slate-900">{totals.vatRate}%</span></p>
+                      <p className="text-sm text-slate-600">Currency: <span className="font-semibold text-slate-900">{(tenant?.currency ?? 'ILS').toUpperCase()}</span></p>
 
                       <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm text-slate-600">
+                          <span>ניכוי מס (%)</span>
+                          <span className="font-semibold text-slate-900">{totals.withholdingTaxRate}%</span>
+                        </div>
                         <div className="flex items-center justify-between text-sm text-slate-600">
                           <span>{t('admin.invoices.form.subtotal')}</span>
                           <span className="font-semibold text-slate-900">{formatCurrency(totals.subtotal)}</span>
@@ -636,21 +754,23 @@ export default function AdminInvoices() {
                           <span className="font-semibold text-slate-900">{formatCurrency(totals.vatAmount)}</span>
                         </div>
                         <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
-                          <span className="text-base font-semibold text-slate-900">
-                            {t('admin.invoices.form.totalAmount')}
-                          </span>
-                          <span className="text-2xl font-bold text-slate-900">
-                            {formatCurrency(totals.totalAmount)}
-                          </span>
+                          <span className="text-base font-semibold text-slate-900">{t('admin.invoices.form.totalAmount')}</span>
+                          <span className="text-xl font-bold text-slate-900">{formatCurrency(totals.totalAmount)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm text-slate-600">
+                          <span>ניכוי מס (₪)</span>
+                          <span className="font-semibold text-slate-900">{formatCurrency(totals.withholdingTaxAmount)}</span>
+                        </div>
+                        <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+                          <span className="text-base font-semibold text-slate-900">לתשלום בפועל</span>
+                          <span className="text-2xl font-bold text-primary-700">{formatCurrency(totals.finalAmountToPay)}</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      {t('admin.invoices.form.notes')}
-                    </label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.notes')}</label>
                     <textarea
                       value={invoiceForm.notes}
                       onChange={(event) => updateInvoiceField('notes', event.target.value)}

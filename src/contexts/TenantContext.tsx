@@ -6,11 +6,20 @@ import { useAuth } from '@/contexts/AuthContext'
 
 export interface Tenant {
   name?: string
+  legalBusinessName?: string | null
+  businessRegistrationNumber?: string | null
   phone?: string | null
   whatsApp?: string | null
   logoUrl?: string | null
+  businessStampUrl?: string | null
   defaultVatRate?: number | null
+  defaultWithholdingTaxRate?: number | null
   currency?: 'ILS' | 'USD' | 'EUR' | string | null
+  defaultPaymentMethod?: string | null
+  defaultInstallments?: number | null
+  defaultInvoiceStatus?: string | null
+  invoicePrefix?: string | null
+  nextInvoiceNumber?: number | null
   autoDeleteNotDocumentedAfterDays?: number | null
   enableAutoDeleteNotDocumented?: boolean | null
 }

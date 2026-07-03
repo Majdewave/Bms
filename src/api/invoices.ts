@@ -2,7 +2,8 @@ import { del, get, getBlob, post, put } from './apiClient'
 
 export const DEFAULT_VAT_RATE = 18
 
-export type InvoiceStatus = 'paid' | 'pending' | 'overdue'
+export type InvoiceStatus = 'pending' | 'paid' | 'partially_paid' | 'cancelled'
+export type InvoicePaymentMethod = 'cash' | 'credit' | 'bank_transfer' | 'check' | 'bit' | 'paybox' | 'other'
 
 export interface InvoiceLineItem {
   id: string
@@ -23,10 +24,15 @@ export interface Invoice {
   vatRate: number
   vatAmount: number
   totalAmount: number
+  withholdingTaxAmount?: number
+  finalAmountToPay?: number
   invoiceDate: string
   date: string
   dueDate: string
   status: InvoiceStatus
+  paymentMethod?: InvoicePaymentMethod
+  installments?: number
+  withholdingTaxRate?: number
   lineItems: InvoiceLineItem[]
   notes?: string
 }
@@ -39,10 +45,15 @@ export interface CreateInvoiceLineItemRequest {
 
 export interface CreateInvoiceRequest {
   clientId: string
+  invoiceNumber?: string
   invoiceDate?: string
   dueDate?: string
   notes?: string
   vatRate?: number
+  status?: InvoiceStatus
+  paymentMethod?: InvoicePaymentMethod
+  installments?: number
+  withholdingTaxRate?: number
   lineItems: CreateInvoiceLineItemRequest[]
 }
 
@@ -85,20 +96,27 @@ const normalizeInvoiceLineItem = (lineItem: any, index: number): InvoiceLineItem
 
 export const calculateInvoiceTotals = (
   lineItems: Array<Pick<CreateInvoiceLineItemRequest, 'quantity' | 'price'>>,
-  vatRate?: number
+  vatRate?: number,
+  withholdingTaxRate?: number
 ) => {
   const normalizedVatRate = normalizeVatRate(vatRate)
+  const normalizedWithholdingTaxRate = Math.max(0, Math.min(100, roundCurrency(toNumber(withholdingTaxRate, 0))))
   const subtotal = roundCurrency(
     lineItems.reduce((sum, item) => sum + toNumber(item.quantity) * toNumber(item.price), 0)
   )
   const vatAmount = roundCurrency(subtotal * normalizedVatRate / 100)
   const totalAmount = roundCurrency(subtotal + vatAmount)
+  const withholdingTaxAmount = roundCurrency(totalAmount * normalizedWithholdingTaxRate / 100)
+  const finalAmountToPay = roundCurrency(totalAmount - withholdingTaxAmount)
 
   return {
     subtotal,
     vatRate: normalizedVatRate,
     vatAmount,
     totalAmount,
+    withholdingTaxRate: normalizedWithholdingTaxRate,
+    withholdingTaxAmount,
+    finalAmountToPay,
   }
 }
 
@@ -112,8 +130,33 @@ const normalizeInvoice = (invoice: any): Invoice => {
   const subtotal = roundCurrency(toNumber(invoice?.subtotal, fallbackTotals.subtotal))
   const vatRate = normalizeVatRate(invoice?.vatRate ?? fallbackTotals.vatRate)
   const vatAmount = roundCurrency(toNumber(invoice?.vatAmount, fallbackTotals.vatAmount))
-  const rawStatus = String(invoice?.status ?? 'pending').toLowerCase()
-  const status: InvoiceStatus = rawStatus === 'paid' || rawStatus === 'overdue' ? rawStatus : 'pending'
+  const withholdingTaxRate = Math.max(0, Math.min(100, roundCurrency(toNumber(invoice?.withholdingTaxRate, 0))))
+  const withholdingTaxAmount = roundCurrency(
+    toNumber(invoice?.withholdingTaxAmount, roundCurrency(totalAmount * withholdingTaxRate / 100))
+  )
+  const finalAmountToPay = roundCurrency(
+    toNumber(invoice?.finalAmountToPay, roundCurrency(totalAmount - withholdingTaxAmount))
+  )
+  const rawStatus = String(invoice?.status ?? 'pending').toLowerCase().replace(/\s+/g, '_')
+  const status: InvoiceStatus =
+    rawStatus === 'paid'
+      ? 'paid'
+      : rawStatus === 'partially_paid' || rawStatus === 'partial' || rawStatus === 'partiallypaid'
+      ? 'partially_paid'
+      : rawStatus === 'cancelled' || rawStatus === 'canceled'
+      ? 'cancelled'
+      : 'pending'
+  const rawPaymentMethod = String(invoice?.paymentMethod ?? '').toLowerCase().replace(/\s+/g, '_')
+  const paymentMethod: InvoicePaymentMethod | undefined =
+    rawPaymentMethod === 'cash' ||
+    rawPaymentMethod === 'credit' ||
+    rawPaymentMethod === 'bank_transfer' ||
+    rawPaymentMethod === 'check' ||
+    rawPaymentMethod === 'bit' ||
+    rawPaymentMethod === 'paybox' ||
+    rawPaymentMethod === 'other'
+      ? rawPaymentMethod
+      : undefined
   const invoiceDate = String(invoice?.invoiceDate ?? invoice?.date ?? invoice?.createdAt ?? new Date().toISOString())
 
   return {
@@ -127,10 +170,15 @@ const normalizeInvoice = (invoice: any): Invoice => {
     vatRate,
     vatAmount,
     totalAmount,
+    withholdingTaxAmount,
+    finalAmountToPay,
     invoiceDate,
     date: invoiceDate,
     dueDate: invoice?.dueDate ? String(invoice.dueDate) : '',
     status,
+    paymentMethod,
+    installments: toNumber(invoice?.installments, 0) || undefined,
+    withholdingTaxRate,
     lineItems,
     notes: invoice?.notes ?? undefined,
   }

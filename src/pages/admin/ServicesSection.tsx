@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { servicesService, BusinessService } from "../../api/servicesService";
-import { Pencil, Trash2, FileText } from 'lucide-react';
+import { Pencil, Trash2, FileText, ChevronDown, ChevronUp, Briefcase } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ConsentTemplateModal } from '@/components';
 
+interface Props {
+  isAdmin: boolean
+  isOpen?: boolean
+  onToggle?: () => void
+}
 
-export default function ServicesSection({ isAdmin }: Props) {
+export default function ServicesSection({ isAdmin, isOpen = true, onToggle }: Props) {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'he' || i18n.language === 'ar';
   const [services, setServices] = useState<BusinessService[]>([]);
@@ -103,15 +108,38 @@ export default function ServicesSection({ isAdmin }: Props) {
 
   return (
 <div
-  className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg mt-8"
+  className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg"
   dir={isRTL ? 'rtl' : 'ltr'}
 >
 
-  <div className="px-6 py-4 flex items-center bg-[#F6A27B]">
-    <h2 className="text-lg font-semibold text-white">
-      {t('services.title')}
-    </h2>
-  </div>
+    <button
+      type="button"
+      onClick={onToggle}
+      className="w-full px-6 py-4 flex items-center justify-between bg-[#F6A27B]"
+      aria-expanded={isOpen}
+    >
+      <div className="flex items-center gap-3">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+          <Briefcase className="w-5 h-5" />
+        </span>
+        <h2 className="text-lg font-semibold text-white">
+          {t('services.title')}
+        </h2>
+      </div>
+      <span className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+        {isOpen ? (
+          <ChevronUp className="w-5 h-5 text-white" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-white" />
+        )}
+      </span>
+    </button>
+
+    <div
+      className={`overflow-hidden transition-all duration-300 ${
+        isOpen ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
+      }`}
+    >
 
   <div className="p-6 border-b border-slate-200">
     {isAdmin && (
@@ -468,5 +496,6 @@ export default function ServicesSection({ isAdmin }: Props) {
         />
       )}
     </div>
+  </div>
   );
 }

@@ -1,9 +1,25 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Building2, Upload, CheckCircle, X, FileText } from 'lucide-react'
+import {
+  BadgeCheck,
+  Building2,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  CircleDollarSign,
+  CreditCard,
+  FileText,
+  Info,
+  Palette,
+  Percent,
+  Receipt,
+  ShieldAlert,
+  Upload,
+  Wallet,
+  X,
+} from 'lucide-react'
 import { Container, PageHeader } from '@/components/Layout'
-import { Card, CardContent } from '@/components'
-import { getBusinessSettings, updateBusinessSettings, deleteBusinessStamp, uploadTenantLogo,  uploadBusinessStamp} from '@/api/businessSettings'
+import { getBusinessSettings, deleteBusinessStamp, uploadTenantLogo,  uploadBusinessStamp} from '@/api/businessSettings'
 import ServicesSection from './ServicesSection'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
@@ -12,13 +28,58 @@ import { get, put, post, del } from '@/api/apiClient'
 
 interface TenantContactSettings {
   name?: string
+  legalBusinessName?: string | null
+  businessRegistrationNumber?: string | null
   phone?: string | null
   whatsApp?: string | null
   logoUrl?: string | null
+  businessStampUrl?: string | null
   defaultVatRate?: number | null
+  defaultWithholdingTaxRate?: number | null
   currency?: 'ILS' | 'USD' | 'EUR' | string | null
+  defaultPaymentMethod?: string | null
+  defaultInstallments?: number | null
+  defaultInvoiceStatus?: string | null
+  invoicePrefix?: string | null
+  nextInvoiceNumber?: number | null
   autoDeleteNotDocumentedAfterDays?: number | null
   enableAutoDeleteNotDocumented?: boolean | null
+}
+
+type SectionCardProps = {
+  title: string
+  icon: ReactNode
+  headerClassName: string
+  isOpen: boolean
+  onToggle: () => void
+  children: ReactNode
+}
+
+function SectionCard({ title, icon, headerClassName, isOpen, onToggle, children }: SectionCardProps) {
+  return (
+    <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`w-full px-6 py-4 flex items-center justify-between ${headerClassName}`}
+        aria-expanded={isOpen}
+      >
+        <div className="flex items-center gap-3 text-start">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+            {icon}
+          </span>
+          <h2 className="text-lg font-semibold text-white">{title}</h2>
+        </div>
+        <span className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+          {isOpen ? <ChevronUp className="w-5 h-5 text-white" /> : <ChevronDown className="w-5 h-5 text-white" />}
+        </span>
+      </button>
+
+      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[4000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+        {children}
+      </div>
+    </div>
+  )
 }
 
 export default function BusinessSettings() {
@@ -29,18 +90,30 @@ export default function BusinessSettings() {
   const isRTL = i18n.language === 'he' || i18n.language === 'ar'
   const [formData, setFormData] = useState<{
     name: string
+    legalBusinessName: string
+    businessRegistrationNumber: string
     phone: string
     whatsApp: string
     defaultVatRate: string
+    defaultWithholdingTaxRate: string
     currency: 'ILS' | 'USD' | 'EUR'
-      invoicePrefix: string
+    defaultPaymentMethod: string
+    defaultInstallments: string
+    defaultInvoiceStatus: string
+    invoicePrefix: string
     nextInvoiceNumber: string
   }>({
     name: '',
+    legalBusinessName: '',
+    businessRegistrationNumber: '',
     phone: '',
     whatsApp: '',
     defaultVatRate: '18',
+    defaultWithholdingTaxRate: '0',
     currency: 'ILS',
+    defaultPaymentMethod: 'cash',
+    defaultInstallments: '1',
+    defaultInvoiceStatus: 'pending',
     invoicePrefix: 'INV-',
     nextInvoiceNumber: '1',
   })
@@ -59,6 +132,41 @@ export default function BusinessSettings() {
   const [deletingLogo, setDeletingLogo] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [openCards, setOpenCards] = useState({
+    business: true,
+    invoice: false,
+    branding: false,
+    services: false,
+    autoDelete: false,
+  })
+  const [invoiceValidationErrors, setInvoiceValidationErrors] = useState<Partial<Record<
+    'nextInvoiceNumber' | 'defaultVatRate' | 'defaultWithholdingTaxRate' | 'defaultInstallments',
+    string
+  >>>({})
+
+  const invoiceStatusLabelMap: Record<string, string> = {
+    pending: '🟡 ממתין',
+    paid: '🟢 שולם',
+    partially_paid: '🟠 שולם חלקית',
+    cancelled: '🔴 בוטל',
+  }
+
+  const paymentMethodLabelMap: Record<string, string> = {
+    cash: '💵 מזומן',
+    credit: '💳 אשראי',
+    bank_transfer: '🏦 העברה בנקאית',
+    check: "🧾 צ'ק",
+    bit: '📱 BIT',
+    paybox: '📲 PayBox',
+    other: '📄 אחר',
+  }
+
+  const toggleCard = (key: keyof typeof openCards) => {
+    setOpenCards((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }))
+  }
 
   const API_BASE = (import.meta as any).env.VITE_API_URL
 
@@ -99,10 +207,16 @@ export default function BusinessSettings() {
 
       setFormData({
         name: settings.name,
+        legalBusinessName: tenant?.legalBusinessName ?? settings.legalBusinessName ?? '',
+        businessRegistrationNumber: tenant?.businessRegistrationNumber ?? settings.businessRegistrationNumber ?? '',
         phone: tenant?.phone ?? '',
         whatsApp: tenant?.whatsApp ?? '',
         defaultVatRate: String(tenant?.defaultVatRate ?? settings.defaultVatRate ?? 18),
+        defaultWithholdingTaxRate: String(tenant?.defaultWithholdingTaxRate ?? settings.defaultWithholdingTaxRate ?? 0),
         currency: (tenant?.currency ?? settings.currency ?? 'ILS') as 'ILS' | 'USD' | 'EUR',
+        defaultPaymentMethod: String(tenant?.defaultPaymentMethod ?? settings.defaultPaymentMethod ?? 'cash'),
+        defaultInstallments: String(tenant?.defaultInstallments ?? settings.defaultInstallments ?? 1),
+        defaultInvoiceStatus: String(tenant?.defaultInvoiceStatus ?? settings.defaultInvoiceStatus ?? 'pending'),
         invoicePrefix: settings.invoicePrefix ?? 'INV-',
         nextInvoiceNumber: String(settings.nextInvoiceNumber ?? 1),
       })
@@ -119,11 +233,20 @@ export default function BusinessSettings() {
         setTenant((prev) => ({
           ...prev,
           name: settings.name,
+          legalBusinessName: tenant?.legalBusinessName ?? settings.legalBusinessName ?? '',
+          businessRegistrationNumber: tenant?.businessRegistrationNumber ?? settings.businessRegistrationNumber ?? '',
           phone: tenant?.phone ?? '',
           whatsApp: tenant?.whatsApp ?? '',
           logoUrl: settings.logoUrl,
+          businessStampUrl: settings.businessStampUrl,
           defaultVatRate: tenant?.defaultVatRate ?? settings.defaultVatRate ?? 18,
+          defaultWithholdingTaxRate: tenant?.defaultWithholdingTaxRate ?? settings.defaultWithholdingTaxRate ?? 0,
           currency: tenant?.currency ?? settings.currency ?? 'ILS',
+          defaultPaymentMethod: tenant?.defaultPaymentMethod ?? settings.defaultPaymentMethod ?? 'cash',
+          defaultInstallments: tenant?.defaultInstallments ?? settings.defaultInstallments ?? 1,
+          defaultInvoiceStatus: tenant?.defaultInvoiceStatus ?? settings.defaultInvoiceStatus ?? 'pending',
+          invoicePrefix: settings.invoicePrefix ?? 'INV-',
+          nextInvoiceNumber: settings.nextInvoiceNumber ?? 1,
           autoDeleteNotDocumentedAfterDays: tenant?.autoDeleteNotDocumentedAfterDays ?? 1,
           enableAutoDeleteNotDocumented: tenant?.enableAutoDeleteNotDocumented ?? true,
         }))
@@ -136,11 +259,20 @@ export default function BusinessSettings() {
         setTenant((prev) => ({
           ...prev,
           name: settings.name,
+          legalBusinessName: tenant?.legalBusinessName ?? settings.legalBusinessName ?? '',
+          businessRegistrationNumber: tenant?.businessRegistrationNumber ?? settings.businessRegistrationNumber ?? '',
           phone: tenant?.phone ?? '',
           whatsApp: tenant?.whatsApp ?? '',
           logoUrl: null,
+          businessStampUrl: settings.businessStampUrl,
           defaultVatRate: tenant?.defaultVatRate ?? settings.defaultVatRate ?? 18,
+          defaultWithholdingTaxRate: tenant?.defaultWithholdingTaxRate ?? settings.defaultWithholdingTaxRate ?? 0,
           currency: tenant?.currency ?? settings.currency ?? 'ILS',
+          defaultPaymentMethod: tenant?.defaultPaymentMethod ?? settings.defaultPaymentMethod ?? 'cash',
+          defaultInstallments: tenant?.defaultInstallments ?? settings.defaultInstallments ?? 1,
+          defaultInvoiceStatus: tenant?.defaultInvoiceStatus ?? settings.defaultInvoiceStatus ?? 'pending',
+          invoicePrefix: settings.invoicePrefix ?? 'INV-',
+          nextInvoiceNumber: settings.nextInvoiceNumber ?? 1,
           autoDeleteNotDocumentedAfterDays: tenant?.autoDeleteNotDocumentedAfterDays ?? 1,
           enableAutoDeleteNotDocumented: tenant?.enableAutoDeleteNotDocumented ?? true,
         }))
@@ -210,9 +342,16 @@ export default function BusinessSettings() {
 }
 
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+
+    if (name in invoiceValidationErrors) {
+      setInvoiceValidationErrors((prev) => ({
+        ...prev,
+        [name]: '',
+      }))
+    }
   }
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -288,15 +427,62 @@ export default function BusinessSettings() {
     e.preventDefault()
     setSaving(true)
 
+    const validationErrors: Partial<Record<
+      'nextInvoiceNumber' | 'defaultVatRate' | 'defaultWithholdingTaxRate' | 'defaultInstallments',
+      string
+    >> = {}
+
+    const parsedNextInvoiceNumber = Number(formData.nextInvoiceNumber)
+    const parsedDefaultVatRate = Number(formData.defaultVatRate)
+    const parsedDefaultWithholdingTaxRate = Number(formData.defaultWithholdingTaxRate)
+    const parsedDefaultInstallments = Number(formData.defaultInstallments)
+
+    if (!Number.isFinite(parsedNextInvoiceNumber) || parsedNextInvoiceNumber < 1) {
+      validationErrors.nextInvoiceNumber = 'מספר החשבונית הבא חייב להיות 1 ומעלה'
+    }
+
+    if (!Number.isFinite(parsedDefaultVatRate) || parsedDefaultVatRate < 0 || parsedDefaultVatRate > 100) {
+      validationErrors.defaultVatRate = 'מע"מ ברירת מחדל חייב להיות בין 0 ל-100'
+    }
+
+    if (
+      !Number.isFinite(parsedDefaultWithholdingTaxRate) ||
+      parsedDefaultWithholdingTaxRate < 0 ||
+      parsedDefaultWithholdingTaxRate > 100
+    ) {
+      validationErrors.defaultWithholdingTaxRate = 'ניכוי מס במקור חייב להיות בין 0 ל-100'
+    }
+
+    if (
+      formData.defaultPaymentMethod === 'credit' &&
+      (!Number.isFinite(parsedDefaultInstallments) || parsedDefaultInstallments < 1 || parsedDefaultInstallments > 36)
+    ) {
+      validationErrors.defaultInstallments = 'מספר תשלומים חייב להיות בין 1 ל-36'
+    }
+
+    if (Object.values(validationErrors).some(Boolean)) {
+      setInvoiceValidationErrors(validationErrors)
+      setSaving(false)
+      return
+    }
+
+    setInvoiceValidationErrors({})
+
     try {
       await apiClient.put('/api/tenant/me', {
         name: formData.name,
+        legalBusinessName: formData.legalBusinessName,
+        businessRegistrationNumber: formData.businessRegistrationNumber,
         logoUrl: logoUrl,
         businessStampUrl: businessStampUrl,
         phone: formData.phone,
         whatsApp: formData.whatsApp,
         defaultVatRate: Number(formData.defaultVatRate) || 18,
+        defaultWithholdingTaxRate: Number(formData.defaultWithholdingTaxRate) || 0,
         currency: formData.currency,
+        defaultPaymentMethod: formData.defaultPaymentMethod,
+        defaultInstallments: formData.defaultPaymentMethod === 'credit' ? Number(formData.defaultInstallments) || 1 : 1,
+        defaultInvoiceStatus: formData.defaultInvoiceStatus,
         invoicePrefix: formData.invoicePrefix,
         nextInvoiceNumber: Number(formData.nextInvoiceNumber),
       })
@@ -305,6 +491,27 @@ export default function BusinessSettings() {
         days: autoDeleteDays,
         enabled: enabled,
       })
+
+      setTenant((prev) => ({
+        ...(prev ?? {}),
+        name: formData.name,
+        legalBusinessName: formData.legalBusinessName,
+        businessRegistrationNumber: formData.businessRegistrationNumber,
+        phone: formData.phone,
+        whatsApp: formData.whatsApp,
+        defaultVatRate: Number(formData.defaultVatRate) || 18,
+        defaultWithholdingTaxRate: Number(formData.defaultWithholdingTaxRate) || 0,
+        currency: formData.currency,
+        defaultPaymentMethod: formData.defaultPaymentMethod,
+        defaultInstallments: formData.defaultPaymentMethod === 'credit' ? Number(formData.defaultInstallments) || 1 : 1,
+        defaultInvoiceStatus: formData.defaultInvoiceStatus,
+        invoicePrefix: formData.invoicePrefix,
+        nextInvoiceNumber: Number(formData.nextInvoiceNumber),
+        logoUrl,
+        businessStampUrl,
+        autoDeleteNotDocumentedAfterDays: autoDeleteDays,
+        enableAutoDeleteNotDocumented: enabled,
+      }))
 
       showToastNotification(t('admin.settings.saveSuccess'))
     } catch (error) {
@@ -350,14 +557,37 @@ export default function BusinessSettings() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
-          <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">          
-              <div className="px-6 py-3 rounded-t-xl bg-[#5B8DEF]">
-              <h2 className="text-lg font-semibold text-white">
-                {t('admin.settings.businessDetails')}
-              </h2>
-            </div>
-            <div className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex flex-col gap-8">
+          <div className="order-1 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">
+            <button
+              type="button"
+              onClick={() => toggleCard('business')}
+              className="w-full px-6 py-4 bg-[#5B8DEF] flex items-center justify-between"
+              aria-expanded={openCards.business}
+            >
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+                  <Building2 className="w-5 h-5" />
+                </span>
+                <h2 className="text-lg font-semibold text-white">
+                  {t('admin.settings.businessDetails')}
+                </h2>
+              </div>
+              <span className={`transition-transform duration-300 ${openCards.business ? 'rotate-180' : ''}`}>
+                {openCards.business ? (
+                  <ChevronUp className="w-5 h-5 text-white" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-white" />
+                )}
+              </span>
+            </button>
+
+            <div
+              className={`overflow-hidden transition-all duration-300 ${
+                openCards.business ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="p-6 space-y-5">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
                   <div className="flex items-center gap-2">
@@ -401,109 +631,354 @@ export default function BusinessSettings() {
 
               </div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">          
-            <div className="px-6 py-4 flex items-center rounded-t-xl bg-[#14B8A6]">          
-                <h2 className="text-lg font-semibold text-white">
-              הגדרות חשבונית
-            </h2>
-          </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {/* Currency */}
-            <div>
-              <label className="block text-sm mb-1">מטבע</label>
-              <select
-                name="currency"
-                value={formData.currency}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    currency: e.target.value as 'ILS' | 'USD' | 'EUR'
-                  }))
-                }
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="ILS">ILS (₪)</option>
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-              </select>
             </div>
+          </div>
 
-            {/* VAT */}
-            <div>
-              <label className="block text-sm mb-1">
-                {t('admin.settings.defaultVatRate')}
-              </label>
-
-              <div className="relative">
-                <input
-                  name="defaultVatRate"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.defaultVatRate}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 pr-8 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">
-                  %
+          <div className="order-3 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">
+            <button
+              type="button"
+              onClick={() => toggleCard('invoice')}
+              className="w-full px-6 py-4 bg-emerald-600 flex items-center justify-between"
+              aria-expanded={openCards.invoice}
+            >
+              <div className="flex items-center gap-3 text-start">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+                  <Receipt className="w-5 h-5" />
                 </span>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">הגדרות חשבונית</h2>
+                  <p className="text-sm text-emerald-50 mt-1">הגדרות ברירת מחדל עבור כל החשבוניות במערכת</p>
+                </div>
+              </div>
+              <span className={`transition-transform duration-300 ${openCards.invoice ? 'rotate-180' : ''}`}>
+                {openCards.invoice ? (
+                  <ChevronUp className="w-5 h-5 text-white" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-white" />
+                )}
+              </span>
+            </button>
+
+            <div
+              className={`overflow-hidden transition-all duration-300 ${
+                openCards.invoice ? 'max-h-[4000px] opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+            <div className="p-6 space-y-6">
+              <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4">
+                <h3 className="text-sm font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-blue-600" />
+                  פרטי העסק
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-blue-600" />
+                        שם חברה / ישות משפטית
+                        <span title="שם הישות המשפטית שיודפס כברירת מחדל על חשבוניות חדשות">
+                          <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </span>
+                      </span>
+                    </label>
+                    <input
+                      name="legalBusinessName"
+                      value={formData.legalBusinessName}
+                      onChange={handleChange}
+                      placeholder={'סלמאן שירותי רפואה בע"מ'}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <BadgeCheck className="w-4 h-4 text-slate-500" />
+                        ח.פ / עוסק מורשה
+                        <span title="מספר הרישום העסקי שיופיע על החשבונית">
+                          <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </span>
+                      </span>
+                    </label>
+                    <input
+                      name="businessRegistrationNumber"
+                      value={formData.businessRegistrationNumber}
+                      onChange={handleChange}
+                      placeholder="516662921"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-purple-100 bg-purple-50/40 p-4">
+                <h3 className="text-sm font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                  <Receipt className="w-4 h-4 text-purple-600" />
+                  מספור ומיסוי
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <Receipt className="w-4 h-4 text-purple-600" />
+                        קידומת חשבונית
+                        <span title="טקסט שיתווסף לפני מספר החשבונית (למשל INV-)">
+                          <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </span>
+                      </span>
+                    </label>
+                    <input
+                      name="invoicePrefix"
+                      value={formData.invoicePrefix}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-slate-500" />
+                        מספר החשבונית הבא
+                        <span title="מספר החשבונית שישמש ליצירת החשבונית הבאה">
+                          <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </span>
+                      </span>
+                    </label>
+                    <input
+                      name="nextInvoiceNumber"
+                      type="number"
+                      min="1"
+                      value={formData.nextInvoiceNumber}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    {invoiceValidationErrors.nextInvoiceNumber && (
+                      <p className="text-xs text-red-600 mt-1">{invoiceValidationErrors.nextInvoiceNumber}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <Wallet className="w-4 h-4 text-green-600" />
+                        מטבע
+                        <span title="המטבע שיוצע כברירת מחדל בעת יצירת חשבונית">
+                          <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </span>
+                      </span>
+                    </label>
+                    <select
+                      name="currency"
+                      value={formData.currency}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          currency: e.target.value as 'ILS' | 'USD' | 'EUR',
+                        }))
+                      }
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="ILS">ILS (₪)</option>
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <Percent className="w-4 h-4 text-green-600" />
+                        {t('admin.settings.defaultVatRate')}
+                        <span title={'אחוז המע"מ שיוצע כברירת מחדל בחשבוניות חדשות'}>
+                          <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </span>
+                      </span>
+                    </label>
+
+                    <div className="relative">
+                      <input
+                        name="defaultVatRate"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={formData.defaultVatRate}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2.5 pr-8 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">%</span>
+                    </div>
+                    {invoiceValidationErrors.defaultVatRate && (
+                      <p className="text-xs text-red-600 mt-1">{invoiceValidationErrors.defaultVatRate}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <Percent className="w-4 h-4 text-orange-500" />
+                        ניכוי מס במקור (%)
+                        <span title="אחוז ניכוי מס במקור שיוצע כברירת מחדל בחשבוניות חדשות">
+                          <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </span>
+                      </span>
+                    </label>
+                    <input
+                      name="defaultWithholdingTaxRate"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={formData.defaultWithholdingTaxRate}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    {invoiceValidationErrors.defaultWithholdingTaxRate && (
+                      <p className="text-xs text-red-600 mt-1">{invoiceValidationErrors.defaultWithholdingTaxRate}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-orange-100 bg-orange-50/40 p-4">
+                <h3 className="text-sm font-semibold text-orange-700 mb-3 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-orange-600" />
+                  תשלום
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <Wallet className="w-4 h-4 text-orange-600" />
+                        אופן תשלום ברירת מחדל
+                        <span title="יוצג כברירת מחדל בעת יצירת חשבונית חדשה">
+                          <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </span>
+                      </span>
+                    </label>
+                    <select
+                      name="defaultPaymentMethod"
+                      value={formData.defaultPaymentMethod}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="cash">מזומן</option>
+                      <option value="credit">אשראי</option>
+                      <option value="bank_transfer">העברה בנקאית</option>
+                      <option value="check">צ'ק</option>
+                      <option value="bit">BIT</option>
+                      <option value="paybox">PayBox</option>
+                      <option value="other">אחר</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-orange-600" />
+                        מספר תשלומים ברירת מחדל
+                        <span title="רלוונטי רק כאשר אופן התשלום הוא אשראי">
+                          <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </span>
+                      </span>
+                    </label>
+                    <input
+                      name="defaultInstallments"
+                      type="number"
+                      min="1"
+                      max="36"
+                      value={formData.defaultInstallments}
+                      onChange={handleChange}
+                      disabled={formData.defaultPaymentMethod !== 'credit'}
+                      className={`w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        formData.defaultPaymentMethod !== 'credit'
+                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                          : ''
+                      }`}
+                    />
+                    {invoiceValidationErrors.defaultInstallments && (
+                      <p className="text-xs text-red-600 mt-1">{invoiceValidationErrors.defaultInstallments}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <CircleDollarSign className="w-4 h-4 text-green-700" />
+                        סטטוס ברירת מחדל לחשבונית
+                        <span title="הסטטוס שיוצע כברירת מחדל בחשבוניות חדשות">
+                          <Info className="w-3.5 h-3.5 text-slate-400 cursor-help" />
+                        </span>
+                      </span>
+                    </label>
+                    <select
+                      name="defaultInvoiceStatus"
+                      value={formData.defaultInvoiceStatus}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="pending">ממתין לתשלום</option>
+                      <option value="paid">שולם</option>
+                      <option value="partially_paid">שולם חלקית</option>
+                      <option value="cancelled">בוטל</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="text-xs text-slate-500 mb-2 flex items-center gap-1">
+                  <FileText className="w-4 h-4 text-slate-500" />
+                  תצוגה מקדימה
+                </div>
+                <div className="space-y-1.5 text-sm text-slate-700">
+                  <p className="text-lg font-bold text-indigo-600 tracking-wide">
+                    {formData.invoicePrefix}{formData.nextInvoiceNumber}
+                  </p>
+                  <p>סטטוס: {invoiceStatusLabelMap[formData.defaultInvoiceStatus] ?? '🟡 ממתין'}</p>
+                  <p>אופן תשלום: {paymentMethodLabelMap[formData.defaultPaymentMethod] ?? '💵 מזומן'}</p>
+                  <p>{Math.max(1, Number(formData.defaultInstallments) || 1)} תשלומים</p>
+                  <p>מע"מ: {formData.defaultVatRate || '0'}%</p>
+                  <p>ניכוי מס: {formData.defaultWithholdingTaxRate || '0'}%</p>
+                </div>
               </div>
             </div>
-
-            {/* Prefix */}
-            <div>
-              <label className="block text-sm mb-1">
-                קידומת חשבונית
-              </label>
-
-              <input
-                name="invoicePrefix"
-                value={formData.invoicePrefix}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            {/* Next Number */}
-            <div>
-              <label className="block text-sm mb-1">
-                מספר חשבונית הבא
-              </label>
-
-              <input
-                name="nextInvoiceNumber"
-                type="number"
-                min="1"
-                value={formData.nextInvoiceNumber}
-                onChange={handleChange}
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-          </div>
-          <div className="md:col-span-2">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-            <div className="text-xs text-slate-500 mb-1">
-              <FileText className="w-4 h-4 text-indigo-600" />
-              תצוגה מקדימה
-            </div>
-            <div className="text-lg font-bold text-indigo-600 tracking-wide">
-              {formData.invoicePrefix}{formData.nextInvoiceNumber}
             </div>
           </div>
-        </div>
-      </div>
 
-          <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">         
-            <div className="px-6 py-4 flex items-center bg-[#B89CF8]">
+          <div className="order-2 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden transition-shadow hover:shadow-lg">
+            <button
+              type="button"
+              onClick={() => toggleCard('branding')}
+              className="w-full px-6 py-4 flex items-center justify-between bg-[#B89CF8]"
+              aria-expanded={openCards.branding}
+            >
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/15 text-white">
+                  <Palette className="w-5 h-5" />
+                </span>
                 <h2 className="text-lg font-semibold text-white">
-                    {t('admin.settings.branding')}
+                  {t('admin.settings.branding')}
                 </h2>
-            </div>
+              </div>
+              <span className={`transition-transform duration-300 ${openCards.branding ? 'rotate-180' : ''}`}>
+                {openCards.branding ? (
+                  <ChevronUp className="w-5 h-5 text-white" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-white" />
+                )}
+              </span>
+            </button>
+
+            <div
+              className={`overflow-hidden transition-all duration-300 ${
+                openCards.branding ? 'max-h-[2500px] opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
             <div className="p-6">
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 <div className="flex items-center gap-2">
@@ -621,17 +1096,25 @@ export default function BusinessSettings() {
                 </div>
 
             </div>
+            </div>
           </div>
 
-          <ServicesSection isAdmin={isAdmin} />
-              <Card className="overflow-hidden">
-              <div className="px-6 py-3 bg-[#64748B] text-white rounded-t-xl">
-                  <h2 className="text-lg font-semibold text-white">
-                      {t('settings.autoDeleteTitle')}
-                  </h2>
-              </div>
-              <CardContent>
-              <div className="space-y-4">
+          <div className="order-4 mt-0">
+            <ServicesSection
+              isAdmin={isAdmin}
+              isOpen={openCards.services}
+              onToggle={() => toggleCard('services')}
+            />
+          </div>
+          <div className="order-5 mt-0">
+            <SectionCard
+              title={t('settings.autoDeleteTitle')}
+              icon={<ShieldAlert className="w-5 h-5" />}
+              headerClassName="bg-slate-700"
+              isOpen={openCards.autoDelete}
+              onToggle={() => toggleCard('autoDelete')}
+            >
+            <div className="p-6 space-y-4">
                 <div className="flex justify-end">
                   {!enabled && (
                     <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">
@@ -687,8 +1170,8 @@ export default function BusinessSettings() {
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </SectionCard>
+          </div>
 
           <div className="flex justify-end">
             <button
