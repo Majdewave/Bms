@@ -85,6 +85,11 @@ export const getAdminStats = async (): Promise<any> => {
       change: '+0%',
       trend: 'up',
     },
+    notDocumentedClients: {
+      count: data.notDocumentedClientsCount ?? 0,
+      change: '+0%',
+      trend: 'up',
+    },
     appointmentsToday: {
       count: data.appointmentsToday ?? 0,
       change: '+0%',

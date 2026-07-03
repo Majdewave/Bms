@@ -197,7 +197,7 @@ export default function AdminDashboard() {
               <div className="flex-1">
                 <p className="text-sm text-slate-500 font-medium">{t('dashboard.notDocumentedClients')}</p>
                 <p className="text-3xl font-bold text-slate-900 mt-2">
-                  { stats?.upcomingAppointmentsList ? stats.upcomingAppointmentsList.filter( (a: any) => !a.isDocumented ).length : 0 }
+                  {stats?.notDocumentedClients?.count ?? 0}
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-red-50 text-red-600">
