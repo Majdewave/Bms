@@ -61,6 +61,7 @@ const allMenuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/staff/dashboard', roles: ['staff'] },
   { icon: Calendar, label: 'My Appointments', path: '/staff/appointments', roles: ['staff'], permission: 'manage_appointments' },
   { icon: Users, label: 'Manage Clients', path: '/staff/clients', roles: ['staff'], permission: 'manage_clients' },
+  { icon: FileText, label: 'Invoices', path: '/staff/invoices', roles: ['staff'], permission: 'manage_invoices', feature: 'invoicesEnabled' },
 ]
 
 export default function AdminLayout() {
@@ -92,6 +93,7 @@ export default function AdminLayout() {
 
     return allMenuItems.filter((item) => {
       if (item.roles.includes('staff') && user.role === 'staff') {
+        if (item.feature && !features?.[item.feature]) return false
         if (!item.permission) return true
         return hasPermission(item.permission)
       }
@@ -118,6 +120,8 @@ export default function AdminLayout() {
         return t('nav.staff')
       case 'Manage Clients':
         return t('staff.clients.viewTitle')
+      case 'Invoices':
+        return t('nav.invoices')
       case 'Business Settings':
         return t('nav.settings')
       case 'Feature Toggles':

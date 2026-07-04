@@ -13,6 +13,9 @@ import {
   Trash2,
   Mail,
   User,
+  FileText,
+  Calendar,
+  Folder,
   ChevronDown,
   ChevronUp,
   Check,
@@ -52,6 +55,14 @@ export default function AdminStaff() {
   const [stampFile, setStampFile] = useState<File | null>(null)
   const [stampPreview, setStampPreview] = useState<string>('')
   const [uploadingStamp, setUploadingStamp] = useState(false)
+
+  const permissionOptions: Array<{ permission: StaffPermission; icon: typeof User }> = [
+    { permission: 'manage_clients', icon: User },
+    { permission: 'manage_appointments', icon: Calendar },
+    { permission: 'manage_invoices', icon: FileText },
+    { permission: 'manage_notes', icon: Pencil },
+    { permission: 'manage_files', icon: Folder },
+  ]
 
   
   useEffect(() => {
@@ -693,7 +704,7 @@ export default function AdminStaff() {
                 <p className="text-sm text-slate-600">{t('admin.staff.form.permissionsHint')}</p>
 
                 <div className="space-y-3">
-                  {(['manage_clients', 'manage_appointments', 'manage_notes', 'manage_files'] as StaffPermission[]).map((permission) => (
+                  {permissionOptions.map(({ permission, icon: PermissionIcon }) => (
                     <label
                       key={permission}
                       className="flex items-start gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer"
@@ -705,7 +716,8 @@ export default function AdminStaff() {
                         className="mt-0.5 w-4 h-4 text-primary-600 rounded border-slate-300 focus:ring-2 focus:ring-primary-500"
                       />
                       <div className="flex-1">
-                        <p className="font-medium text-slate-900">
+                        <p className="font-medium text-slate-900 inline-flex items-center gap-2">
+                          <PermissionIcon className="w-4 h-4 text-slate-500" />
                           {t(`admin.staff.permissions.${permission}.title`)}
                         </p>
                         <p className="text-xs text-slate-500">

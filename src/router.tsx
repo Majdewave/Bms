@@ -184,9 +184,9 @@ export const router = createBrowserRouter([
       {
         path: 'invoices',
         element: (
-          <RoleBasedRoute allowedRoles={['admin']}>
+          <PermissionBasedRoute requiredPermission="manage_invoices">
             <AdminInvoices />
-          </RoleBasedRoute>
+          </PermissionBasedRoute>
         ),
       },
 
@@ -281,6 +281,18 @@ export const router = createBrowserRouter([
             requiredPermission="manage_clients"
           >
             <AdminClientProfile />
+          </PermissionBasedRoute>
+        ),
+      },
+
+      {
+        path: 'invoices',
+        element: (
+          <PermissionBasedRoute
+            allowedRoles={['staff']}
+            requiredPermission="manage_invoices"
+          >
+            <AdminInvoices />
           </PermissionBasedRoute>
         ),
       },

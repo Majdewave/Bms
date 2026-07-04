@@ -6,6 +6,7 @@ import { servicesService, type BusinessService } from '@/api/servicesService'
 import { staffService, type StaffMember } from '@/api/staff'
 import { useTranslation } from 'react-i18next'
 import SignConsentModal from './SignConsentModal'
+import Autocomplete from './Autocomplete'
 
 type EditableAppointment = {
   id: string
@@ -43,6 +44,8 @@ export default function CreateAppointmentModal({
   const [showConsentModal, setShowConsentModal] = useState(false)
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [clientQuery, setClientQuery] = useState('')
+  const [serviceQuery, setServiceQuery] = useState('')
 
   const [formData, setFormData] = useState({
     clientId: defaultClientId || '',
@@ -77,6 +80,28 @@ export default function CreateAppointmentModal({
       })
     }
   }, [mode, appointment])
+
+  useEffect(() => {
+    if (!clients.length) {
+      return
+    }
+
+    const selectedClient = clients.find((client) => client.id === formData.clientId)
+    if (selectedClient) {
+      setClientQuery(selectedClient.fullName || selectedClient.email || '')
+    }
+  }, [clients, formData.clientId])
+
+  useEffect(() => {
+    if (!services.length) {
+      return
+    }
+
+    const selectedService = services.find((service) => service.id === formData.serviceId)
+    if (selectedService) {
+      setServiceQuery(selectedService.name || '')
+    }
+  }, [services, formData.serviceId])
 
   useEffect(() => {
     if (formData.serviceId) {
@@ -223,22 +248,33 @@ if (!formData.date || !formData.time) {
             {t('appointments.form.client')}
             <span className="text-red-500 ml-1">*</span>
           </label>
-            <select
-              value={formData.clientId}
-              onChange={e => setFormData({ ...formData, clientId: e.target.value })}
-              className={`w-full rounded-lg px-3 py-2 border ${
+            <Autocomplete
+                items={clients}
+                query={clientQuery}
+                onQueryChange={(value) => {
+                  setClientQuery(value)
+                  setFormData((previous) => ({ ...previous, clientId: '' }))
+                }}
+                onSelect={(client) => {
+                  setClientQuery(client.fullName || client.email || '')
+                  setFormData((previous) => ({ ...previous, clientId: client.id }))
+                  setErrors((previous) => ({ ...previous, clientId: '' }))
+                }}
+                getItemId={(client) => client.id}
+                getItemLabel={(client) => client.fullName || client.email || ''}
+                getItemSecondaryText={(client) => client.email || undefined}
+                getItemSearchText={(client) => `${client.fullName || ''} ${client.email || ''}`}
+                placeholder={t('appointments.form.selectClient')}
+                inputClassName={`w-full rounded-lg px-3 py-2 border ${
                   errors.clientId
                     ? 'border-red-500 focus:ring-1 focus:ring-red-500'
                     : 'border-slate-300'
                 }`}
-                >
-              <option value="">{t('appointments.form.selectClient')}</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>
-                 {(c as any).fullName || c.email}
-                </option>
-              ))}
-            </select>
+                noResultsText="לא נמצאו לקוחות"
+                minQueryLength={0}
+                emptyQueryShowsAll={true}
+                maxResults={30}
+            />
 
             {errors.clientId && (
             <p className="text-sm text-red-500 mt-1">
@@ -250,22 +286,32 @@ if (!formData.date || !formData.time) {
               {t('appointments.form.service')}
               <span className="text-red-500 ml-1">*</span>  
             </label>
-            <select
-              value={formData.serviceId}
-              onChange={e => setFormData({ ...formData, serviceId: e.target.value })}
-              className={`w-full rounded-lg px-3 py-2 border ${
-                  errors.serviceId
-                    ? 'border-red-500 focus:ring-1 focus:ring-red-500'
-                    : 'border-slate-300'
-                }`}
-                >
-              <option value="">{t('appointments.form.selectService')}</option>
-              {services.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <Autocomplete
+              items={services}
+              query={serviceQuery}
+              onQueryChange={(value) => {
+                setServiceQuery(value)
+                setFormData((previous) => ({ ...previous, serviceId: '' }))
+              }}
+              onSelect={(service) => {
+                setServiceQuery(service.name || '')
+                setFormData((previous) => ({ ...previous, serviceId: service.id }))
+                setErrors((previous) => ({ ...previous, serviceId: '' }))
+              }}
+              getItemId={(service) => service.id}
+              getItemLabel={(service) => service.name || ''}
+              getItemSearchText={(service) => service.name || ''}
+              placeholder={t('appointments.form.selectService')}
+              inputClassName={`w-full rounded-lg px-3 py-2 border ${
+                errors.serviceId
+                  ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                  : 'border-slate-300'
+              }`}
+              noResultsText={t('services.empty', 'לא נמצאו שירותים')}
+              minQueryLength={0}
+              emptyQueryShowsAll={true}
+              maxResults={30}
+            />
 
             {mode === 'edit' && appointment?.id && formData.clientId && formData.serviceId && (
               <div className="flex justify-end">

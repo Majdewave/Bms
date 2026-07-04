@@ -764,6 +764,10 @@
           "title": "Manage Appointments",
           "description": "Create and edit appointments"
         },
+        "manage_invoices": {
+          "title": "Manage Invoices",
+          "description": "Create, edit, delete, and download invoice PDFs"
+        },
         "manage_notes": {
           "title": "Manage Notes",
           "description": "Add, edit and delete internal notes"

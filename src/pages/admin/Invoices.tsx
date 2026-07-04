@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Container, PageHeader, Card, CardHeader, CardContent } from '@/components'
 import { clientsService, invoicesService } from '@/api'
 import { useTenant } from '@/contexts/TenantContext'
+import { useAuth } from '@/contexts/AuthContext'
 import type {
   Client,
   CreateInvoiceLineItemRequest,
@@ -15,6 +17,7 @@ import {
   type InvoiceStatus,
 } from '@/api/invoices'
 import { useTranslation } from 'react-i18next'
+import Autocomplete from '@/components/Autocomplete'
 import {
   Check,
   ChevronDown,
@@ -150,7 +153,9 @@ const toCurrency = (value: number) => {
 const toIsoDate = (date: string) => new Date(`${date}T00:00:00`).toISOString()
 
 export default function AdminInvoices() {
+  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+  const { hasPermission } = useAuth()
   const { tenant } = useTenant()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [clients, setClients] = useState<Client[]>([])
@@ -160,13 +165,21 @@ export default function AdminInvoices() {
   const [saving, setSaving] = useState(false)
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null)
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(() => createDefaultInvoiceForm(tenant))
+  const [clientQuery, setClientQuery] = useState('')
   const [openMobileCards, setOpenMobileCards] = useState<Record<string, boolean>>({})
 
   const isRtl = isRtlLanguage(i18n.language)
+  const canManageInvoices = hasPermission('manage_invoices')
 
   useEffect(() => {
+    if (!canManageInvoices) {
+      navigate('/unauthorized')
+      setLoading(false)
+      return
+    }
+
     loadData()
-  }, [])
+  }, [canManageInvoices, navigate])
 
   const loadData = async () => {
     try {
@@ -188,6 +201,7 @@ export default function AdminInvoices() {
     setShowCreateModal(false)
     setEditingInvoiceId(null)
     setInvoiceForm(createDefaultInvoiceForm(tenant))
+    setClientQuery('')
   }
 
   const updateInvoiceField = <K extends keyof InvoiceFormState>(field: K, value: InvoiceFormState[K]) => {
@@ -278,6 +292,10 @@ export default function AdminInvoices() {
   const handleCreateInvoice = async (event: React.FormEvent) => {
     event.preventDefault()
 
+    if (!canManageInvoices) {
+      return
+    }
+
     if (!isFormValid) {
       return
     }
@@ -303,6 +321,10 @@ export default function AdminInvoices() {
   }
 
   const handleDownloadInvoice = async (invoice: Invoice) => {
+    if (!canManageInvoices) {
+      return
+    }
+
     try {
       const blob = await invoicesService.downloadInvoice(invoice.id)
       const url = window.URL.createObjectURL(blob)
@@ -320,6 +342,10 @@ export default function AdminInvoices() {
   }
 
   const handleEdit = (invoice: Invoice) => {
+    if (!canManageInvoices) {
+      return
+    }
+
     const fallbackPrice = invoice.subtotal > 0 ? invoice.subtotal : invoice.totalAmount
     const nextLineItems = invoice.lineItems.length > 0
       ? invoice.lineItems.map((lineItem) => ({
@@ -349,11 +375,27 @@ export default function AdminInvoices() {
       notes: invoice.notes ?? '',
       lineItems: nextLineItems,
     })
+    setClientQuery(invoice.clientName || '')
     setEditingInvoiceId(invoice.id)
     setShowCreateModal(true)
   }
 
+  useEffect(() => {
+    if (!clients.length) {
+      return
+    }
+
+    const selectedClient = clients.find((client) => client.id === invoiceForm.clientId)
+    if (selectedClient) {
+      setClientQuery(selectedClient.fullName || selectedClient.email || '')
+    }
+  }, [clients, invoiceForm.clientId])
+
   const handleDeleteInvoice = async (invoiceId: string) => {
+    if (!canManageInvoices) {
+      return
+    }
+
     if (!confirm('Delete this invoice?')) {
       return
     }
@@ -419,25 +461,29 @@ export default function AdminInvoices() {
           title={t('admin.invoices.title')}
           description={t('admin.invoices.description')}
           action={
-            <button
-              onClick={() => {
-                setEditingInvoiceId(null)
-                setInvoiceForm(createDefaultInvoiceForm(tenant))
-                setShowCreateModal(true)
-              }}
-              className="inline-flex max-[540px]:hidden items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              {t('admin.invoices.create')}
-            </button>
+            canManageInvoices ? (
+              <button
+                onClick={() => {
+                  setEditingInvoiceId(null)
+                  setInvoiceForm(createDefaultInvoiceForm(tenant))
+                  setClientQuery('')
+                  setShowCreateModal(true)
+                }}
+                className="inline-flex max-[540px]:hidden items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t('admin.invoices.create')}
+              </button>
+            ) : null
           }
         />
 
-        <div dir="ltr" className="hidden max-[540px]:flex mb-6">
+        <div dir="ltr" className={`mb-6 ${canManageInvoices ? 'hidden max-[540px]:flex' : 'hidden'}`}>
           <button
             onClick={() => {
               setEditingInvoiceId(null)
               setInvoiceForm(createDefaultInvoiceForm(tenant))
+              setClientQuery('')
               setShowCreateModal(true)
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
@@ -537,32 +583,34 @@ export default function AdminInvoices() {
                               </div>
                             )}
 
-                            <div className="pt-1 flex items-center justify-between gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteInvoice(invoice.id)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-red-700 bg-red-50 rounded-lg"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                מחיקה
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleEdit(invoice)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                                עריכה
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDownloadInvoice(invoice)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 rounded-lg"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                                הורדת PDF
-                              </button>
-                            </div>
+                            {canManageInvoices ? (
+                              <div className="pt-1 flex items-center justify-between gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteInvoice(invoice.id)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-red-700 bg-red-50 rounded-lg"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  מחיקה
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleEdit(invoice)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                  עריכה
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadInvoice(invoice)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 rounded-lg"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                  הורדת PDF
+                                </button>
+                              </div>
+                            ) : null}
                           </div>
                         </div>
                       </div>
@@ -615,17 +663,19 @@ export default function AdminInvoices() {
                             </span>
                           </td>
                           <td className="py-4 px-4">
-                            <div className="flex items-center gap-3">
-                              <button type="button" onClick={() => handleDownloadInvoice(invoice)}>
-                                <Download className="w-4 h-4 text-blue-600" />
-                              </button>
-                              <button type="button" onClick={() => handleEdit(invoice)}>
-                                <Pencil className="w-4 h-4 text-green-600" />
-                              </button>
-                              <button type="button" onClick={() => handleDeleteInvoice(invoice.id)}>
-                                <Trash2 className="w-4 h-4 text-red-600" />
-                              </button>
-                            </div>
+                            {canManageInvoices ? (
+                              <div className="flex items-center gap-3">
+                                <button type="button" onClick={() => handleDownloadInvoice(invoice)}>
+                                  <Download className="w-4 h-4 text-blue-600" />
+                                </button>
+                                <button type="button" onClick={() => handleEdit(invoice)}>
+                                  <Pencil className="w-4 h-4 text-green-600" />
+                                </button>
+                                <button type="button" onClick={() => handleDeleteInvoice(invoice.id)}>
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                </button>
+                              </div>
+                            ) : null}
                           </td>
                         </tr>
                       )
@@ -644,7 +694,7 @@ export default function AdminInvoices() {
           </CardContent>
         </Card>
 
-        {showCreateModal && (
+        {canManageInvoices && showCreateModal && (
           <div className="fixed inset-0 z-50 overflow-y-auto" dir={isRtl ? 'rtl' : 'ltr'}>
             <div className="flex min-h-screen items-center justify-center p-4">
               <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={closeModal}></div>
@@ -663,19 +713,28 @@ export default function AdminInvoices() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.client')} *</label>
-                      <select
-                        required
-                        value={invoiceForm.clientId}
-                        onChange={(event) => updateInvoiceField('clientId', event.target.value)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                      >
-                        <option value="">{t('admin.invoices.form.selectClient')}</option>
-                        {clients.map((client) => (
-                          <option key={client.id} value={client.id}>
-                            {client.fullName ? `${client.fullName} (${client.email || ''})` : client.email}
-                          </option>
-                        ))}
-                      </select>
+                      <Autocomplete
+                        items={clients}
+                        query={clientQuery}
+                        onQueryChange={(value) => {
+                          setClientQuery(value)
+                          updateInvoiceField('clientId', '')
+                        }}
+                        onSelect={(client) => {
+                          setClientQuery(client.fullName || client.email || '')
+                          updateInvoiceField('clientId', client.id)
+                        }}
+                        getItemId={(client) => client.id}
+                        getItemLabel={(client) => client.fullName || client.email || ''}
+                        getItemSecondaryText={(client) => client.email || undefined}
+                        getItemSearchText={(client) => `${client.fullName || ''} ${client.email || ''} ${client.phone || ''}`}
+                        placeholder={t('admin.invoices.form.selectClient')}
+                        inputClassName="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                        noResultsText="לא נמצאו לקוחות"
+                        minQueryLength={0}
+                        emptyQueryShowsAll={true}
+                        maxResults={30}
+                      />
                     </div>
 
                     <div>

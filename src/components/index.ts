@@ -15,5 +15,6 @@ export { PermissionBasedRoute } from './PermissionBasedRoute'
 export { default as CreateAppointmentModal } from './CreateAppointmentModal'
 export { default as ConsentTemplateModal } from './ConsentTemplateModal'
 export { default as SignConsentModal } from './SignConsentModal'
+export { default as Autocomplete } from './Autocomplete'
 // Plan Components
 export { default as PlanDisplay } from './PlanDisplay'

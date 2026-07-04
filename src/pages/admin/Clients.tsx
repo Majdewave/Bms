@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Container, Card, CardHeader, CardContent, Badge } from '@/components'
 import CreateClientModal from '@/components/CreateClientModal'
+import Autocomplete from '@/components/Autocomplete'
 import { clientsService } from '@/api'
 import type { Client } from '@/api'
 import { useTranslation } from 'react-i18next'
@@ -172,12 +173,21 @@ export default function Clients() {
             <div className="flex-1 relative">
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
 
-              <input
-                type="text"
+              <Autocomplete
+                items={safeClients}
+                query={searchQuery ?? ''}
+                onQueryChange={(value) => setSearchQuery(value ?? '')}
+                onSelect={(client) => setSearchQuery(client.fullName ?? '')}
+                getItemId={(client) => client.id}
+                getItemLabel={(client) => client.fullName ?? client.email ?? ''}
+                getItemSecondaryText={(client) => client.email || client.phone || undefined}
+                getItemSearchText={(client) => `${client.fullName ?? ''} ${client.email ?? ''} ${client.phone ?? ''} ${client.idNumber ?? ''}`}
                 placeholder={t('admin.clients.searchPlaceholder')}
-                value={searchQuery ?? ''}
-                onChange={(e) => setSearchQuery(e.target.value ?? '')}
-                className="input ps-10"
+                inputClassName="input ps-10"
+                noResultsText="לא נמצאו לקוחות"
+                minQueryLength={0}
+                emptyQueryShowsAll={false}
+                maxResults={20}
               />
             </div>
 
