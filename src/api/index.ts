@@ -10,6 +10,7 @@ import * as profileApi from './profile'
 import * as clientsApi from './clients'
 import * as staffApi from './staff'
 import * as clientPhotosApi from './clientPhotosService'
+import * as departmentApi from './departmentService'
 
 
 // Export service objects
@@ -22,6 +23,7 @@ export const profileService = profileApi
 export const clientsService = clientsApi
 export const staffService = staffApi
 export const clientPhotosService = clientPhotosApi
+export const departmentService = departmentApi
 
 
 
@@ -52,6 +54,11 @@ export type {
   CreateStaffRequest,
   UpdateStaffRequest,
 } from './staff'
+export type {
+  Department,
+  CreateDepartmentRequest,
+  UpdateDepartmentRequest,
+} from './departmentService'
 
 
 
