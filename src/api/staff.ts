@@ -18,6 +18,7 @@ export interface StaffMember {
   roleLabel: string
   isActive: boolean
   permissions: string[]
+  departmentIds: string[]
   useStamp?: boolean
   stampUrl?: string
 }
@@ -29,6 +30,7 @@ export interface CreateStaffRequest {
   role?: string
   RoleLabel: string
   Permissions: string[]
+  DepartmentIds?: string[]
   VisibleMenuItems?: string[]
   UseStamp?: boolean
   StampUrl?: string
@@ -42,6 +44,7 @@ export interface UpdateStaffRequest {
   StampUrl?: string
   IsActive: boolean
   Permissions: string[]
+  DepartmentIds?: string[]
   Password?: string
   Email?: string
 }
@@ -78,6 +81,7 @@ export const staffService = {
       RoleLabel: staffMember.roleLabel,
       IsActive: !staffMember.isActive,
       Permissions: staffMember.permissions || [],
+      DepartmentIds: staffMember.departmentIds || [],
     }
 
     return put<StaffMember>(`/api/staff/${staffMember.id}`, payload)

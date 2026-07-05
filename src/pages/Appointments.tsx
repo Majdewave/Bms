@@ -180,6 +180,23 @@ const historyAppointments = filteredAppointments
     }
   }
 
+  const renderDepartmentBadge = (appointment: AppointmentRow) => {
+    if (!appointment.departmentName) {
+      return null
+    }
+
+    return (
+      <span
+        className="inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-semibold bg-white"
+        style={appointment.departmentColor
+          ? { color: appointment.departmentColor, borderColor: appointment.departmentColor }
+          : undefined}
+      >
+        {appointment.departmentName}
+      </span>
+    )
+  }
+
 
   const markDocumented = async (appointment: Appointment) => {
   try {
@@ -256,6 +273,7 @@ const historyAppointments = filteredAppointments
                   <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-sm font-semibold">
                     {appointment.serviceName}
                   </span>
+                  {renderDepartmentBadge(appointment)}
                 </div>
 
                 {appointment.staffName && (
@@ -385,6 +403,7 @@ const historyAppointments = filteredAppointments
                         <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">
                           {appointment.serviceName}
                         </span>
+                        {renderDepartmentBadge(appointment)}
                         <div className="mt-1 flex gap-2 items-center">
                           {hasConsent ? (
                             <span className="flex items-center gap-1 text-green-700 text-sm font-medium opacity-80" title="הסכמה כבר נחתמה">

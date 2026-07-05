@@ -280,6 +280,8 @@
       "titlePlaceholder": "e.g., Quarterly Review",
       "service": "Service",
       "selectService": "Select a service",
+      "department": "Department",
+      "noServicesForStaff": "No services found for the selected staff departments",
       "date": "Date",
       "time": "Time",
       "staff": "Staff Member",
@@ -634,6 +636,57 @@
       "note": "Note",
       "noteText": "These settings will be displayed across the system including login page, headers, and contact information."
     },
+    "departments": {
+      "title": "Business Departments",
+      "description": "Manage internal departments, display order, and fixed colors",
+      "createTitle": "Add New Department",
+      "editTitle": "Edit Department",
+      "create": "Add Department",
+      "update": "Update Department",
+      "note": "Required fields are marked with an asterisk",
+      "empty": "No departments have been created yet",
+      "noDescription": "No description",
+      "confirmDeactivate": "Deactivate this department? You can enable it again later.",
+      "table": {
+        "order": "Order",
+        "name": "Name",
+        "description": "Description",
+        "color": "Color",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "form": {
+        "name": "Department Name",
+        "namePlaceholder": "e.g. Physiotherapy",
+        "description": "Description",
+        "descriptionPlaceholder": "Short internal description",
+        "color": "Department Color",
+        "active": "Active"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "actions": {
+        "up": "Up",
+        "down": "Down",
+        "deactivate": "Deactivate",
+        "activate": "Enable"
+      },
+      "colors": {
+        "blue": "Blue",
+        "indigo": "Indigo",
+        "emerald": "Green",
+        "amber": "Amber",
+        "rose": "Rose",
+        "slate": "Slate"
+      },
+      "validation": {
+        "requiredName": "Department name is required.",
+        "duplicateName": "A department with this name already exists.",
+        "saveFailed": "Failed to save the department. Please try again."
+      }
+    },
     "invoices": {
       "title": "All Invoices",
       "description": "Manage invoices and payments for all clients",
@@ -750,6 +803,10 @@
         "roleHint": "Free text role description (optional)",
         "permissions": "Permissions",
         "permissionsHint": "Select what this staff member can do",
+        "departments": "Departments",
+        "departmentsHint": "Select one or more departments. Non-admin staff must have at least one department.",
+        "adminDepartmentsNote": "Admin staff can be saved without departments.",
+        "noDepartments": "No departments are available yet",
         "menuVisibility": "Menu Visibility",
         "menuVisibilityHint": "Select which menu items are visible",
         "password": "Password",
@@ -782,7 +839,8 @@
         "appointments": "View Appointments"
       },
       "validation": {
-        "requiredFields": "Please fill in all required fields"
+        "requiredFields": "Please fill in all required fields",
+        "departmentRequired": "Select at least one department unless this staff member is an Admin."
       },
       "errors": {
         "saveFailed": "Failed to save staff member",
@@ -838,9 +896,18 @@
     "title": "Business Services",
     "add": "Add",
     "serviceName": "Service name",
+    "department": "Department",
+    "departmentUnassigned": "No department",
+    "noDepartments": "No active departments available",
     "actions": "Actions",
     "duration": "Duration (min)",
     "name": "Name",
-    "empty": "No services found."
+    "empty": "No services found.",
+    "confirmDelete": "Delete this service?",
+    "validation": {
+      "nameRequired": "Service name is required.",
+      "departmentRequired": "Department is required for a service.",
+      "saveFailed": "Failed to save service. Please try again."
+    }
   }
 }

@@ -80,25 +80,34 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
 
     try {
       const audioContext = new window.AudioContext()
-      const oscillator = audioContext.createOscillator()
-      const gainNode = audioContext.createGain()
+      const masterGain = audioContext.createGain()
+      masterGain.connect(audioContext.destination)
 
-      oscillator.type = 'sine'
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime)
+      const scheduleBeep = (startAt: number, frequency: number, peak: number) => {
+        const oscillator = audioContext.createOscillator()
+        const gainNode = audioContext.createGain()
 
-      gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime)
-      gainNode.gain.exponentialRampToValueAtTime(0.035, audioContext.currentTime + 0.01)
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.14)
+        oscillator.type = 'square'
+        oscillator.frequency.setValueAtTime(frequency, startAt)
 
-      oscillator.connect(gainNode)
-      gainNode.connect(audioContext.destination)
+        gainNode.gain.setValueAtTime(0.0001, startAt)
+        gainNode.gain.exponentialRampToValueAtTime(peak, startAt + 0.008)
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.095)
 
-      oscillator.start(audioContext.currentTime)
-      oscillator.stop(audioContext.currentTime + 0.15)
+        oscillator.connect(gainNode)
+        gainNode.connect(masterGain)
 
-      oscillator.onended = () => {
-        void audioContext.close()
+        oscillator.start(startAt)
+        oscillator.stop(startAt + 0.1)
       }
+
+      const now = audioContext.currentTime
+      scheduleBeep(now, 1080, 0.2)
+      scheduleBeep(now + 0.11, 1320, 0.22)
+
+      window.setTimeout(() => {
+        void audioContext.close()
+      }, 350)
     } catch {
       // Ignore blocked audio contexts (e.g., browser autoplay policy)
     }

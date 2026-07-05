@@ -19,6 +19,9 @@ export interface Appointment {
   clientName: string
   clientEmail?: string | null
   serviceName?: string | null
+  departmentId?: string | null
+  departmentName?: string | null
+  departmentColor?: string | null
   startTime: string
   endTime: string
   notes?: string | null

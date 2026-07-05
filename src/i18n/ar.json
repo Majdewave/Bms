@@ -280,6 +280,8 @@
       "titlePlaceholder": "على سبيل المثال، مراجعة ربع سنوية",
       "service": "الخدمة",
       "selectService": "اختر الخدمة",
+      "department": "القسم",
+      "noServicesForStaff": "لا توجد خدمات ضمن أقسام عضو الفريق المحدد",
       "date": "التاريخ",
       "time": "الوقت",
       "staff": "الفريق",
@@ -632,6 +634,57 @@
       "note": "ملاحظة",
       "noteText": "ستظهر هذه الإعدادات في جميع أنحاء النظام بما في ذلك صفحة تسجيل الدخول والعناوين ومعلومات الاتصال."
     },
+    "departments": {
+      "title": "أقسام العمل",
+      "description": "إدارة الأقسام الداخلية وترتيب العرض والألوان الثابتة",
+      "createTitle": "إضافة قسم جديد",
+      "editTitle": "تعديل القسم",
+      "create": "إضافة قسم",
+      "update": "تحديث القسم",
+      "note": "الحقول المطلوبة مميزة بنجمة",
+      "empty": "لم يتم إنشاء أي أقسام بعد",
+      "noDescription": "لا يوجد وصف",
+      "confirmDeactivate": "هل تريد تعطيل هذا القسم؟ يمكنك إعادة تفعيله لاحقاً.",
+      "table": {
+        "order": "الترتيب",
+        "name": "الاسم",
+        "description": "الوصف",
+        "color": "اللون",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "form": {
+        "name": "اسم القسم",
+        "namePlaceholder": "مثال: العلاج الطبيعي",
+        "description": "الوصف",
+        "descriptionPlaceholder": "وصف داخلي قصير",
+        "color": "لون القسم",
+        "active": "نشط"
+      },
+      "status": {
+        "active": "نشط",
+        "inactive": "غير نشط"
+      },
+      "actions": {
+        "up": "أعلى",
+        "down": "أسفل",
+        "deactivate": "تعطيل",
+        "activate": "تفعيل"
+      },
+      "colors": {
+        "blue": "أزرق",
+        "indigo": "أرجواني",
+        "emerald": "أخضر",
+        "amber": "عنبر",
+        "rose": "وردي",
+        "slate": "رمادي"
+      },
+      "validation": {
+        "requiredName": "اسم القسم مطلوب.",
+        "duplicateName": "يوجد قسم بهذا الاسم بالفعل.",
+        "saveFailed": "فشل حفظ القسم. يرجى المحاولة مرة أخرى."
+      }
+    },
     "invoices": {
       "title": "جميع الفواتير",
       "description": "إدارة الفواتير والمدفوعات لجميع العملاء",
@@ -748,6 +801,10 @@
         "roleHint": "وصف الدور بشكل حر (اختياري)",
         "permissions": "الأذونات",
         "permissionsHint": "اختر ما يمكن لهذا العضو القيام به",
+        "departments": "الأقسام",
+        "departmentsHint": "اختر قسمًا واحدًا أو أكثر. يجب أن يحتوي عضو الفريق غير الإداري على قسم واحد على الأقل.",
+        "adminDepartmentsNote": "يمكن حفظ الأدمن بدون أقسام.",
+        "noDepartments": "لا توجد أقسام متاحة بعد",
         "menuVisibility": "رؤية القائمة",
         "menuVisibilityHint": "اختر عناصر القائمة التي تكون مرئية لهذا العضو",
         "password": "كلمة المرور",
@@ -780,7 +837,8 @@
         "appointments": "عرض المواعيد"
       },
       "validation": {
-        "requiredFields": "يرجى ملء جميع الحقول المطلوبة"
+        "requiredFields": "يرجى ملء جميع الحقول المطلوبة",
+        "departmentRequired": "يرجى اختيار قسم واحد على الأقل، إلا إذا كان هذا العضو أدمن."
       },
       "errors": {
         "saveFailed": "خطأ في حفظ عضو الفريق",
@@ -823,9 +881,18 @@
     "title": "الخدمات التجارية",
     "add": "إضافة",
     "serviceName": "اسم الخدمة",
+    "department": "القسم",
+    "departmentUnassigned": "بدون قسم",
+    "noDepartments": "لا توجد أقسام نشطة متاحة",
     "actions": "الإجراءات",
     "duration": "المدة (دقائق)",
     "name": "الاسم",
-    "empty": "لم يتم العثور على خدمات"
+    "empty": "لم يتم العثور على خدمات",
+    "confirmDelete": "هل تريد حذف هذه الخدمة؟",
+    "validation": {
+      "nameRequired": "اسم الخدمة مطلوب.",
+      "departmentRequired": "يجب اختيار قسم للخدمة.",
+      "saveFailed": "فشل حفظ الخدمة. يرجى المحاولة مرة أخرى."
+    }
   }
 }

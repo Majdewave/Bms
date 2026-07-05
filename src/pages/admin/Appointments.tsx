@@ -180,6 +180,27 @@ const historyAppointments = filteredAppointments
     }
   }
 
+  const renderDepartmentBadge = (appointment: AppointmentRow, compact = false) => {
+    if (!appointment.departmentId || !appointment.departmentName) {
+      return null
+    }
+
+    const color = appointment.departmentColor || '#6b7280'
+    const badgeClass = compact
+      ? 'inline-flex items-center px-1.5 py-0.5 rounded-full border text-[10px] font-medium leading-none max-w-full'
+      : 'inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium leading-none max-w-full'
+
+    return (
+      <span
+        className={badgeClass}
+        title={appointment.departmentName}
+        style={{ color, borderColor: color, backgroundColor: 'rgba(255, 255, 255, 0.92)' }}
+      >
+        <span className="truncate">{appointment.departmentName}</span>
+      </span>
+    )
+  }
+
 
   const markDocumented = async (appointment: Appointment) => {
   try {
@@ -256,6 +277,7 @@ const historyAppointments = filteredAppointments
                   <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-sm font-semibold">
                     {appointment.serviceName}
                   </span>
+                  {renderDepartmentBadge(appointment, true)}
                 </div>
 
                 {appointment.staffName && (
@@ -385,6 +407,7 @@ const historyAppointments = filteredAppointments
                         <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">
                           {appointment.serviceName}
                         </span>
+                        {renderDepartmentBadge(appointment)}
                         <div className="mt-1 flex gap-2 items-center">
                           {hasConsent ? (
                             <span className="flex items-center gap-1 text-green-700 text-sm font-medium opacity-80" title="הסכמה כבר נחתמה">

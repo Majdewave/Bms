@@ -20,7 +20,9 @@ import {
 } from 'lucide-react'
 import { Container, PageHeader } from '@/components/Layout'
 import { getBusinessSettings, deleteBusinessStamp, uploadTenantLogo,  uploadBusinessStamp} from '@/api/businessSettings'
+import DepartmentsSection from './DepartmentsSection'
 import ServicesSection from './ServicesSection'
+import type { Department } from '@/api/departmentService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import * as apiClient from '@/api/apiClient'
@@ -84,9 +86,10 @@ function SectionCard({ title, icon, headerClassName, isOpen, onToggle, children 
 
 export default function BusinessSettings() {
   const { t, i18n } = useTranslation()
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
   const { setTenant } = useTenant()
   const isAdmin = user?.role === 'admin'
+  const canManageDepartments = hasPermission('manage_business_settings')
   const isRTL = i18n.language === 'he' || i18n.language === 'ar'
   const [formData, setFormData] = useState<{
     name: string
@@ -132,10 +135,12 @@ export default function BusinessSettings() {
   const [deletingLogo, setDeletingLogo] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [departments, setDepartments] = useState<Department[]>([])
   const [openCards, setOpenCards] = useState({
     business: true,
     invoice: false,
     branding: false,
+    departments: false,
     services: false,
     autoDelete: false,
   })
@@ -1100,13 +1105,22 @@ export default function BusinessSettings() {
           </div>
 
           <div className="order-4 mt-0">
+            <DepartmentsSection
+              canManageDepartments={canManageDepartments}
+              isOpen={openCards.departments}
+              onToggle={() => toggleCard('departments')}
+              onDepartmentsLoaded={setDepartments}
+            />
+          </div>
+          <div className="order-5 mt-0">
             <ServicesSection
               isAdmin={isAdmin}
+              departments={departments}
               isOpen={openCards.services}
               onToggle={() => toggleCard('services')}
             />
           </div>
-          <div className="order-5 mt-0">
+          <div className="order-6 mt-0">
             <SectionCard
               title={t('settings.autoDeleteTitle')}
               icon={<ShieldAlert className="w-5 h-5" />}

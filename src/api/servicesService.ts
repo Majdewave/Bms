@@ -4,8 +4,17 @@ export interface BusinessService {
   id: string;
   name: string;
   defaultDurationMinutes: number;
+  departmentId?: string | null;
+  departmentName?: string | null;
+  departmentColor?: string | null;
   consentTemplateId?: string | null;
   consentTemplateContent?: string | null;
+}
+
+export interface SaveBusinessServiceRequest {
+  name: string;
+  defaultDurationMinutes: number;
+  departmentId: string;
 }
 
 export const servicesService = {
@@ -13,11 +22,11 @@ export const servicesService = {
     return apiClient.get("/api/services");
   },
 
-  async create(data: Partial<BusinessService>) {
+  async create(data: SaveBusinessServiceRequest) {
     return apiClient.post("/api/services", data);
   },
 
-  async update(id: string, data: Partial<BusinessService>) {
+  async update(id: string, data: SaveBusinessServiceRequest) {
     return apiClient.put(`/api/services/${id}`, data);
   },
 

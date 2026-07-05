@@ -272,6 +272,8 @@
       "titlePlaceholder": "למשל, סקירה רבעונית",
       "service": "שירות",
       "selectService": "בחר שירות",
+      "department": "מחלקה",
+      "noServicesForStaff": "לא נמצאו שירותים במחלקות של איש הצוות שנבחר",
       "date": "תאריך",
       "time": "שעה",
       "staff": "חבר צוות מטפל",
@@ -623,6 +625,57 @@
       "note": "הערה",
       "noteText": "הגדרות אלו יוצגו בכל המערכת כולל דף הכניסה, כותרות ומידע ליצירת קשר."
     },
+    "departments": {
+      "title": "מחלקות העסק",
+      "description": "נהל מחלקות פנימיות, סדר תצוגה וצבעים קבועים",
+      "createTitle": "הוספת מחלקה חדשה",
+      "editTitle": "עריכת מחלקה",
+      "create": "הוסף מחלקה",
+      "update": "עדכן מחלקה",
+      "note": "שדות חובה מסומנים בכוכבית",
+      "empty": "אין עדיין מחלקות מוגדרות",
+      "noDescription": "אין תיאור",
+      "confirmDeactivate": "להשבית את המחלקה? ניתן להפעיל אותה מחדש לאחר מכן.",
+      "table": {
+        "order": "סדר",
+        "name": "שם",
+        "description": "תיאור",
+        "color": "צבע",
+        "status": "סטטוס",
+        "actions": "פעולות"
+      },
+      "form": {
+        "name": "שם המחלקה",
+        "namePlaceholder": "למשל, פיזיותרפיה",
+        "description": "תיאור",
+        "descriptionPlaceholder": "תיאור פנימי קצר",
+        "color": "צבע מחלקה",
+        "active": "פעילה"
+      },
+      "status": {
+        "active": "פעילה",
+        "inactive": "לא פעילה"
+      },
+      "actions": {
+        "up": "למעלה",
+        "down": "למטה",
+        "deactivate": "השבתה",
+        "activate": "הפעלה"
+      },
+      "colors": {
+        "blue": "כחול",
+        "indigo": "אינדיגו",
+        "emerald": "ירוק",
+        "amber": "ענבר",
+        "rose": "ורוד",
+        "slate": "אפור"
+      },
+      "validation": {
+        "requiredName": "יש להזין שם מחלקה.",
+        "duplicateName": "קיימת כבר מחלקה עם שם זהה.",
+        "saveFailed": "שמירת המחלקה נכשלה. אנא נסה שוב."
+      }
+    },
     "invoices": {
       "title": "כל החשבוניות",
       "description": "נהל חשבוניות ותשלומים עבור כל הלקוחות",
@@ -738,6 +791,10 @@
         "roleHint": "תיאור תפקיד חופשי (אופציונלי)",
         "permissions": "הרשאות",
         "permissionsHint": "בחר מה חבר הצוות הזה יכול לעשות",
+        "departments": "מחלקות",
+        "departmentsHint": "בחר מחלקה אחת או יותר. לאנשי צוות שאינם אדמין חייבת להיות לפחות מחלקה אחת.",
+        "adminDepartmentsNote": "אדמין יכול להישמר גם ללא מחלקות.",
+        "noDepartments": "אין עדיין מחלקות זמינות",
         "menuVisibility": "נראות בתפריט",
         "menuVisibilityHint": "בחר אילו פריטי תפריט נראים",
          "password": "סיסמה",
@@ -770,7 +827,8 @@
         "appointments": "צפה בפגישות"
       },
       "validation": {
-        "requiredFields": "אנא מלא את כל השדות הנדרשים"
+        "requiredFields": "אנא מלא את כל השדות הנדרשים",
+        "departmentRequired": "יש לבחור לפחות מחלקה אחת, אלא אם מדובר באדמין."
       },
       "errors": {
         "saveFailed": "שגיאה בשמירת חבר הצוות",
@@ -819,9 +877,18 @@
     "title": "שירותים עסקיים",
     "add": "הוסף",
     "serviceName": "שם השירות",
+    "department": "מחלקה",
+    "departmentUnassigned": "ללא מחלקה",
+    "noDepartments": "אין מחלקות פעילות זמינות",
     "actions": "פעולות",
     "duration": "משך (דקות)",
     "name": "שם",
-    "empty": "לא נמצאו שירותים"
+    "empty": "לא נמצאו שירותים",
+    "confirmDelete": "למחוק את השירות?",
+    "validation": {
+      "nameRequired": "יש להזין שם שירות.",
+      "departmentRequired": "יש לבחור מחלקה לשירות.",
+      "saveFailed": "שמירת השירות נכשלה. אנא נסה שוב."
+    }
   }
 }

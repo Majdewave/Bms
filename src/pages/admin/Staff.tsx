@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
 import { staffService } from '@/api/staff'
+import { departmentService, type Department } from '@/api/departmentService'
 import type { StaffMember, StaffPermission, VisibleMenuItem } from '@/api'
 import { useTranslation } from 'react-i18next'
 import {
@@ -36,6 +37,9 @@ export default function AdminStaff() {
   const [savingStaff, setSavingStaff] = useState(false)
   const [sendingLink, setSendingLink] = useState<string | null>(null)
   const [role, setRole] = useState('Staff')
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [loadingDepartments, setLoadingDepartments] = useState(false)
+  const [departmentError, setDepartmentError] = useState('')
   const [openMobileCards, setOpenMobileCards] = useState<Record<string, boolean>>({})
   
 
@@ -46,6 +50,7 @@ export default function AdminStaff() {
     Password: '',
     RoleLabel: '',
     Permissions: [] as StaffPermission[],
+    DepartmentIds: [] as string[],
     VisibleMenuItems: [] as VisibleMenuItem[],
     IsActive: true,
     UseStamp: false,
@@ -79,6 +84,23 @@ export default function AdminStaff() {
     }
   }, [role])
 
+  useEffect(() => {
+    const loadDepartments = async () => {
+      setLoadingDepartments(true)
+      try {
+        const data = await departmentService.getDepartments()
+        setDepartments(Array.isArray(data) ? data : [])
+      } catch (error) {
+        console.error('Failed to load departments:', error)
+        setDepartments([])
+      } finally {
+        setLoadingDepartments(false)
+      }
+    }
+
+    loadDepartments()
+  }, [])
+
   const loadStaff = async () => {
     setLoading(true)
     try {
@@ -96,6 +118,8 @@ export default function AdminStaff() {
   }
 
   const handleCreateOrUpdate = async () => {
+    setDepartmentError('')
+
     if (
       !formData.FullName.trim() ||
       !formData.Email.trim() ||
@@ -109,6 +133,12 @@ export default function AdminStaff() {
       return
     }
 
+    const selectedDepartmentIds = formData.DepartmentIds || []
+    if (role.toLowerCase() !== 'admin' && selectedDepartmentIds.length === 0) {
+      setDepartmentError(t('admin.staff.validation.departmentRequired'))
+      return
+    }
+
     setSavingStaff(true)
     try {
       const normalizedRole = role.toLowerCase() === 'admin' ? 'Admin' : 'Staff'
@@ -119,6 +149,7 @@ export default function AdminStaff() {
           ...formData,
           role: normalizedRole,
           Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
+          DepartmentIds: normalizedRole === 'Admin' ? selectedDepartmentIds : selectedDepartmentIds,
         }
         // If uploading a new stamp, never send UseStamp: true with empty StampUrl
         if (stampFile) {
@@ -154,6 +185,7 @@ export default function AdminStaff() {
         StampUrl: '',
         role: normalizedRole,
         Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
+        DepartmentIds: selectedDepartmentIds,
       }
       const created = await staffService.createStaffMember(createPayload)
       let staffId = created?.id
@@ -181,6 +213,7 @@ export default function AdminStaff() {
             StampUrl: stampUrl,
             role: normalizedRole,
             Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
+            DepartmentIds: selectedDepartmentIds,
           })
         } catch (error) {
           console.error('Failed to update staff with stamp:', error)
@@ -235,12 +268,14 @@ export default function AdminStaff() {
   const openEditModal = (staffMember: StaffMember) => {
     setEditingStaff(staffMember)
     setRole(staffMember.role || 'Staff')
+    setDepartmentError('')
     setFormData({
       FullName: staffMember.fullName || staffMember.name || '',
       Email: staffMember.email || '',
       Password: '',
       RoleLabel: staffMember.roleLabel || staffMember.role || '',
       Permissions: staffMember.permissions || [],
+      DepartmentIds: staffMember.departmentIds || [],
       VisibleMenuItems: staffMember.visibleMenuItems || [],
       IsActive: staffMember.isActive ?? true,
       UseStamp: staffMember.useStamp ?? false,
@@ -255,12 +290,14 @@ export default function AdminStaff() {
     setShowModal(false)
     setEditingStaff(null)
     setRole('Staff')
+    setDepartmentError('')
     setFormData({
       FullName: '',
       Email: '',
       Password: '',
       RoleLabel: '',
       Permissions: [],
+      DepartmentIds: [],
       VisibleMenuItems: [],
       IsActive: true,
       UseStamp: false,
@@ -285,6 +322,16 @@ export default function AdminStaff() {
       visibleMenuItems: prev.visibleMenuItems.includes(item)
         ? prev.visibleMenuItems.filter(i => i !== item)
         : [...prev.visibleMenuItems, item],
+    }))
+  }
+
+  const toggleDepartment = (departmentId: string) => {
+    setDepartmentError('')
+    setFormData((prev) => ({
+      ...prev,
+      DepartmentIds: prev.DepartmentIds.includes(departmentId)
+        ? prev.DepartmentIds.filter((id) => id !== departmentId)
+        : [...prev.DepartmentIds, departmentId],
     }))
   }
 
@@ -729,6 +776,71 @@ export default function AdminStaff() {
                 </div>
               </div>
               )}
+
+              {/* Departments */}
+              <div className="space-y-4">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
+                    {t('admin.staff.form.departments')}
+                  </h3>
+                  <p className="text-sm text-slate-600">{t('admin.staff.form.departmentsHint')}</p>
+                  {role.toLowerCase() === 'admin' && (
+                    <p className="text-xs text-slate-500">{t('admin.staff.form.adminDepartmentsNote')}</p>
+                  )}
+                </div>
+
+                {loadingDepartments ? (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                    {t('common.loading')}
+                  </div>
+                ) : departments.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                    {t('admin.staff.form.noDepartments')}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {departments.map((department) => {
+                      const selected = formData.DepartmentIds.includes(department.id)
+                      return (
+                        <label
+                          key={department.id}
+                          className={`cursor-pointer rounded-2xl border p-4 transition shadow-sm hover:shadow-md ${selected ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:border-sky-300'}`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => toggleDepartment(department.id)}
+                              className="mt-1 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span
+                                    className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-white shadow-sm"
+                                    style={{ backgroundColor: department.color || '#3B82F6' }}
+                                  />
+                                  <span className="font-semibold text-slate-900 truncate">{department.name}</span>
+                                </div>
+                                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${department.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                                  {department.isActive ? t('admin.departments.status.active') : t('admin.departments.status.inactive')}
+                                </span>
+                              </div>
+                              <p className="mt-2 text-sm text-slate-600 line-clamp-2">
+                                {department.description || t('admin.departments.noDescription')}
+                              </p>
+                            </div>
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {departmentError && (
+                  <p className="text-sm text-red-600">{departmentError}</p>
+                )}
+              </div>
 
               {/* Menu Visibility */}
               <div className="space-y-4">

@@ -4,6 +4,7 @@ import { appointmentsService, type AppointmentClient } from '@/api'
 import { consentsApi, type SignedConsent } from '@/api/consents'
 import { servicesService, type BusinessService } from '@/api/servicesService'
 import { staffService, type StaffMember } from '@/api/staff'
+import { useAuth } from '@/contexts/AuthContext'
 import { useTranslation } from 'react-i18next'
 import SignConsentModal from './SignConsentModal'
 import Autocomplete from './Autocomplete'
@@ -13,6 +14,8 @@ type EditableAppointment = {
   clientId?: string
   serviceId?: string | null
   staffId?: string | null
+  departmentName?: string | null
+  departmentColor?: string | null
   startTime: string
   notes?: string | null
   status?: string
@@ -35,6 +38,7 @@ export default function CreateAppointmentModal({
 }: CreateAppointmentModalProps) {
 
   const { t } = useTranslation()
+  const { user } = useAuth()
 
   const [clients, setClients] = useState<AppointmentClient[]>([])
   const [services, setServices] = useState<BusinessService[]>([])
@@ -42,6 +46,7 @@ export default function CreateAppointmentModal({
   const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
   const [saving, setSaving] = useState(false)
   const [showConsentModal, setShowConsentModal] = useState(false)
+  const [pendingEditServiceId, setPendingEditServiceId] = useState<string | null>(null)
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [clientQuery, setClientQuery] = useState('')
@@ -58,6 +63,15 @@ export default function CreateAppointmentModal({
     status: 'Scheduled'
   })
 
+  const selectedStaffMember = staffMembers.find((staff) => staff.id === formData.staffId)
+  const selectedStaffDepartmentIds = selectedStaffMember?.departmentIds ?? []
+  const filteredServices = selectedStaffDepartmentIds.length > 0
+    ? services.filter((service) =>
+        !service.departmentId || selectedStaffDepartmentIds.includes(service.departmentId))
+    : services
+
+  const isStaffContextReadyForEdit = !formData.staffId || staffMembers.some((staff) => staff.id === formData.staffId)
+
   useEffect(() => {
     loadClients()
     loadServices()
@@ -67,10 +81,11 @@ export default function CreateAppointmentModal({
   useEffect(() => {
     if (mode === 'edit' && appointment) {
       const start = new Date(appointment.startTime)
+      const initialServiceId = appointment.serviceId ?? ''
 
       setFormData({
         clientId: appointment.clientId ?? '',
-        serviceId: (appointment as any).serviceId ?? '',
+        serviceId: '',
         staffId: (appointment as any).staffId ?? '',
         date: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`,
         time: start.toTimeString().slice(0,5),
@@ -78,8 +93,38 @@ export default function CreateAppointmentModal({
         description: appointment.notes ?? '',
         status: appointment.status ?? 'Scheduled'
       })
+
+      setPendingEditServiceId(initialServiceId || null)
+      setServiceQuery('')
+      return
     }
+
+    setPendingEditServiceId(null)
   }, [mode, appointment])
+
+  useEffect(() => {
+    if (mode !== 'edit' || !pendingEditServiceId) {
+      return
+    }
+
+    if (!services.length || !isStaffContextReadyForEdit) {
+      return
+    }
+
+    const matchingService = filteredServices.find((service) => service.id === pendingEditServiceId)
+    if (!matchingService) {
+      setPendingEditServiceId(null)
+      return
+    }
+
+    setFormData((previous) => ({
+      ...previous,
+      serviceId: matchingService.id
+    }))
+    setServiceQuery(matchingService.name || '')
+    setErrors((previous) => ({ ...previous, serviceId: '' }))
+    setPendingEditServiceId(null)
+  }, [mode, pendingEditServiceId, services.length, isStaffContextReadyForEdit, filteredServices])
 
   useEffect(() => {
     if (!clients.length) {
@@ -114,6 +159,41 @@ export default function CreateAppointmentModal({
       }
     }
   }, [formData.serviceId, services])
+
+  useEffect(() => {
+    if (!formData.serviceId) {
+      return
+    }
+
+    const selectedServiceStillAvailable = filteredServices.some(
+      (service) => service.id === formData.serviceId
+    )
+
+    if (!selectedServiceStillAvailable) {
+      setFormData((previous) => ({
+        ...previous,
+        serviceId: '',
+        duration: ''
+      }))
+      setServiceQuery('')
+    }
+  }, [filteredServices, formData.serviceId])
+
+  useEffect(() => {
+    if (user?.role !== 'staff' || !user.email || staffMembers.length === 0 || formData.staffId) {
+      return
+    }
+
+    const normalizedEmail = user.email.trim().toLowerCase()
+    const currentStaff = staffMembers.find((staff) =>
+      staff.email?.trim().toLowerCase() === normalizedEmail
+    )
+
+    if (currentStaff) {
+      setFormData((previous) => ({ ...previous, staffId: currentStaff.id }))
+      setErrors((previous) => ({ ...previous, staffId: '' }))
+    }
+  }, [user, staffMembers, formData.staffId])
 
   useEffect(() => {
     const loadSignedConsents = async () => {
@@ -219,6 +299,8 @@ if (!formData.date || !formData.time) {
 
   const selectedClient = clients.find(c => c.id === formData.clientId)
   const selectedService = services.find(s => s.id === formData.serviceId)
+  const selectedDepartmentName = selectedService?.departmentName || appointment?.departmentName || ''
+  const selectedDepartmentColor = selectedService?.departmentColor || appointment?.departmentColor || ''
   const hasConsent = !!appointment?.id && signedConsents.some(c => c.appointmentId === appointment.id)
 
   return (
@@ -287,7 +369,7 @@ if (!formData.date || !formData.time) {
               <span className="text-red-500 ml-1">*</span>  
             </label>
             <Autocomplete
-              items={services}
+              items={filteredServices}
               query={serviceQuery}
               onQueryChange={(value) => {
                 setServiceQuery(value)
@@ -307,11 +389,37 @@ if (!formData.date || !formData.time) {
                   ? 'border-red-500 focus:ring-1 focus:ring-red-500'
                   : 'border-slate-300'
               }`}
-              noResultsText={t('services.empty', 'לא נמצאו שירותים')}
+              noResultsText={
+                selectedStaffDepartmentIds.length > 0
+                  ? t('appointments.form.noServicesForStaff')
+                  : t('services.empty', 'לא נמצאו שירותים')
+              }
               minQueryLength={0}
               emptyQueryShowsAll={true}
               maxResults={30}
             />
+
+            {mode === 'edit' && (
+              <>
+                <label className="block text-sm font-semibold">
+                  {t('appointments.form.department')}
+                </label>
+                <div className="border rounded-lg px-3 py-2 bg-gray-100 flex items-center gap-2 min-h-[42px]">
+                  {selectedDepartmentName ? (
+                    <span
+                      className="inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-semibold bg-white"
+                      style={selectedDepartmentColor
+                        ? { color: selectedDepartmentColor, borderColor: selectedDepartmentColor }
+                        : undefined}
+                    >
+                      {selectedDepartmentName}
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 text-sm">-</span>
+                  )}
+                </div>
+              </>
+            )}
 
             {mode === 'edit' && appointment?.id && formData.clientId && formData.serviceId && (
               <div className="flex justify-end">
