@@ -36,7 +36,7 @@ import StaffDashboard from '@/pages/staff/Dashboard'
 import StaffAppointments from '@/pages/staff/Appointments'
 import StaffClients from '@/pages/staff/Clients'
 
-import VisitSummaryForm from '@/pages/staff/VisitSummaryForm'
+import VisitSummaryEntry from '@/pages/staff/VisitSummaryEntry'
 
 /* ================= CLIENT PAGES ================= */
 
@@ -300,7 +300,7 @@ export const router = createBrowserRouter([
         // Visit Summary Form
         {
           path: 'visit-summary/:clientId',
-          element: <VisitSummaryForm />,
+          element: <VisitSummaryEntry />,
         },
     ],
   },

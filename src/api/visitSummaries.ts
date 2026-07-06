@@ -3,6 +3,7 @@ import { del, get, post, put } from './apiClient';
 export interface VisitSummary {
   id: string;
   clientId: string;
+  appointmentId?: string | null;
   staffId?: string | null;
   examination: string;
   diagnosis: string;
@@ -10,8 +11,12 @@ export interface VisitSummary {
   createdAt?: string;
 }
 
+export type CreateVisitSummaryRequest = Omit<VisitSummary, 'id' | 'createdAt'> & {
+  appointmentId: string;
+}
+
 export const visitSummariesService = {
-  create: async (payload: Omit<VisitSummary, 'id' | 'createdAt'>) => {
+  create: async (payload: CreateVisitSummaryRequest) => {
     return await post<VisitSummary>('/api/VisitSummary', payload);
   },
 

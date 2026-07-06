@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { visitSummariesService } from '@/api/visitSummaries';
 import { getClientDetails, type ClientDetails } from '@/api/clients';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,7 +8,9 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function VisitSummaryForm() {
   const { user } = useAuth();
   const { clientId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const appointmentId = searchParams.get('appointmentId') || '';
 
   const [examination, setExamination] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
@@ -26,10 +28,15 @@ export default function VisitSummaryForm() {
 
   const handleSubmit = async () => {
     if (!clientId) return;
+    if (!appointmentId) {
+      alert('סיכום ביקור חייב להיות משויך לפגישה');
+      return;
+    }
     setLoading(true);
     try {
       await visitSummariesService.create({
         clientId,
+        appointmentId,
         examination,
         diagnosis,
         recommendations
@@ -122,7 +129,7 @@ export default function VisitSummaryForm() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end pt-6">
           <div>
-            <label className="block text-sm mb-1">שם הרופא</label>
+            <label className="block text-sm mb-1">שם איש הצוות המטפל</label>
             <input
               type="text"
               value={user?.name || ''}
@@ -133,7 +140,7 @@ export default function VisitSummaryForm() {
           <div>
             {user?.useStamp && user?.stampUrl && (
               <div className="flex flex-col items-end">
-                <span className="block text-sm mb-1">חותמת רופא</span>
+                <span className="block text-sm mb-1">חותמת איש צוות מטפל</span>
                 <img
                   src={user.stampUrl}
                   alt="חותמת"

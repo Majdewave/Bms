@@ -22,6 +22,7 @@ import {
 
 import { useAuth, UserRole } from '@/contexts/AuthContext'
 import { useFeatures } from '@/contexts/FeatureContext'
+import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
 import { useTenant } from '@/contexts/TenantContext'
 import type { Features } from '@/contexts/FeatureContext'
 import type { Permission } from '@/utils/permissions'
@@ -76,6 +77,7 @@ export default function AdminLayout() {
 
   const { user, logout, hasPermission } = useAuth()
   const { features } = useFeatures()
+  const { departmentFeatures } = useDepartmentFeatures()
   const { tenant } = useTenant()
 
   const { t } = useTranslation()
@@ -87,6 +89,7 @@ export default function AdminLayout() {
       return allMenuItems.filter((item) => {
         if (!item.roles.includes('admin')) return false
         if (item.feature && !features?.[item.feature]) return false
+        if (item.path === '/admin/drugs' && !departmentFeatures?.drugsEnabled) return false
         return true
       })
     }
@@ -94,13 +97,16 @@ export default function AdminLayout() {
     return allMenuItems.filter((item) => {
       if (item.roles.includes('staff') && user.role === 'staff') {
         if (item.feature && !features?.[item.feature]) return false
+        if (item.path === '/admin/drugs' && !departmentFeatures?.drugsEnabled) return false
         if (!item.permission) return true
         return hasPermission(item.permission)
       }
 
       return false
     })
-  }, [user, hasPermission, features])
+  }, [user, hasPermission, features, departmentFeatures?.drugsEnabled])
+
+  const isTeamChatEnabled = departmentFeatures?.teamChatEnabled === true
 
   const getMenuLabel = (label: string) => {
     switch (label) {
@@ -166,19 +172,19 @@ export default function AdminLayout() {
   }, [])
 
   useEffect(() => {
-    if (!features?.teamChatEnabled) {
+    if (!isTeamChatEnabled) {
       window.localStorage.removeItem(TEAM_CHAT_OPEN_STORAGE_KEY)
       return
     }
 
     window.localStorage.setItem(TEAM_CHAT_OPEN_STORAGE_KEY, isChatPanelOpen ? 'true' : 'false')
-  }, [features?.teamChatEnabled, isChatPanelOpen])
+  }, [isTeamChatEnabled, isChatPanelOpen])
 
   useEffect(() => {
-    if (!features?.teamChatEnabled && isChatPanelOpen) {
+    if (!isTeamChatEnabled && isChatPanelOpen) {
       setIsChatPanelOpen(false)
     }
-  }, [features?.teamChatEnabled, isChatPanelOpen])
+  }, [isTeamChatEnabled, isChatPanelOpen])
 
   if (!user) return null
 
@@ -411,7 +417,7 @@ export default function AdminLayout() {
 
           <div className="flex items-center gap-1.5 md:gap-4 shrink-0">
             <LanguageSwitcher />
-            {(user.role === 'admin' || user.role === 'staff') && features?.teamChatEnabled && (
+            {(user.role === 'admin' || user.role === 'staff') && isTeamChatEnabled && (
               <TeamChatEntry
                 bellButtonRef={chatBellButtonRef}
                 isOpen={isChatPanelOpen}

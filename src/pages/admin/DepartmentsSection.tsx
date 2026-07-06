@@ -7,13 +7,20 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  SlidersHorizontal,
   Loader2,
   Pencil,
   Palette,
   Plus,
   Trash2,
 } from 'lucide-react'
-import { departmentService, type Department, type CreateDepartmentRequest, type UpdateDepartmentRequest } from '@/api/departmentService'
+import {
+  departmentService,
+  type Department,
+  type CreateDepartmentRequest,
+  type DepartmentFeatureItem,
+  type UpdateDepartmentRequest,
+} from '@/api/departmentService'
 
 type Props = {
   canManageDepartments: boolean
@@ -81,6 +88,11 @@ export default function DepartmentsSection({ canManageDepartments, isOpen = true
     color: defaultColor,
     isActive: true,
   })
+  const [featuresDialogDepartment, setFeaturesDialogDepartment] = useState<Department | null>(null)
+  const [departmentFeatures, setDepartmentFeatures] = useState<DepartmentFeatureItem[]>([])
+  const [featuresLoading, setFeaturesLoading] = useState(false)
+  const [featuresSaving, setFeaturesSaving] = useState(false)
+  const [featuresError, setFeaturesError] = useState<string>('')
 
   const sortedDepartments = useMemo(() => sortDepartments(departments), [departments])
 
@@ -331,6 +343,96 @@ export default function DepartmentsSection({ canManageDepartments, isOpen = true
     }
   }
 
+  const getFeatureTitle = (featureKey: string) => {
+    switch (featureKey) {
+      case 'prescriptionsEnabled':
+        return t('features.prescriptions')
+      case 'drugsEnabled':
+        return t('features.drugs')
+      case 'consentFormsEnabled':
+        return t('features.consentForms', 'טפסי הסכמה')
+      case 'visitSummariesEnabled':
+        return t('features.visitSummaries')
+      case 'beforeAfterPhotosEnabled':
+        return t('features.beforeAfterPhotos')
+      case 'teamChatEnabled':
+        return t('features.teamChat', 'צ\'אט צוות')
+      default:
+        return featureKey
+    }
+  }
+
+  const openFeaturesDialog = async (department: Department) => {
+    if (!canManageDepartments) {
+      return
+    }
+
+    setFeaturesDialogDepartment(department)
+    setFeaturesError('')
+    setFeaturesLoading(true)
+
+    try {
+      const items = await departmentService.getDepartmentFeatures(department.id)
+      setDepartmentFeatures(Array.isArray(items) ? items : [])
+    } catch (error) {
+      console.error('Failed to load department features', error)
+      setDepartmentFeatures([])
+      setFeaturesError(t('admin.departments.features.loadFailed', 'לא ניתן לטעון תכונות מחלקה'))
+    } finally {
+      setFeaturesLoading(false)
+    }
+  }
+
+  const closeFeaturesDialog = () => {
+    if (featuresSaving) {
+      return
+    }
+
+    setFeaturesDialogDepartment(null)
+    setDepartmentFeatures([])
+    setFeaturesError('')
+  }
+
+  const handleFeatureToggle = (featureKey: string, isEnabled: boolean) => {
+    setDepartmentFeatures((current) =>
+      current.map((feature) =>
+        feature.featureKey === featureKey
+          ? {
+              ...feature,
+              departmentEnabled: isEnabled,
+              effectiveEnabled: feature.tenantEnabled && isEnabled,
+            }
+          : feature
+      )
+    )
+  }
+
+  const saveDepartmentFeatures = async () => {
+    if (!featuresDialogDepartment || featuresSaving) {
+      return
+    }
+
+    try {
+      setFeaturesSaving(true)
+      setFeaturesError('')
+
+      const updated = await departmentService.updateDepartmentFeatures(featuresDialogDepartment.id, {
+        features: departmentFeatures.map((feature) => ({
+          featureKey: feature.featureKey,
+          isEnabled: feature.departmentEnabled,
+        })),
+      })
+
+      setDepartmentFeatures(Array.isArray(updated) ? updated : [])
+      closeFeaturesDialog()
+    } catch (error) {
+      console.error('Failed to save department features', error)
+      setFeaturesError(t('admin.departments.features.saveFailed', 'שמירת התכונות נכשלה'))
+    } finally {
+      setFeaturesSaving(false)
+    }
+  }
+
   if (loading) {
     return <div className="p-6">{t('common.loading')}</div>
   }
@@ -561,6 +663,14 @@ export default function DepartmentsSection({ canManageDepartments, isOpen = true
                             <>
                               <button
                                 type="button"
+                                onClick={() => openFeaturesDialog(department)}
+                                className="inline-flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-700 transition hover:bg-violet-100"
+                              >
+                                <SlidersHorizontal className="w-4 h-4" />
+                                {t('admin.departments.actions.features', 'נהל תכונות')}
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => moveDepartment(department, 'up')}
                                 disabled={saving || index === 0}
                                 className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
@@ -752,6 +862,14 @@ export default function DepartmentsSection({ canManageDepartments, isOpen = true
                                   <>
                                     <button
                                       type="button"
+                                      onClick={() => openFeaturesDialog(department)}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-700 transition hover:bg-violet-100"
+                                    >
+                                      <SlidersHorizontal className="w-4 h-4" />
+                                      {t('admin.departments.actions.features', 'נהל תכונות')}
+                                    </button>
+                                    <button
+                                      type="button"
                                       onClick={() => handleEditStart(department)}
                                       className="inline-flex items-center gap-1 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700 transition hover:bg-sky-100"
                                     >
@@ -798,6 +916,89 @@ export default function DepartmentsSection({ canManageDepartments, isOpen = true
           )}
         </div>
       </div>
+
+      {featuresDialogDepartment && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 p-0 sm:p-4">
+          <div className="w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl border border-slate-200 max-h-[90vh] overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base sm:text-lg font-semibold text-slate-900">
+                  {t('admin.departments.features.title', 'תכונות מחלקה')}
+                </h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  {featuresDialogDepartment.name}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeFeaturesDialog}
+                disabled={featuresSaving}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              >
+                {t('common.close', 'סגור')}
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5 overflow-y-auto max-h-[60vh] space-y-3">
+              {featuresLoading ? (
+                <div className="py-10 text-center text-slate-500 flex flex-col items-center gap-3">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>{t('common.loading')}</span>
+                </div>
+              ) : (
+                departmentFeatures.map((feature) => (
+                  <label
+                    key={feature.featureKey}
+                    className={`flex items-start gap-3 rounded-xl border px-3 py-3 ${feature.tenantEnabled ? 'border-slate-200 bg-white' : 'border-amber-200 bg-amber-50'}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={feature.departmentEnabled}
+                      disabled={!feature.tenantEnabled || featuresSaving}
+                      onChange={(event) => handleFeatureToggle(feature.featureKey, event.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 disabled:opacity-60"
+                    />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-slate-900">{getFeatureTitle(feature.featureKey)}</div>
+                      {!feature.tenantEnabled && (
+                        <div className="text-xs text-amber-700 mt-1">
+                          {t('admin.departments.features.tenantDisabled', 'מנוטרל ברמת העסק')}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                ))
+              )}
+
+              {featuresError && (
+                <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                  {featuresError}
+                </div>
+              )}
+            </div>
+
+            <div className="px-4 sm:px-5 py-4 border-t border-slate-200 bg-slate-50 flex flex-col-reverse sm:flex-row justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeFeaturesDialog}
+                disabled={featuresSaving}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={saveDepartmentFeatures}
+                disabled={featuresLoading || featuresSaving}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60"
+              >
+                {featuresSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {t('common.save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

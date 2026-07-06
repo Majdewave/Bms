@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
-import { appointmentsService, type AppointmentClient } from '@/api'
+import { appointmentsService, type Appointment, type AppointmentClient } from '@/api'
 import { consentsApi, type SignedConsent } from '@/api/consents'
 import { servicesService, type BusinessService } from '@/api/servicesService'
 import { staffService, type StaffMember } from '@/api/staff'
@@ -23,7 +23,7 @@ type EditableAppointment = {
 
 interface CreateAppointmentModalProps {
   onClose: () => void
-  onSuccess?: () => void
+  onSuccess?: (appointment?: Appointment) => void
   defaultClientId?: string
   mode?: 'create' | 'edit'
   appointment?: EditableAppointment
@@ -283,10 +283,10 @@ if (!formData.date || !formData.time) {
       if (mode === 'edit' && appointment) {
         await appointmentsService.updateAppointment(appointment.id, payload)
       } else {
-        await appointmentsService.createAppointment(payload)
+        const createdAppointment = await appointmentsService.createAppointment(payload)
+        onSuccess?.(createdAppointment)
       }
 
-      onSuccess?.()
       onClose()
 
     } catch (err) {

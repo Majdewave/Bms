@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Pill } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import * as apiClient from '@/api/apiClient'
+import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
 
 interface Drug {
   id: string;
@@ -19,6 +20,7 @@ const AdminDrugs: React.FC = () => {
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { t } = useTranslation();
+  const { departmentFeatures } = useDepartmentFeatures();
 
   const loadDrugs = async () => {
     setLoading(true);
@@ -30,7 +32,26 @@ const AdminDrugs: React.FC = () => {
     }
   };
 
-  useEffect(() => { loadDrugs(); }, []);
+  useEffect(() => {
+    if (departmentFeatures?.drugsEnabled) {
+      void loadDrugs();
+      return;
+    }
+
+    setDrugs([]);
+  }, [departmentFeatures?.drugsEnabled]);
+
+  if (!departmentFeatures) {
+    return null;
+  }
+
+  if (!departmentFeatures.drugsEnabled) {
+    return (
+      <div className="max-w-2xl mx-auto p-6 text-center text-slate-500">
+        {t('common.notAuthorized')}
+      </div>
+    );
+  }
 
   const openModal = (drug?: Drug) => {
     setEditingDrug(drug || null);

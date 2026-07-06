@@ -18,6 +18,7 @@ import { useTenant } from '@/hooks/useTenant'
 import { toast } from 'react-toastify';
 import { useAuth } from '@/contexts/AuthContext'
 import { dashboardService } from '@/api'
+import { useNavigate } from 'react-router-dom'
 import { Container, PageHeader, Card, CardHeader, CardContent } from '@/components'
 import { useTranslation } from 'react-i18next'
 import {
@@ -30,6 +31,7 @@ import {
 import BillingBanner from '@/components/BillingBanner'
 
 export default function AdminDashboard() {
+  const navigate = useNavigate()
   const { loading: tenantLoading } = useTenant();
   const { user } = useAuth()
   const { t, i18n } = useTranslation()
@@ -143,7 +145,10 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => navigate('/admin/appointments')}
+        >
           <CardContent>
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -175,7 +180,10 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => navigate('/admin/clients')}
+        >
           <CardContent>
             <div className="flex items-start justify-between">
               <div className="flex-1">

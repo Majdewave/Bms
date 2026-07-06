@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
 import { TeamChatService } from '../services/TeamChatService'
 import type { TeamChatConnectionState } from '../types/TeamChatConnectionState'
 import type { TeamChatMessage } from '../types/TeamChatMessage'
@@ -29,6 +30,7 @@ export const TeamChatContext = createContext<TeamChatContextValue | undefined>(u
 
 export const TeamChatProvider = ({ children }: { children: React.ReactNode }) => {
   const { user, getAccessToken } = useAuth()
+  const { departmentFeatures } = useDepartmentFeatures()
   const [onlineUsers, setOnlineUsers] = useState<TeamChatOnlineUser[]>([])
   const [selectedUser, setSelectedUser] = useState<TeamChatOnlineUser | null>(null)
   const [conversations, setConversations] = useState<Map<string, TeamChatMessage[]>>(() => new Map())
@@ -50,6 +52,7 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
   }
 
   const service = serviceRef.current
+  const isTeamChatEnabled = departmentFeatures?.teamChatEnabled === true
 
   useEffect(() => {
     currentUserIdRef.current = user?.id ?? null
@@ -180,8 +183,11 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
   }, [service, playIncomingMessageSound])
 
   const connect = useCallback(async () => {
+    if (!isTeamChatEnabled) {
+      return
+    }
     await service.start()
-  }, [service])
+  }, [isTeamChatEnabled, service])
 
   const disconnect = useCallback(async () => {
     await service.reset()
@@ -232,7 +238,7 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
     let isDisposed = false
 
     const run = async () => {
-      if (!user || user.role === 'client') {
+      if (!user || user.role === 'client' || !isTeamChatEnabled) {
         previousUserIdRef.current = null
         await service.reset()
         if (!isDisposed) {
@@ -260,7 +266,7 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
     return () => {
       isDisposed = true
     }
-  }, [user?.id, user?.role, service])
+  }, [user?.id, user?.role, isTeamChatEnabled, service])
 
   useEffect(() => {
     if (!selectedUser) return

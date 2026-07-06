@@ -1,14 +1,15 @@
-import { ReactNode } from 'react'
+import { ReactNode, HTMLAttributes } from 'react'
 
-interface CardProps {
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode
   className?: string
   hoverable?: boolean
 }
 
-export const Card = ({ children, className = '', hoverable = false }: CardProps) => {
+export const Card = ({ children, className = '', hoverable = false, ...rest }: CardProps) => {
   return (
     <div
+      {...rest}
       className={`card p-6 ${hoverable ? 'hover:shadow-lg cursor-pointer' : ''} ${className}`}
     >
       {children}

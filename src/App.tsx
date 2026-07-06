@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { RouterProvider } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { FeatureProvider } from '@/contexts/FeatureContext';
+import { DepartmentFeatureProvider } from '@/contexts/DepartmentFeatureContext';
 import { TenantProvider } from '@/contexts/TenantContext';
 import { router } from '@/router';
 import '@/styles/index.css';
@@ -34,8 +35,10 @@ export default function App() {
     <AuthProvider>
       <TenantProvider>
         <FeatureProvider>
-          <RouterProvider router={router} />
-          <ToastContainer position="top-center" />
+          <DepartmentFeatureProvider>
+            <RouterProvider router={router} />
+            <ToastContainer position="top-center" />
+          </DepartmentFeatureProvider>
         </FeatureProvider>
       </TenantProvider>
     </AuthProvider>

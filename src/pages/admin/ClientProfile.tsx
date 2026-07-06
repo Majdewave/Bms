@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { ChevronDown, FileCheck, FileText, Image as ImageIcon, MessageSquare, Pill, User } from "lucide-react"
 import { visitSummariesService, type VisitSummary } from '@/api/visitSummaries'
 import { useAuth } from "@/contexts/AuthContext"
-import { useFeatures } from "@/contexts/FeatureContext"
+import { useDepartmentFeatures } from "@/contexts/DepartmentFeatureContext"
 import * as apiClient from "@/api/apiClient"
 import DrugAutocomplete from '@/components/DrugAutocomplete'
 import ClientBeforeAfterPhotos from '@/components/ClientBeforeAfterPhotos'
@@ -57,7 +57,7 @@ export default function ClientProfile() {
 
   const isAdmin = user?.role === "admin"
   const isRTL = i18n.language === "he" || i18n.language === "ar"
-  const { features } = useFeatures()
+  const { departmentFeatures } = useDepartmentFeatures()
   const [currentStaff, setCurrentStaff] = useState<CurrentStaff | null>(null)
   const stampSrc = currentStaff?.stampUrl
     ? (currentStaff.stampUrl.startsWith('http')
@@ -160,9 +160,9 @@ export default function ClientProfile() {
           `/api/notes?clientId=${id}`
         )
 
-        const prescriptionsData = await apiClient.get<Prescription[]>(
-          `/api/prescriptions/client/${id}`
-        )
+        const prescriptionsData = departmentFeatures?.prescriptionsEnabled
+          ? await apiClient.get<Prescription[]>(`/api/prescriptions/client/${id}`)
+          : []
         setNotes(Array.isArray(notesData) ? notesData : [])
         
         // Remove duplicates from fetched prescriptions
@@ -173,7 +173,11 @@ export default function ClientProfile() {
           : []
         
         setPrescriptions(unique)
-        await reloadConsents(id)
+        if (departmentFeatures?.consentFormsEnabled) {
+          await reloadConsents(id)
+        } else {
+          setSignedConsents([])
+        }
 
       } catch (err) {
         console.error("Load client failed:", err)
@@ -183,7 +187,7 @@ export default function ClientProfile() {
     }
 
     loadData()
-  }, [id])
+  }, [id, departmentFeatures?.prescriptionsEnabled, departmentFeatures?.consentFormsEnabled])
 
   useEffect(() => {
   if (currentStaff?.fullName && !prescriptionForm.doctorName) {
@@ -251,6 +255,11 @@ export default function ClientProfile() {
   const visitSummariesCount = visitSummaries.length
   // Load visit summaries when section is expanded
 useEffect(() => {
+  if (!departmentFeatures?.visitSummariesEnabled) {
+    setVisitSummaries([]);
+    return;
+  }
+
   if (!client?.id) return;
 
   visitSummariesService.getByClientId(client.id)
@@ -261,17 +270,21 @@ useEffect(() => {
       console.error('Visit summaries failed:', err);
       setVisitSummaries([]);
     });
-}, [client?.id]);
+}, [client?.id, departmentFeatures?.visitSummariesEnabled]);
 
 
 useEffect(() => {
+  if (!departmentFeatures?.visitSummariesEnabled) {
+    return;
+  }
+
   if (!client?.id) return;
   if (!openSections.includes('visitSummaries')) return;
 
   visitSummariesService.getByClientId(client.id)
     .then((data) => setVisitSummaries(Array.isArray(data) ? data : []))
     .catch(() => setVisitSummaries([]));
-}, [openSections]);
+}, [openSections, client?.id, departmentFeatures?.visitSummariesEnabled]);
   /* ================================
      EDIT CLIENT
   ================================ */
@@ -598,7 +611,7 @@ const saveClient = async () => {
       </div>
     )
 
-    if (!features)
+    if (!departmentFeatures)
       return null;
     
 
@@ -618,7 +631,7 @@ const saveClient = async () => {
 
         <div className="flex flex-wrap gap-2 md:gap-3">
 
-          {features?.prescriptionsEnabled === true && (
+          {departmentFeatures.prescriptionsEnabled === true && (
           <button
             onClick={() => {
               setPrescriptionForm({
@@ -892,7 +905,7 @@ const saveClient = async () => {
 
       {/* NOTES */}
 
-      {features?.visitSummariesEnabled === true && (
+      {departmentFeatures.visitSummariesEnabled === true && (
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
           <button
             type="button"
@@ -1043,6 +1056,7 @@ const saveClient = async () => {
         )}
       </div>
 
+      {departmentFeatures.prescriptionsEnabled === true && (
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <button
           type="button"
@@ -1085,7 +1099,7 @@ const saveClient = async () => {
                         </ul>
                       ) : <span className="text-slate-800"> -</span>}
                     </div>
-                    <div className="text-sm text-slate-500">רופא: <span className="font-semibold text-slate-800">{p.doctorName}</span></div>
+                    <div className="text-sm text-slate-500">איש צוות מטפל: <span className="font-semibold text-slate-800">{p.doctorName}</span></div>
                     <div className="flex gap-2 pt-1">
                       <button onClick={() => downloadPrescription(p.id)} className="px-3 py-1 rounded-lg bg-blue-600 text-white text-sm">PDF</button>
                       <button onClick={() => deletePrescription(p.id)} className="px-3 py-1 rounded-lg bg-red-100 text-red-600 text-sm">מחק</button>
@@ -1101,7 +1115,7 @@ const saveClient = async () => {
                 <tr>
                   <th className="text-right p-2">תאריך</th>
                   <th className="text-right p-2">תרופות</th>
-                  <th className="text-right p-2">רופא</th>
+                  <th className="text-right p-2">איש צוות מטפל</th>
                   <th className="text-right p-2">פעולות</th>
                 </tr>
               </thead>
@@ -1133,7 +1147,9 @@ const saveClient = async () => {
           </div>
         )}
       </div>
+      )}
 
+      {departmentFeatures.consentFormsEnabled === true && (
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <button
           type="button"
@@ -1201,8 +1217,9 @@ const saveClient = async () => {
           </div>
         )}
       </div>
+      )}
 
-      {features?.beforeAfterPhotosEnabled === true && (
+      {departmentFeatures.beforeAfterPhotosEnabled === true && (
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
           <button
             type="button"
@@ -1349,7 +1366,7 @@ const saveClient = async () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm mb-1">שם הרופא </label>
+                <label className="block text-sm mb-1">איש הצוות המטפל </label>
                 <input
                   type="text"
                   value={prescriptionForm.doctorName}
@@ -1455,11 +1472,11 @@ function ConsentViewModal({ isOpen, consent, onClose, onDownload, resolveAssetUr
 
         <div className="grid grid-cols-2 gap-6 mt-6">
           <div className="text-center">
-            <div className="text-sm text-slate-500 mb-2">חתימת רופא</div>
+            <div className="text-sm text-slate-500 mb-2">חתימת איש צוות מטפל</div>
             {consent.doctorSignatureUrl ? (
               <img
                 src={resolveAssetUrl(consent.doctorSignatureUrl) || consent.doctorSignatureUrl}
-                alt="Doctor signature"
+                alt="Staff Member signature"
                 className="h-16 object-contain mx-auto"
               />
             ) : (

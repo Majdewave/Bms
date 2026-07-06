@@ -26,6 +26,20 @@ export interface UpdateDepartmentRequest {
   isActive: boolean
 }
 
+export interface DepartmentFeatureItem {
+  featureKey: string
+  tenantEnabled: boolean
+  departmentEnabled: boolean
+  effectiveEnabled: boolean
+}
+
+export interface UpdateDepartmentFeaturesRequest {
+  features: Array<{
+    featureKey: string
+    isEnabled: boolean
+  }>
+}
+
 export const departmentService = {
   async getDepartments(): Promise<Department[]> {
     return get<Department[]>('/api/departments')
@@ -45,5 +59,13 @@ export const departmentService = {
 
   async deleteDepartment(id: string): Promise<void> {
     return del<void>(`/api/departments/${id}`)
+  },
+
+  async getDepartmentFeatures(id: string): Promise<DepartmentFeatureItem[]> {
+    return get<DepartmentFeatureItem[]>(`/api/departments/${id}/features`)
+  },
+
+  async updateDepartmentFeatures(id: string, data: UpdateDepartmentFeaturesRequest): Promise<DepartmentFeatureItem[]> {
+    return put<DepartmentFeatureItem[]>(`/api/departments/${id}/features`, data)
   },
 }
