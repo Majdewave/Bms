@@ -29,6 +29,7 @@ export interface Invoice {
   invoiceDate: string
   date: string
   dueDate: string
+  allocationNumber?: string
   status: InvoiceStatus
   paymentMethod?: InvoicePaymentMethod
   installments?: number
@@ -48,6 +49,7 @@ export interface CreateInvoiceRequest {
   invoiceNumber?: string
   invoiceDate?: string
   dueDate?: string
+  allocationNumber?: string
   notes?: string
   vatRate?: number
   status?: InvoiceStatus
@@ -175,6 +177,7 @@ const normalizeInvoice = (invoice: any): Invoice => {
     invoiceDate,
     date: invoiceDate,
     dueDate: invoice?.dueDate ? String(invoice.dueDate) : '',
+    allocationNumber: typeof invoice?.allocationNumber === 'string' ? invoice.allocationNumber : undefined,
     status,
     paymentMethod,
     installments: toNumber(invoice?.installments, 0) || undefined,

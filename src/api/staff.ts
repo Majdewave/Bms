@@ -19,6 +19,8 @@ export interface StaffMember {
   isActive: boolean
   permissions: string[]
   departmentIds: string[]
+  lastLoginAt?: string | null
+  lastLogin?: string | null
   useStamp?: boolean
   stampUrl?: string
 }

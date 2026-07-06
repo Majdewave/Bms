@@ -48,6 +48,7 @@ type InvoiceFormState = {
   invoiceNumber: string
   invoiceDate: string
   dueDate: string
+  allocationNumber: string
   status: InvoiceStatus
   paymentMethod: InvoicePaymentMethod
   installments: string
@@ -124,6 +125,7 @@ const createDefaultInvoiceForm = (tenant?: {
   invoiceNumber: `${tenant?.invoicePrefix ?? 'INV-'}${tenant?.nextInvoiceNumber ?? Date.now()}`,
   invoiceDate: new Date().toISOString().split('T')[0],
   dueDate: '',
+  allocationNumber: '',
   status: normalizeInvoiceStatus(tenant?.defaultInvoiceStatus),
   paymentMethod: normalizePaymentMethod(tenant?.defaultPaymentMethod),
   installments: String(tenant?.defaultInstallments ?? 1),
@@ -281,6 +283,7 @@ export default function AdminInvoices() {
     invoiceNumber: invoiceForm.invoiceNumber.trim(),
     invoiceDate: toIsoDate(invoiceForm.invoiceDate),
     dueDate: invoiceForm.dueDate ? toIsoDate(invoiceForm.dueDate) : undefined,
+    allocationNumber: invoiceForm.allocationNumber.trim() || undefined,
     status: normalizeInvoiceStatus(invoiceForm.status),
     paymentMethod: normalizePaymentMethod(invoiceForm.paymentMethod),
     installments: invoiceForm.paymentMethod === 'credit' ? Math.max(1, Math.min(36, toNumber(invoiceForm.installments, 1))) : undefined,
@@ -368,6 +371,7 @@ export default function AdminInvoices() {
       invoiceNumber: invoice.number,
       invoiceDate: invoice.invoiceDate ? invoice.invoiceDate.split('T')[0] : new Date().toISOString().split('T')[0],
       dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : '',
+      allocationNumber: invoice.allocationNumber ?? '',
       status: normalizeInvoiceStatus(invoice.status),
       paymentMethod: normalizePaymentMethod(invoice.paymentMethod ?? tenant?.defaultPaymentMethod),
       installments: String(invoice.installments ?? tenant?.defaultInstallments ?? 1),
@@ -765,6 +769,17 @@ export default function AdminInvoices() {
                         type="date"
                         value={invoiceForm.dueDate}
                         onChange={(event) => updateInvoiceField('dueDate', event.target.value)}
+                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">מספר הקצאה (אופציונלי)</label>
+                      <input
+                        type="text"
+                        maxLength={100}
+                        value={invoiceForm.allocationNumber}
+                        onChange={(event) => updateInvoiceField('allocationNumber', event.target.value)}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                       />
                     </div>

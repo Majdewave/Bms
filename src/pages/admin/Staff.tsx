@@ -481,7 +481,7 @@ export default function AdminStaff() {
                       </div>
 
                       <div className="text-sm text-slate-700">
-                        <span className="text-slate-500">{t('admin.staff.table.lastLogin')}:</span> {staffMember.lastLogin ? formatDate(staffMember.lastLogin) : '—'}
+                        <span className="text-slate-500">{t('admin.staff.table.lastLogin')}:</span> {(staffMember.lastLoginAt || staffMember.lastLogin) ? formatDate(staffMember.lastLoginAt || staffMember.lastLogin || '') : '—'}
                       </div>
 
                       <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
@@ -612,7 +612,7 @@ export default function AdminStaff() {
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {staffMember.lastLogin ? formatDate(staffMember.lastLogin) : '—'}
+                        {(staffMember.lastLoginAt || staffMember.lastLogin) ? formatDate(staffMember.lastLoginAt || staffMember.lastLogin || '') : '—'}
                       </td>
                       <td className={`px-6 py-4 ${isRTL ? 'text-left' : 'text-right'}`}>
                         <div className={`flex items-center gap-2 ${isRTL ? 'justify-start' : 'justify-end'}`}>
@@ -814,15 +814,15 @@ export default function AdminStaff() {
                               className="mt-1 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                             />
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-start justify-between gap-2 flex-wrap">
                                 <div className="flex items-center gap-2 min-w-0">
                                   <span
                                     className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-white shadow-sm"
                                     style={{ backgroundColor: department.color || '#3B82F6' }}
                                   />
-                                  <span className="font-semibold text-slate-900 truncate">{department.name}</span>
+                                  <span className="font-semibold text-slate-900 break-words whitespace-normal">{department.name}</span>
                                 </div>
-                                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${department.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-medium w-auto ${department.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                                   {department.isActive ? t('admin.departments.status.active') : t('admin.departments.status.inactive')}
                                 </span>
                               </div>
