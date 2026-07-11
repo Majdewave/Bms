@@ -33,6 +33,8 @@ interface TenantContactSettings {
   legalBusinessName?: string | null
   businessRegistrationNumber?: string | null
   phone?: string | null
+  email?: string | null
+  address?: string | null
   whatsApp?: string | null
   logoUrl?: string | null
   businessStampUrl?: string | null

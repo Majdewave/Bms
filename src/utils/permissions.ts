@@ -11,6 +11,7 @@ export type Permission =
   | 'send_client_links' // Send login/reset links
   | 'manage_staff' // Add, edit, delete staff users
   | 'manage_business_settings' // Business settings, system configuration
+  | 'manage_whatsapp' // WhatsApp Business settings and status
   | 'manage_appointments' // All appointment management
   | 'manage_invoices' // All invoice management
   | 'view_reports' // View system reports
@@ -25,6 +26,7 @@ export const PERMISSION_MATRIX: Record<UserRole, Permission[]> = {
     'send_client_links',
     'manage_staff',
     'manage_business_settings',
+    'manage_whatsapp',
     'manage_appointments',
     'manage_invoices',
     'view_reports',

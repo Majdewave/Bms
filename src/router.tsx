@@ -27,6 +27,7 @@ import AdminAppointments from '@/pages/admin/Appointments'
 import AdminInvoices from '@/pages/admin/Invoices'
 import AdminReports from '@/pages/admin/Reports'
 import AdminBusinessSettings from '@/pages/admin/BusinessSettings'
+import AdminWhatsApp from '@/pages/admin/WhatsApp'
 import AdminStaff from '@/pages/admin/Staff'
 import AdminFeatures from '@/pages/admin/Features'
 
@@ -204,6 +205,15 @@ export const router = createBrowserRouter([
         element: (
           <PermissionBasedRoute requiredPermission="manage_business_settings">
             <AdminBusinessSettings />
+          </PermissionBasedRoute>
+        ),
+      },
+
+      {
+        path: 'settings/whatsapp',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_whatsapp">
+            <AdminWhatsApp />
           </PermissionBasedRoute>
         ),
       },

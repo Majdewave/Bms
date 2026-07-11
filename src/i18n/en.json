@@ -120,6 +120,7 @@
     "email": "Email",
     "phone": "Phone",
     "address": "Address",
+    "print": "Print",
     "signOut": "Sign Out",
     "notifications": "Notifications",
     "expand": "Expand",

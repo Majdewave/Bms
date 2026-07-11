@@ -13,6 +13,7 @@ import {
   Pill,
   Settings,
   Sliders,
+  MessageCircle,
   UserPlus,
   Users,
   CreditCard,
@@ -55,6 +56,7 @@ const allMenuItems: MenuItem[] = [
   { icon: UserPlus, label: 'Staff Management', path: '/admin/staff', roles: ['admin'] },
   { icon: Pill, label: 'Drugs', path: '/admin/drugs', roles: ['admin'], feature: 'drugsEnabled' },
   { icon: Settings, label: 'Business Settings', path: '/admin/settings', roles: ['admin'] },
+  { icon: MessageCircle, label: 'WhatsApp', path: '/admin/settings/whatsapp', roles: ['admin'], permission: 'manage_whatsapp' },
   { icon: CreditCard, label: 'Billing', path: '/admin/billing', roles: ['admin'] },
   { icon: Sliders, label: 'Feature Toggles', path: '/admin/features', roles: ['admin'] },
  
@@ -132,6 +134,8 @@ export default function AdminLayout() {
         return t('nav.settings')
       case 'Feature Toggles':
         return t('features.title')
+      case 'WhatsApp':
+        return 'WhatsApp'
       case 'Drugs':
         return t('features.drugs')
       case 'My Appointments':
@@ -217,6 +221,7 @@ export default function AdminLayout() {
             : t('nav.allAppointments'),
 
         settings: t('nav.settings'),
+        whatsapp: 'WhatsApp',
 
         invoices: t('nav.allInvoices'),
 

@@ -209,6 +209,7 @@ export default function Clients() {
               {/* Mobile: cards */}
               <div className="hidden max-[540px]:flex flex-col gap-2">
                 {filteredClients.map((client, idx) => {
+                  const rowNumber = idx + 1
                   const clientId = client?.id ?? ''
                   const isBlocked = client?.isActive === false || client?.status === 'blocked' || client?.status === 'inactive';
                   const isNotDocumented = Boolean(client?.isNotDocumented || (client as any)?.isDocumented === false);
@@ -249,6 +250,9 @@ export default function Clients() {
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0 flex items-center gap-2 text-white font-semibold">
+                            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-white/20 px-1 text-xs font-bold">
+                              {rowNumber}
+                            </span>
                             <User className="w-4 h-4 shrink-0" />
                             <span className="truncate text-right">{client?.fullName ?? 'Unnamed'}</span>
                             <span className={isBlocked
@@ -312,6 +316,7 @@ export default function Clients() {
 
                   <thead className="bg-slate-50 border-b">
                     <tr>
+                      <th className="w-12 min-w-12 text-center py-3 px-2">#</th>
                       <th className="text-start py-3 px-4">
                         {t('admin.clients.table.client')}
                       </th>
@@ -334,7 +339,8 @@ export default function Clients() {
                   </thead>
 
                   <tbody className="divide-y">
-                    {filteredClients.map((client) => {
+                    {filteredClients.map((client, idx) => {
+                      const rowNumber = idx + 1
                       const clientId = client?.id ?? ''
                       const isBlocked = client?.isActive === false || client?.status === 'blocked' || client?.status === 'inactive';
                       const handleBlock = async (e: React.MouseEvent) => {
@@ -362,6 +368,9 @@ export default function Clients() {
                           }`}
                           onClick={() => clientId && navigate(`/admin/clients/${clientId}`)}
                         >
+                          <td className="w-12 min-w-12 py-4 px-2 text-center font-semibold text-slate-500">
+                            {rowNumber}
+                          </td>
                           <td className="py-4 px-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-primary-600 text-white rounded-lg flex items-center justify-center text-sm font-semibold">

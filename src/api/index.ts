@@ -11,6 +11,7 @@ import * as clientsApi from './clients'
 import * as staffApi from './staff'
 import * as clientPhotosApi from './clientPhotosService'
 import * as departmentApi from './departmentService'
+import * as whatsappApi from './whatsapp'
 
 
 // Export service objects
@@ -24,6 +25,7 @@ export const clientsService = clientsApi
 export const staffService = staffApi
 export const clientPhotosService = clientPhotosApi
 export const departmentService = departmentApi
+export const whatsappService = whatsappApi
 
 
 
@@ -59,6 +61,7 @@ export type {
   CreateDepartmentRequest,
   UpdateDepartmentRequest,
 } from './departmentService'
+export type { WhatsAppStatus } from './whatsapp'
 
 
 

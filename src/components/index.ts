@@ -13,6 +13,7 @@ export { PermissionBasedRoute } from './PermissionBasedRoute'
 
 // Modal Components
 export { default as CreateAppointmentModal } from './CreateAppointmentModal'
+export { default as AppointmentTicket } from './AppointmentTicket'
 export { default as ConsentTemplateModal } from './ConsentTemplateModal'
 export { default as SignConsentModal } from './SignConsentModal'
 export { default as Autocomplete } from './Autocomplete'

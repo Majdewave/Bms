@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react'
-import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature, ChevronDown, ChevronUp, Printer } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { CreateAppointmentModal, SignConsentModal } from '@/components'
+import { AppointmentTicket, CreateAppointmentModal, SignConsentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
 import { connection } from '@/lib/signalr'
 import { appointmentsService, type Appointment } from '@/api/appointmentsService'
 import ActionButton from '@/components/ActionButton'
 import { useTranslation } from 'react-i18next'
+import { scheduleAppointmentTicketPrint } from '@/utils/appointmentTicketPrint'
+import { useTenant } from '@/contexts/TenantContext'
 
 type AppointmentRow = Appointment
 
@@ -14,12 +16,15 @@ export default function AdminAppointments() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { hasPermission } = useAuth()
+  const { tenant } = useTenant()
 
   const [appointments, setAppointments] = useState<AppointmentRow[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'Scheduled' | 'Waiting' | 'InProgress' | 'Completed' | 'Cancelled' | 'NoShow'>('all')
+  const [departmentFilter, setDepartmentFilter] = useState('all')
   const [showHistory, setShowHistory] = useState(true)
+  const [ticketToPrint, setTicketToPrint] = useState<{ appointment: AppointmentRow; queueNumber: number } | null>(null)
   // --- Queue Logic ---
   const current = appointments.find(a => a.status === 'InProgress') || null;
   const waitingList = appointments
@@ -127,6 +132,23 @@ const markNotDocumented = async (appointment: Appointment) => {
     }
   }
 
+const availableDepartments = useMemo(() => {
+  const seen = new Map<string, { id: string; name: string }>()
+
+  appointments.forEach((appointment) => {
+    if (!appointment.departmentId || !appointment.departmentName || seen.has(appointment.departmentId)) {
+      return
+    }
+
+    seen.set(appointment.departmentId, {
+      id: appointment.departmentId,
+      name: appointment.departmentName,
+    })
+  })
+
+  return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name))
+}, [appointments])
+
 const filteredAppointments = appointments
   .filter(a => {
     const matchesSearch =
@@ -135,7 +157,10 @@ const filteredAppointments = appointments
     const matchesStatus =
       statusFilter === 'all' || a.status.toLowerCase() === statusFilter.toLowerCase()
 
-    return matchesSearch && matchesStatus
+    const matchesDepartment =
+      departmentFilter === 'all' || a.departmentId === departmentFilter
+
+    return matchesSearch && matchesStatus && matchesDepartment
   })
 
 
@@ -156,6 +181,22 @@ const historyAppointments = filteredAppointments
     new Date(b.endTime).getTime() -
     new Date(a.endTime).getTime()
   );
+
+  useEffect(() => {
+    if (!ticketToPrint) {
+      return
+    }
+
+    const timerId = scheduleAppointmentTicketPrint()
+    const handleAfterPrint = () => setTicketToPrint(null)
+
+    window.addEventListener('afterprint', handleAfterPrint)
+
+    return () => {
+      window.clearTimeout(timerId)
+      window.removeEventListener('afterprint', handleAfterPrint)
+    }
+  }, [ticketToPrint])
 
 
   const formatDate = (date: string) =>
@@ -199,6 +240,10 @@ const historyAppointments = filteredAppointments
         <span className="truncate">{appointment.departmentName}</span>
       </span>
     )
+  }
+
+  const handlePrintAppointment = (appointment: AppointmentRow, queueNumber: number) => {
+    setTicketToPrint({ appointment, queueNumber })
   }
 
 
@@ -246,6 +291,19 @@ const historyAppointments = filteredAppointments
                     : 'bg-white border border-slate-100'
                 }`}
               >
+                <div className="flex items-center justify-between gap-2 text-slate-500 text-sm font-medium">
+                  <span>#{idx + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => handlePrintAppointment(appointment, idx + 1)}
+                    className="inline-flex items-center justify-center rounded-full p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    aria-label={t('common.print')}
+                    title={t('common.print')}
+                  >
+                    <Printer className="w-4 h-4" />
+                  </button>
+                </div>
+
                 <div className="text-sm text-slate-700">
                   <span className="text-slate-500">{t('appointments.table.client')}:</span>{' '}
                     <div className="flex items-center gap-2">
@@ -381,7 +439,18 @@ const historyAppointments = filteredAppointments
                 >
 
                   <td className="px-3 py-3 text-center text-slate-500 font-medium">
-                      {index + 1}
+                      <div className="flex items-center justify-center gap-2">
+                        <span>{index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => handlePrintAppointment(appointment, index + 1)}
+                          className="inline-flex items-center justify-center rounded-full p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                          aria-label={t('common.print')}
+                          title={t('common.print')}
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
+                      </div>
                   </td>
                   <td className="px-4 py-3 cursor-pointer" onClick={() => navigate(`/admin/clients/${appointment.clientId}`)}>
                     <div className="flex items-center gap-3">
@@ -528,8 +597,11 @@ const historyAppointments = filteredAppointments
   }
 
 
+  const businessName = tenant?.businessName || tenant?.name || tenant?.legalBusinessName || ''
+
   return (
-    <div className="space-y-6">
+    <>
+    <div className="space-y-6 print:hidden">
 
       {/* Queue Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -626,6 +698,22 @@ const historyAppointments = filteredAppointments
               </option>
             </select>
         </div>
+
+        <div className="flex items-center gap-2">
+          <Filter className="w-5 h-5 text-slate-400" />
+          <select
+            value={departmentFilter}
+            onChange={(e) => setDepartmentFilter(e.target.value)}
+            className="input"
+          >
+            <option value="all">כל המחלקות</option>
+            {availableDepartments.map((department) => (
+              <option key={department.id} value={department.id}>
+                {department.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Table */}
@@ -698,5 +786,19 @@ transition
       )}
 
     </div>
+
+    {ticketToPrint ? (
+      <div className="hidden print:block">
+        <AppointmentTicket
+          appointment={ticketToPrint.appointment}
+          queueNumber={ticketToPrint.queueNumber}
+          business={{
+            name: businessName,
+            phone: tenant?.phone ?? null,
+          }}
+        />
+      </div>
+    ) : null}
+    </>
   )
 }

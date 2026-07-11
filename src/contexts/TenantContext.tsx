@@ -5,10 +5,13 @@ import { get } from '@/api/apiClient'
 import { useAuth } from '@/contexts/AuthContext'
 
 export interface Tenant {
+  businessName?: string | null
   name?: string
   legalBusinessName?: string | null
   businessRegistrationNumber?: string | null
   phone?: string | null
+  email?: string | null
+  address?: string | null
   whatsApp?: string | null
   logoUrl?: string | null
   businessStampUrl?: string | null
