@@ -65,6 +65,7 @@ export default function AdminStaff() {
     { permission: 'manage_clients', icon: User },
     { permission: 'manage_appointments', icon: Calendar },
     { permission: 'manage_invoices', icon: FileText },
+    { permission: 'manage_quotes', icon: FileText },
     { permission: 'manage_notes', icon: Pencil },
     { permission: 'manage_files', icon: Folder },
   ]

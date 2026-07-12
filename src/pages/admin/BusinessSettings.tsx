@@ -46,6 +46,8 @@ interface TenantContactSettings {
   defaultInvoiceStatus?: string | null
   invoicePrefix?: string | null
   nextInvoiceNumber?: number | null
+  quotePrefix?: string | null
+  nextQuoteNumber?: number | null
   autoDeleteNotDocumentedAfterDays?: number | null
   enableAutoDeleteNotDocumented?: boolean | null
 }
@@ -107,6 +109,8 @@ export default function BusinessSettings() {
     defaultInvoiceStatus: string
     invoicePrefix: string
     nextInvoiceNumber: string
+    quotePrefix: string
+    nextQuoteNumber: string
   }>({
     name: '',
     legalBusinessName: '',
@@ -121,6 +125,8 @@ export default function BusinessSettings() {
     defaultInvoiceStatus: 'pending',
     invoicePrefix: 'INV-',
     nextInvoiceNumber: '1',
+    quotePrefix: 'QT-',
+    nextQuoteNumber: '1',
   })
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -147,7 +153,7 @@ export default function BusinessSettings() {
     autoDelete: false,
   })
   const [invoiceValidationErrors, setInvoiceValidationErrors] = useState<Partial<Record<
-    'nextInvoiceNumber' | 'defaultVatRate' | 'defaultWithholdingTaxRate' | 'defaultInstallments',
+    'nextInvoiceNumber' | 'nextQuoteNumber' | 'defaultVatRate' | 'defaultWithholdingTaxRate' | 'defaultInstallments',
     string
   >>>({})
 
@@ -226,6 +232,8 @@ export default function BusinessSettings() {
         defaultInvoiceStatus: String(tenant?.defaultInvoiceStatus ?? settings.defaultInvoiceStatus ?? 'pending'),
         invoicePrefix: settings.invoicePrefix ?? 'INV-',
         nextInvoiceNumber: String(settings.nextInvoiceNumber ?? 1),
+        quotePrefix: settings.quotePrefix ?? 'QT-',
+        nextQuoteNumber: String(settings.nextQuoteNumber ?? 1),
       })
 
       if (settings.logoUrl) {
@@ -254,6 +262,8 @@ export default function BusinessSettings() {
           defaultInvoiceStatus: tenant?.defaultInvoiceStatus ?? settings.defaultInvoiceStatus ?? 'pending',
           invoicePrefix: settings.invoicePrefix ?? 'INV-',
           nextInvoiceNumber: settings.nextInvoiceNumber ?? 1,
+          quotePrefix: settings.quotePrefix ?? 'QT-',
+          nextQuoteNumber: settings.nextQuoteNumber ?? 1,
           autoDeleteNotDocumentedAfterDays: tenant?.autoDeleteNotDocumentedAfterDays ?? 1,
           enableAutoDeleteNotDocumented: tenant?.enableAutoDeleteNotDocumented ?? true,
         }))
@@ -280,6 +290,8 @@ export default function BusinessSettings() {
           defaultInvoiceStatus: tenant?.defaultInvoiceStatus ?? settings.defaultInvoiceStatus ?? 'pending',
           invoicePrefix: settings.invoicePrefix ?? 'INV-',
           nextInvoiceNumber: settings.nextInvoiceNumber ?? 1,
+          quotePrefix: settings.quotePrefix ?? 'QT-',
+          nextQuoteNumber: settings.nextQuoteNumber ?? 1,
           autoDeleteNotDocumentedAfterDays: tenant?.autoDeleteNotDocumentedAfterDays ?? 1,
           enableAutoDeleteNotDocumented: tenant?.enableAutoDeleteNotDocumented ?? true,
         }))
@@ -435,17 +447,22 @@ export default function BusinessSettings() {
     setSaving(true)
 
     const validationErrors: Partial<Record<
-      'nextInvoiceNumber' | 'defaultVatRate' | 'defaultWithholdingTaxRate' | 'defaultInstallments',
+      'nextInvoiceNumber' | 'nextQuoteNumber' | 'defaultVatRate' | 'defaultWithholdingTaxRate' | 'defaultInstallments',
       string
     >> = {}
 
     const parsedNextInvoiceNumber = Number(formData.nextInvoiceNumber)
+    const parsedNextQuoteNumber = Number(formData.nextQuoteNumber)
     const parsedDefaultVatRate = Number(formData.defaultVatRate)
     const parsedDefaultWithholdingTaxRate = Number(formData.defaultWithholdingTaxRate)
     const parsedDefaultInstallments = Number(formData.defaultInstallments)
 
     if (!Number.isFinite(parsedNextInvoiceNumber) || parsedNextInvoiceNumber < 1) {
       validationErrors.nextInvoiceNumber = 'מספר החשבונית הבא חייב להיות 1 ומעלה'
+    }
+
+    if (!Number.isFinite(parsedNextQuoteNumber) || parsedNextQuoteNumber < 1) {
+      validationErrors.nextQuoteNumber = 'מספר הצעת המחיר הבא חייב להיות 1 ומעלה'
     }
 
     if (!Number.isFinite(parsedDefaultVatRate) || parsedDefaultVatRate < 0 || parsedDefaultVatRate > 100) {
@@ -492,6 +509,8 @@ export default function BusinessSettings() {
         defaultInvoiceStatus: formData.defaultInvoiceStatus,
         invoicePrefix: formData.invoicePrefix,
         nextInvoiceNumber: Number(formData.nextInvoiceNumber),
+        quotePrefix: formData.quotePrefix,
+        nextQuoteNumber: Number(formData.nextQuoteNumber),
       })
 
       await put('/api/tenant/auto-delete-setting', {
@@ -514,6 +533,8 @@ export default function BusinessSettings() {
         defaultInvoiceStatus: formData.defaultInvoiceStatus,
         invoicePrefix: formData.invoicePrefix,
         nextInvoiceNumber: Number(formData.nextInvoiceNumber),
+        quotePrefix: formData.quotePrefix,
+        nextQuoteNumber: Number(formData.nextQuoteNumber),
         logoUrl,
         businessStampUrl,
         autoDeleteNotDocumentedAfterDays: autoDeleteDays,
@@ -764,6 +785,41 @@ export default function BusinessSettings() {
                     />
                     {invoiceValidationErrors.nextInvoiceNumber && (
                       <p className="text-xs text-red-600 mt-1">{invoiceValidationErrors.nextInvoiceNumber}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <Receipt className="w-4 h-4 text-purple-600" />
+                        קידומת הצעת מחיר
+                      </span>
+                    </label>
+                    <input
+                      name="quotePrefix"
+                      value={formData.quotePrefix}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm mb-1 text-slate-700">
+                      <span className="inline-flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-slate-500" />
+                        מספר הצעת מחיר הבא
+                      </span>
+                    </label>
+                    <input
+                      name="nextQuoteNumber"
+                      type="number"
+                      min="1"
+                      value={formData.nextQuoteNumber}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    {invoiceValidationErrors.nextQuoteNumber && (
+                      <p className="text-xs text-red-600 mt-1">{invoiceValidationErrors.nextQuoteNumber}</p>
                     )}
                   </div>
 

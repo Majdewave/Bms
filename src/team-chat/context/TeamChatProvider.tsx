@@ -53,6 +53,8 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
 
   const service = serviceRef.current
   const isTeamChatEnabled = departmentFeatures?.teamChatEnabled === true
+  const emptyConversations = useMemo(() => new Map<string, TeamChatMessage[]>(), [])
+  const emptyUnreadCounts = useMemo(() => new Map<string, number>(), [])
 
   useEffect(() => {
     currentUserIdRef.current = user?.id ?? null
@@ -198,6 +200,10 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
   }, [service])
 
   const sendMessage = useCallback(async (recipientUserId: string, text: string) => {
+    if (!isTeamChatEnabled) {
+      return
+    }
+
     const normalizedText = text.trim()
 
     if (!recipientUserId || !normalizedText) {
@@ -205,7 +211,7 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
     }
 
     await service.sendMessage(recipientUserId, normalizedText.slice(0, 1000))
-  }, [service])
+  }, [isTeamChatEnabled, service])
 
   const getConversationIdForUser = useCallback((otherUserId: string) => {
     const currentUserId = currentUserIdRef.current ?? ''
@@ -283,12 +289,16 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
   }, [onlineUsers, selectedUser])
 
   const totalUnreadCount = useMemo(() => {
+    if (!isTeamChatEnabled) {
+      return 0
+    }
+
     let total = 0
     unreadCounts.forEach((count) => {
       total += count
     })
     return total
-  }, [unreadCounts])
+  }, [isTeamChatEnabled, unreadCounts])
 
   useEffect(() => {
     return () => {
@@ -298,12 +308,12 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
 
   const value = useMemo<TeamChatContextValue>(
     () => ({
-      onlineUsers,
-      selectedUser,
-      conversations,
-      unreadCounts,
-      totalUnreadCount,
-      connectionState,
+      onlineUsers: isTeamChatEnabled ? onlineUsers : [],
+      selectedUser: isTeamChatEnabled ? selectedUser : null,
+      conversations: isTeamChatEnabled ? conversations : emptyConversations,
+      unreadCounts: isTeamChatEnabled ? unreadCounts : emptyUnreadCounts,
+      totalUnreadCount: isTeamChatEnabled ? totalUnreadCount : 0,
+      connectionState: isTeamChatEnabled ? connectionState : 'Disconnected',
       connect,
       disconnect,
       sendMessage,
@@ -313,7 +323,25 @@ export const TeamChatProvider = ({ children }: { children: React.ReactNode }) =>
       selectUser,
       clearSelectedUser,
     }),
-    [onlineUsers, selectedUser, conversations, unreadCounts, totalUnreadCount, connectionState, connect, disconnect, sendMessage, getConversationIdForUser, getConversationMessages, markConversationAsRead, selectUser, clearSelectedUser]
+    [
+      isTeamChatEnabled,
+      onlineUsers,
+      selectedUser,
+      conversations,
+      unreadCounts,
+      totalUnreadCount,
+      connectionState,
+      emptyConversations,
+      emptyUnreadCounts,
+      connect,
+      disconnect,
+      sendMessage,
+      getConversationIdForUser,
+      getConversationMessages,
+      markConversationAsRead,
+      selectUser,
+      clearSelectedUser,
+    ]
   )
 
   return <TeamChatContext.Provider value={value}>{children}</TeamChatContext.Provider>

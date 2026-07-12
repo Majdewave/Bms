@@ -8,6 +8,7 @@ import { useFeatures } from '@/contexts/FeatureContext'
 const defaultFeatures: Features = {
   reportsEnabled: true,
   invoicesEnabled: true,
+  quotesEnabled: false,
   prescriptionsEnabled: true,
   drugsEnabled: false,
   beforeAfterPhotosEnabled: false,
@@ -79,6 +80,7 @@ export default function AdminFeatures() {
     const updated: Features = {
       reportsEnabled: key === 'reportsEnabled' ? value : settings.reportsEnabled,
       invoicesEnabled: key === 'invoicesEnabled' ? value : settings.invoicesEnabled,
+      quotesEnabled: key === 'quotesEnabled' ? value : settings.quotesEnabled,
       prescriptionsEnabled:
         key === 'prescriptionsEnabled' ? value : settings.prescriptionsEnabled,
       drugsEnabled: key === 'drugsEnabled' ? value : settings.drugsEnabled,
@@ -164,6 +166,15 @@ export default function AdminFeatures() {
           onChange={(val) => handleToggle('invoicesEnabled', val)}
           disabled={saving}
           icon={<Receipt className="w-5 h-5 text-green-400" />}
+        />
+
+        <ToggleRow
+          label={t('features.quotes', 'הצעות מחיר')}
+          description={t('features.quotesDesc', 'הצג את עמוד הצעות המחיר בתפריט הניווט')}
+          checked={settings.quotesEnabled}
+          onChange={(val) => handleToggle('quotesEnabled', val)}
+          disabled={saving}
+          icon={<Receipt className="w-5 h-5 text-emerald-500" />}
         />
 
         <ToggleRow

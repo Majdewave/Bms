@@ -345,6 +345,8 @@ export default function DepartmentsSection({ canManageDepartments, isOpen = true
 
   const getFeatureTitle = (featureKey: string) => {
     switch (featureKey) {
+      case 'quotesEnabled':
+        return t('features.quotes', 'הצעות מחיר')
       case 'prescriptionsEnabled':
         return t('features.prescriptions')
       case 'drugsEnabled':

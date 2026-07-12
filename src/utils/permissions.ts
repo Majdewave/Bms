@@ -14,6 +14,7 @@ export type Permission =
   | 'manage_whatsapp' // WhatsApp Business settings and status
   | 'manage_appointments' // All appointment management
   | 'manage_invoices' // All invoice management
+  | 'manage_quotes' // All quotes management
   | 'view_reports' // View system reports
 
 /**
@@ -29,6 +30,7 @@ export const PERMISSION_MATRIX: Record<UserRole, Permission[]> = {
     'manage_whatsapp',
     'manage_appointments',
     'manage_invoices',
+    'manage_quotes',
     'view_reports',
   ],
   staff: [

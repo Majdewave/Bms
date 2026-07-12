@@ -25,6 +25,8 @@ import AdminClientProfile from '@/pages/admin/ClientProfile'
 import EditClient from '@/pages/admin/EditClient'
 import AdminAppointments from '@/pages/admin/Appointments'
 import AdminInvoices from '@/pages/admin/Invoices'
+import AdminQuotes from '@/pages/admin/Quotes'
+import QuoteDetails from '@/pages/admin/QuoteDetails'
 import AdminReports from '@/pages/admin/Reports'
 import AdminBusinessSettings from '@/pages/admin/BusinessSettings'
 import AdminWhatsApp from '@/pages/admin/WhatsApp'
@@ -48,7 +50,30 @@ import ClientFiles from '@/pages/client/Files'
 import ClientProfile from '@/pages/client/Profile'
 
 import React from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useFeatures } from '@/contexts/FeatureContext'
+import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
 import Register from './pages/Register';
+
+const QuotesEntryRedirect = () => {
+  const { user } = useAuth()
+  const { features } = useFeatures()
+  const { departmentFeatures } = useDepartmentFeatures()
+
+  if (!features || !departmentFeatures) {
+    return <div className="flex min-h-screen items-center justify-center text-slate-600">Loading...</div>
+  }
+
+  if (!features.quotesEnabled || !departmentFeatures.quotesEnabled) {
+    return <Navigate to="/unauthorized" replace />
+  }
+
+  if (user?.role === 'staff') {
+    return <Navigate to="/staff/quotes" replace />
+  }
+
+  return <Navigate to="/admin/quotes" replace />
+}
 
 const ErrorFallback = () => (
   <div style={{ padding: 32, textAlign: 'center', color: '#b91c1c' }}>
@@ -104,6 +129,15 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <BillingPage />
+      </ProtectedRoute>
+    ),
+  },
+
+  {
+    path: '/quotes',
+    element: (
+      <ProtectedRoute>
+        <QuotesEntryRedirect />
       </ProtectedRoute>
     ),
   },
@@ -187,6 +221,24 @@ export const router = createBrowserRouter([
         element: (
           <PermissionBasedRoute requiredPermission="manage_invoices">
             <AdminInvoices />
+          </PermissionBasedRoute>
+        ),
+      },
+
+      {
+        path: 'quotes',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_quotes">
+            <AdminQuotes />
+          </PermissionBasedRoute>
+        ),
+      },
+
+      {
+        path: 'quotes/:id',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_quotes">
+            <QuoteDetails />
           </PermissionBasedRoute>
         ),
       },
@@ -303,6 +355,30 @@ export const router = createBrowserRouter([
             requiredPermission="manage_invoices"
           >
             <AdminInvoices />
+          </PermissionBasedRoute>
+        ),
+      },
+
+      {
+        path: 'quotes',
+        element: (
+          <PermissionBasedRoute
+            allowedRoles={['staff']}
+            requiredPermission="manage_quotes"
+          >
+            <AdminQuotes />
+          </PermissionBasedRoute>
+        ),
+      },
+
+      {
+        path: 'quotes/:id',
+        element: (
+          <PermissionBasedRoute
+            allowedRoles={['staff']}
+            requiredPermission="manage_quotes"
+          >
+            <QuoteDetails />
           </PermissionBasedRoute>
         ),
       },

@@ -4,6 +4,7 @@ import * as apiClient from '@/api/apiClient'
 import { useAuth } from '@/contexts/AuthContext'
 
 export interface DepartmentFeatures {
+  quotesEnabled: boolean
   prescriptionsEnabled: boolean
   drugsEnabled: boolean
   consentFormsEnabled: boolean
@@ -30,6 +31,7 @@ const areDepartmentFeaturesEqual = (
 ) => {
   if (!a) return false
   return (
+    a.quotesEnabled === b.quotesEnabled &&
     a.prescriptionsEnabled === b.prescriptionsEnabled &&
     a.drugsEnabled === b.drugsEnabled &&
     a.consentFormsEnabled === b.consentFormsEnabled &&

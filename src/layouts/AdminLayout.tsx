@@ -52,6 +52,7 @@ const allMenuItems: MenuItem[] = [
   { icon: Users, label: 'All Clients', path: '/admin/clients', roles: ['admin'] },
   { icon: Calendar, label: 'All Appointments', path: '/admin/appointments', roles: ['admin'] },
   { icon: FileText, label: 'All Invoices', path: '/admin/invoices', roles: ['admin'], feature: 'invoicesEnabled' },
+  { icon: FileText, label: 'Quotes', path: '/admin/quotes', roles: ['admin'], permission: 'manage_quotes', feature: 'quotesEnabled' },
   { icon: BarChart3, label: 'Reports', path: '/admin/reports', roles: ['admin'], feature: 'reportsEnabled' },
   { icon: UserPlus, label: 'Staff Management', path: '/admin/staff', roles: ['admin'] },
   { icon: Pill, label: 'Drugs', path: '/admin/drugs', roles: ['admin'], feature: 'drugsEnabled' },
@@ -65,6 +66,7 @@ const allMenuItems: MenuItem[] = [
   { icon: Calendar, label: 'My Appointments', path: '/staff/appointments', roles: ['staff'], permission: 'manage_appointments' },
   { icon: Users, label: 'Manage Clients', path: '/staff/clients', roles: ['staff'], permission: 'manage_clients' },
   { icon: FileText, label: 'Invoices', path: '/staff/invoices', roles: ['staff'], permission: 'manage_invoices', feature: 'invoicesEnabled' },
+  { icon: FileText, label: 'Quotes', path: '/staff/quotes', roles: ['staff'], permission: 'manage_quotes', feature: 'quotesEnabled' },
 ]
 
 export default function AdminLayout() {
@@ -91,6 +93,8 @@ export default function AdminLayout() {
       return allMenuItems.filter((item) => {
         if (!item.roles.includes('admin')) return false
         if (item.feature && !features?.[item.feature]) return false
+        if (item.permission && !hasPermission(item.permission)) return false
+        if ((item.path === '/admin/quotes' || item.path === '/staff/quotes') && !departmentFeatures?.quotesEnabled) return false
         if (item.path === '/admin/drugs' && !departmentFeatures?.drugsEnabled) return false
         return true
       })
@@ -99,6 +103,7 @@ export default function AdminLayout() {
     return allMenuItems.filter((item) => {
       if (item.roles.includes('staff') && user.role === 'staff') {
         if (item.feature && !features?.[item.feature]) return false
+        if ((item.path === '/admin/quotes' || item.path === '/staff/quotes') && !departmentFeatures?.quotesEnabled) return false
         if (item.path === '/admin/drugs' && !departmentFeatures?.drugsEnabled) return false
         if (!item.permission) return true
         return hasPermission(item.permission)
@@ -106,7 +111,7 @@ export default function AdminLayout() {
 
       return false
     })
-  }, [user, hasPermission, features, departmentFeatures?.drugsEnabled])
+  }, [user, hasPermission, features, departmentFeatures?.drugsEnabled, departmentFeatures?.quotesEnabled])
 
   const isTeamChatEnabled = departmentFeatures?.teamChatEnabled === true
 
@@ -130,6 +135,8 @@ export default function AdminLayout() {
         return t('staff.clients.viewTitle')
       case 'Invoices':
         return t('nav.invoices')
+      case 'Quotes':
+        return 'הצעות מחיר'
       case 'Business Settings':
         return t('nav.settings')
       case 'Feature Toggles':

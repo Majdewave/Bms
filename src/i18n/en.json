@@ -741,6 +741,101 @@
         "validationPrice": "Each line item price must be 0 or higher."
       }
     },
+    "quotes": {
+      "title": "Quotes",
+      "detailsSubtitle": "Quote Details",
+      "description": "Manage quotes similar to invoices",
+      "loadMore": "Load More",
+      "loadingMore": "Loading more...",
+      "totalCount": "{{count}} quotes",
+      "create": "Create Quote",
+      "createNew": "Create New Quote",
+      "editTitle": "Edit Quote",
+      "search": "Search by quote number, client, or status...",
+      "empty": "No quotes found.",
+      "notFound": "Quote not found.",
+      "confirmDelete": "Delete this quote?",
+      "convertSuccess": "New invoice created: {{invoiceNumber}}",
+      "table": {
+        "number": "Quote #",
+        "client": "Client",
+        "date": "Date",
+        "validUntil": "Valid Until",
+        "amount": "Amount"
+      },
+      "status": {
+        "draft": "Draft",
+        "sent": "Sent",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "expired": "Expired",
+        "converted": "Converted to Invoice"
+      },
+      "filter": {
+        "allClients": "All clients",
+        "allStatuses": "All statuses",
+        "quickRange": "Quick Range",
+        "last30Days": "Last 30 Days",
+        "last3Months": "Last 3 Months",
+        "lastYear": "Last Year",
+        "all": "All",
+        "fromDate": "From Date",
+        "toDate": "To Date"
+      },
+      "actions": {
+        "view": "View",
+        "pdf": "PDF",
+        "duplicate": "Duplicate",
+        "download": "Download",
+        "downloading": "Downloading...",
+        "printing": "Printing...",
+        "duplicating": "Duplicating...",
+        "deleting": "Deleting...",
+        "converting": "Converting...",
+        "convert": "Convert to Invoice"
+      },
+      "form": {
+        "customerInformation": "Customer Information",
+        "existingClient": "Existing Client",
+        "newClient": "New Customer",
+        "client": "Client",
+        "selectClient": "Type client name, phone, or email",
+        "fullName": "Full Name",
+        "fullNamePlaceholder": "Full name *",
+        "phone": "Phone",
+        "department": "Department",
+        "selectDepartment": "Select department",
+        "quoteDate": "Quote Date",
+        "validUntil": "Valid Until",
+        "status": "Status",
+        "lineItems": "Items",
+        "addItem": "Add Item",
+        "description": "Description",
+        "quantity": "Quantity",
+        "unitPrice": "Unit Price",
+        "discount": "Discount",
+        "vat": "VAT",
+        "total": "Total",
+        "financialSummary": "Financial Summary",
+        "subtotal": "Subtotal",
+        "grandTotal": "Grand Total",
+        "notes": "Notes",
+        "notesPlaceholder": "Add notes",
+        "termsAndConditions": "Quote Terms",
+        "termsPlaceholder": "Add terms and conditions",
+        "submit": "Save Quote",
+        "saveChanges": "Save Changes",
+        "creating": "Creating...",
+        "updating": "Updating...",
+        "validationClient": "Select an existing client.",
+        "validationCustomerName": "Enter customer full name.",
+        "validationDepartment": "Select a department.",
+        "validationLineItems": "Add at least one line item.",
+        "validationDescription": "Each line item must include a description.",
+        "validationQuantity": "Each line item quantity must be greater than 0.",
+        "validationPrice": "Each line item price must be 0 or higher."
+      }
+    },
     "reports": {
       "title": "Reports & Analytics",
       "description": "Business insights and performance metrics",
@@ -826,6 +921,10 @@
           "title": "Manage Invoices",
           "description": "Create, edit, delete, and download invoice PDFs"
         },
+        "manage_quotes": {
+          "title": "Manage Quotes",
+          "description": "Create, edit, duplicate, and convert quotes to invoices"
+        },
         "manage_notes": {
           "title": "Manage Notes",
           "description": "Add, edit and delete internal notes"
@@ -873,6 +972,9 @@
 
     "invoices": "Invoices",
     "invoicesDesc": "Show the Invoices page in the navigation menu",
+
+    "quotes": "Quotes",
+    "quotesDesc": "Show the quotes page in the navigation menu",
 
     "prescriptions": "Prescriptions",
     "prescriptionsDesc": "Show the prescription button in client profiles",

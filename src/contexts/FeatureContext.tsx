@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 export interface Features {
   reportsEnabled: boolean
   invoicesEnabled: boolean
+  quotesEnabled: boolean
   prescriptionsEnabled: boolean
   drugsEnabled: boolean
   beforeAfterPhotosEnabled: boolean
@@ -30,6 +31,7 @@ const areFeaturesEqual = (a: Features | null, b: Features) => {
   return (
     a.reportsEnabled === b.reportsEnabled &&
     a.invoicesEnabled === b.invoicesEnabled &&
+    a.quotesEnabled === b.quotesEnabled &&
     a.prescriptionsEnabled === b.prescriptionsEnabled &&
     a.drugsEnabled === b.drugsEnabled &&
     a.beforeAfterPhotosEnabled === b.beforeAfterPhotosEnabled &&

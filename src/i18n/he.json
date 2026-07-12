@@ -730,6 +730,101 @@
         "validationPrice": "המחיר בכל שורה חייב להיות 0 ומעלה."
       }
     },
+    "quotes": {
+      "title": "הצעות מחיר",
+      "detailsSubtitle": "פרטי הצעת מחיר",
+      "description": "ניהול הצעות מחיר בדומה לחשבוניות",
+      "loadMore": "טען עוד",
+      "loadingMore": "טוען עוד...",
+      "totalCount": "{{count}} הצעות מחיר",
+      "create": "צור הצעת מחיר",
+      "createNew": "הצעת מחיר חדשה",
+      "editTitle": "עריכת הצעת מחיר",
+      "search": "חיפוש לפי מספר הצעה, לקוח או סטטוס...",
+      "empty": "לא נמצאו הצעות מחיר",
+      "notFound": "הצעת המחיר לא נמצאה.",
+      "confirmDelete": "למחוק את ההצעה?",
+      "convertSuccess": "נוצרה חשבונית חדשה: {{invoiceNumber}}",
+      "table": {
+        "number": "מספר הצעה",
+        "client": "לקוח",
+        "date": "תאריך",
+        "validUntil": "בתוקף עד",
+        "amount": "סכום"
+      },
+      "status": {
+        "draft": "טיוטה",
+        "sent": "נשלחה",
+        "approved": "אושרה",
+        "rejected": "נדחתה",
+        "expired": "פגה",
+        "converted": "הומרה לחשבונית"
+      },
+      "filter": {
+        "allClients": "כל הלקוחות",
+        "allStatuses": "כל הסטטוסים",
+        "quickRange": "טווח תאריכים מהיר",
+        "last30Days": "30 ימים אחרונים",
+        "last3Months": "3 חודשים אחרונים",
+        "lastYear": "שנה אחרונה",
+        "all": "הכול",
+        "fromDate": "מתאריך",
+        "toDate": "עד תאריך"
+      },
+      "actions": {
+        "view": "צפייה",
+        "pdf": "PDF",
+        "duplicate": "שכפול",
+        "download": "הורדה",
+        "downloading": "מוריד...",
+        "printing": "מדפיס...",
+        "duplicating": "משכפל...",
+        "deleting": "מוחק...",
+        "converting": "ממיר...",
+        "convert": "המר לחשבונית"
+      },
+      "form": {
+        "customerInformation": "פרטי לקוח",
+        "existingClient": "לקוח קיים",
+        "newClient": "לקוח חדש",
+        "client": "לקוח",
+        "selectClient": "הקלד שם לקוח, טלפון או אימייל",
+        "fullName": "שם מלא",
+        "fullNamePlaceholder": "שם מלא *",
+        "phone": "טלפון",
+        "department": "מחלקה",
+        "selectDepartment": "בחר מחלקה",
+        "quoteDate": "תאריך הצעת המחיר",
+        "validUntil": "תוקף עד",
+        "status": "סטטוס",
+        "lineItems": "שורות",
+        "addItem": "הוסף שורה",
+        "description": "תיאור",
+        "quantity": "כמות",
+        "unitPrice": "מחיר יחידה",
+        "discount": "הנחה",
+        "vat": "מע״מ",
+        "total": "סה״כ",
+        "financialSummary": "סיכום פיננסי",
+        "subtotal": "סכום ביניים",
+        "grandTotal": "סה״כ לתשלום",
+        "notes": "הערות",
+        "notesPlaceholder": "הוסף הערות",
+        "termsAndConditions": "תנאי הצעת מחיר",
+        "termsPlaceholder": "הוסף תנאים והגבלות",
+        "submit": "שמור הצעה",
+        "saveChanges": "שמור שינויים",
+        "creating": "יוצר...",
+        "updating": "מעדכן...",
+        "validationClient": "יש לבחור לקוח קיים.",
+        "validationCustomerName": "יש להזין שם לקוח.",
+        "validationDepartment": "יש לבחור מחלקה.",
+        "validationLineItems": "יש להוסיף לפחות שורה אחת.",
+        "validationDescription": "יש להזין תיאור לכל שורה.",
+        "validationQuantity": "כמות חייבת להיות גדולה מ-0.",
+        "validationPrice": "מחיר חייב להיות 0 ומעלה."
+      }
+    },
     "reports": {
       "title": "דוחות וניתוחים",
       "description": "תובנות עסקיות ומדדי ביצועים",
@@ -814,6 +909,10 @@
           "title": "חשבוניות וקבלות",
           "description": "צור, ערוך, מחק והורד PDF של חשבוניות"
         },
+        "manage_quotes": {
+          "title": "הצעות מחיר",
+          "description": "צור, ערוך, שכפל והמר הצעות מחיר לחשבוניות"
+        },
         "manage_notes": {
           "title": "נהל הערות",
           "description": "הוסף, ערוך ומחק הערות פנימיות על לקוחות"
@@ -861,6 +960,9 @@
 
     "invoices": "חשבוניות",
     "invoicesDesc": "הצג את עמוד החשבוניות בתפריט הניווט",
+
+    "quotes": "הצעות מחיר",
+    "quotesDesc": "הצג את עמוד הצעות המחיר בתפריט הניווט",
 
     "prescriptions": "מרשמים",
     "prescriptionsDesc": "הצג את אפשרות כתיבת מרשם בפרופיל הלקוח",

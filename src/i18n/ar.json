@@ -597,6 +597,9 @@
       "invoicesTitle": "الفواتير",
       "filesTitle": "الملفات",
       "notesTitle": "الملاحظات الداخلية",
+
+      "quotes": "عروض الأسعار",
+      "quotesDesc": "إظهار صفحة عروض الأسعار في قائمة التنقل",
       "noAppointments": "لم يتم تحديد أي مواعيد بعد",
       "noInvoices": "لم يتم إنشاء أي فواتير بعد",
       "noFiles": "لم يتم تحميل أي ملفات بعد",
@@ -739,6 +742,101 @@
         "validationPrice": "يجب أن يكون سعر كل بند 0 أو أكثر."
       }
     },
+    "quotes": {
+      "title": "عروض الأسعار",
+      "detailsSubtitle": "تفاصيل عرض السعر",
+      "description": "إدارة عروض الأسعار بنفس أسلوب الفواتير",
+      "loadMore": "تحميل المزيد",
+      "loadingMore": "جارٍ تحميل المزيد...",
+      "totalCount": "{{count}} عروض أسعار",
+      "create": "إنشاء عرض سعر",
+      "createNew": "عرض سعر جديد",
+      "editTitle": "تعديل عرض سعر",
+      "search": "بحث برقم العرض أو العميل أو الحالة...",
+      "empty": "لم يتم العثور على عروض أسعار.",
+      "notFound": "لم يتم العثور على عرض السعر.",
+      "confirmDelete": "حذف عرض السعر؟",
+      "convertSuccess": "تم إنشاء فاتورة جديدة: {{invoiceNumber}}",
+      "table": {
+        "number": "رقم العرض",
+        "client": "العميل",
+        "date": "التاريخ",
+        "validUntil": "صالح حتى",
+        "amount": "المبلغ"
+      },
+      "status": {
+        "draft": "مسودة",
+        "sent": "مرسلة",
+        "approved": "موافق عليها",
+        "rejected": "مرفوضة",
+        "expired": "منتهية",
+        "converted": "تم تحويلها إلى فاتورة"
+      },
+      "filter": {
+        "allClients": "كل العملاء",
+        "allStatuses": "كل الحالات",
+        "quickRange": "نطاق سريع",
+        "last30Days": "آخر 30 يومًا",
+        "last3Months": "آخر 3 أشهر",
+        "lastYear": "آخر سنة",
+        "all": "الكل",
+        "fromDate": "من تاريخ",
+        "toDate": "إلى تاريخ"
+      },
+      "actions": {
+        "view": "عرض",
+        "pdf": "PDF",
+        "duplicate": "نسخ",
+        "download": "تنزيل",
+        "downloading": "جارٍ التنزيل...",
+        "printing": "جارٍ الطباعة...",
+        "duplicating": "جارٍ النسخ...",
+        "deleting": "جارٍ الحذف...",
+        "converting": "جارٍ التحويل...",
+        "convert": "تحويل إلى فاتورة"
+      },
+      "form": {
+        "customerInformation": "معلومات العميل",
+        "existingClient": "عميل موجود",
+        "newClient": "عميل جديد",
+        "client": "العميل",
+        "selectClient": "اكتب اسم العميل أو الهاتف أو البريد الإلكتروني",
+        "fullName": "الاسم الكامل",
+        "fullNamePlaceholder": "الاسم الكامل *",
+        "phone": "الهاتف",
+        "department": "القسم",
+        "selectDepartment": "اختر القسم",
+        "quoteDate": "تاريخ عرض السعر",
+        "validUntil": "صالح حتى",
+        "status": "الحالة",
+        "lineItems": "العناصر",
+        "addItem": "إضافة عنصر",
+        "description": "الوصف",
+        "quantity": "الكمية",
+        "unitPrice": "سعر الوحدة",
+        "discount": "الخصم",
+        "vat": "ضريبة القيمة المضافة",
+        "total": "الإجمالي",
+        "financialSummary": "الملخص المالي",
+        "subtotal": "المجموع الفرعي",
+        "grandTotal": "الإجمالي النهائي",
+        "notes": "ملاحظات",
+        "notesPlaceholder": "أضف ملاحظات",
+        "termsAndConditions": "شروط عرض السعر",
+        "termsPlaceholder": "أضف الشروط والأحكام",
+        "submit": "حفظ عرض السعر",
+        "saveChanges": "حفظ التعديلات",
+        "creating": "جارٍ الإنشاء...",
+        "updating": "جارٍ التحديث...",
+        "validationClient": "يرجى اختيار عميل موجود.",
+        "validationCustomerName": "يرجى إدخال اسم العميل.",
+        "validationDepartment": "يرجى اختيار القسم.",
+        "validationLineItems": "أضف عنصرًا واحدًا على الأقل.",
+        "validationDescription": "كل عنصر يجب أن يحتوي على وصف.",
+        "validationQuantity": "يجب أن تكون كمية كل عنصر أكبر من 0.",
+        "validationPrice": "يجب أن يكون سعر كل عنصر 0 أو أعلى."
+      }
+    },
     "reports": {
       "title": "التقارير والتحليلات",
       "description": "رؤى الأعمال ومؤشرات الأداء",
@@ -823,6 +921,10 @@
         "manage_invoices": {
           "title": "إدارة الفواتير",
           "description": "إنشاء وتعديل وحذف وتنزيل PDF للفواتير"
+        },
+        "manage_quotes": {
+          "title": "إدارة عروض الأسعار",
+          "description": "إنشاء وتعديل ونسخ وتحويل عروض الأسعار إلى فواتير"
         },
         "manage_notes": {
           "title": "إدارة الملاحظات",

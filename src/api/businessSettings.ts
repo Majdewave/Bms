@@ -18,6 +18,8 @@ export interface BusinessSettings {
   defaultInvoiceStatus?: string | null
   invoicePrefix: string
   nextInvoiceNumber: number
+  quotePrefix?: string | null
+  nextQuoteNumber?: number | null
   businessStampUrl: string | null
 }
 
@@ -57,6 +59,8 @@ export const updateBusinessSettings = async (
     defaultInvoiceStatus?: string
     invoicePrefix?: string
     nextInvoiceNumber?: number
+    quotePrefix?: string
+    nextQuoteNumber?: number
   }
 ): Promise<BusinessSettings> => {
   return put<BusinessSettings>('/api/tenant', data)

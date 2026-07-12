@@ -5,6 +5,7 @@ import * as authApi from './auth'
 import * as dashboardApi from './dashboard'
 import * as appointmentsApi from './appointments'
 import * as invoicesApi from './invoices'
+import * as quotesApi from './quotes'
 import * as filesApi from './files'
 import * as profileApi from './profile'
 import * as clientsApi from './clients'
@@ -19,6 +20,7 @@ export const authService = authApi
 export const dashboardService = dashboardApi
 export const appointmentsService = appointmentsApi
 export const invoicesService = invoicesApi
+export const quotesService = quotesApi
 export const filesService = filesApi
 export const profileService = profileApi
 export const clientsService = clientsApi
@@ -39,6 +41,13 @@ export type {
   Invoice,
   InvoiceLineItem,
 } from './invoices'
+export type {
+  CreateQuoteLineItemRequest,
+  CreateQuoteRequest,
+  Quote,
+  QuoteLineItem,
+  QuoteStatus,
+} from './quotes'
 export type { StorageFile } from './files'
 export type { UserProfile, PasswordChangeRequest } from './profile'
 export type {

@@ -23,6 +23,8 @@ export interface Tenant {
   defaultInvoiceStatus?: string | null
   invoicePrefix?: string | null
   nextInvoiceNumber?: number | null
+  quotePrefix?: string | null
+  nextQuoteNumber?: number | null
   autoDeleteNotDocumentedAfterDays?: number | null
   enableAutoDeleteNotDocumented?: boolean | null
 }
