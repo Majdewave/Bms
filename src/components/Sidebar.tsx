@@ -126,31 +126,6 @@ export default function Sidebar() {
           </div>
         </nav>
 
-        {/* Footer: Compact user info */}
-        <div className="p-4 border-t border-secondary-700">
-          <div
-            className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition"
-            onClick={() => {/* TODO: open profile or menu */}}
-          >
-            <div className="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold">
-              {user?.name
-                ? user.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .toUpperCase()
-                : ''}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-gray-900">
-                {user?.name}
-              </span>
-              <span className="text-xs text-gray-500">
-                {user?.email}
-              </span>
-            </div>
-          </div>
-        </div>
       </aside>
 
       {/* Mobile Overlay */}

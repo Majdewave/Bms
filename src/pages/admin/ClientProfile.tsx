@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, FileCheck, FileText, Image as ImageIcon, MessageSquare, Pill, User } from "lucide-react"
+import { ChevronDown, Download, Eye, FileCheck, FileText, Image as ImageIcon, MessageSquare, Pill, Printer, Trash2, User } from "lucide-react"
 import { visitSummariesService, type VisitSummary } from '@/api/visitSummaries'
+import { invoicesService } from '@/api'
+import type { Invoice } from '@/api/invoices'
 import { useAuth } from "@/contexts/AuthContext"
 import { useDepartmentFeatures } from "@/contexts/DepartmentFeatureContext"
 import * as apiClient from "@/api/apiClient"
@@ -88,6 +90,8 @@ export default function ClientProfile() {
   })
   const [openSections, setOpenSections] = useState<string[]>([])
   const [visitSummaries, setVisitSummaries] = useState<VisitSummary[]>([])
+  const [clientInvoices, setClientInvoices] = useState<Invoice[]>([])
+  const [invoicesLoading, setInvoicesLoading] = useState(false)
   const [prescriptionForm, setPrescriptionForm] = useState({
     date: new Date().toISOString().split('T')[0],
     nationalId: '',
@@ -285,6 +289,132 @@ useEffect(() => {
     .then((data) => setVisitSummaries(Array.isArray(data) ? data : []))
     .catch(() => setVisitSummaries([]));
 }, [openSections, client?.id, departmentFeatures?.visitSummariesEnabled]);
+
+  useEffect(() => {
+    const loadClientInvoices = async () => {
+      if (!client?.id || !openSections.includes('invoices')) {
+        return
+      }
+
+      setInvoicesLoading(true)
+      try {
+        const invoices = await invoicesService.getInvoices()
+        const filtered = invoices
+          .filter((invoice) => invoice.clientId === client.id)
+          .sort((a, b) => new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime())
+
+        setClientInvoices(filtered)
+      } catch (error) {
+        console.error('Failed to load client invoices:', error)
+        setClientInvoices([])
+      } finally {
+        setInvoicesLoading(false)
+      }
+    }
+
+    void loadClientInvoices()
+  }, [client?.id, openSections])
+
+  const getInvoiceStatusLabel = (status: Invoice['status']) => {
+    if (status === 'paid') return t('admin.invoices.status.paid')
+    if (status === 'pending') return t('admin.invoices.status.pending')
+    if (status === 'partially_paid') return i18n.language === 'he' ? 'שולם חלקית' : i18n.language === 'ar' ? 'مدفوع جزئياً' : 'Partially Paid'
+    if (status === 'cancelled') return i18n.language === 'he' ? 'בוטל' : i18n.language === 'ar' ? 'ملغي' : 'Cancelled'
+    return t('common.status')
+  }
+
+  const handleInvoiceDocumentAction = async (invoice: Invoice, action: 'view' | 'download' | 'print') => {
+    try {
+      const blob = await invoicesService.downloadInvoice(invoice.id)
+      const url = window.URL.createObjectURL(blob)
+
+      if (action === 'download') {
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${invoice.number}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+        return
+      }
+
+      const targetWindow = window.open(url, '_blank')
+      if (targetWindow && action === 'print') {
+        targetWindow.onload = () => targetWindow.print()
+      }
+
+      window.setTimeout(() => {
+        window.URL.revokeObjectURL(url)
+      }, 10000)
+    } catch (error) {
+      console.error(`Failed to ${action} invoice:`, error)
+    }
+  }
+
+  const performPdfAction = (blob: Blob, fileName: string, action: 'view' | 'download' | 'print') => {
+    const url = window.URL.createObjectURL(blob)
+
+    if (action === 'download') {
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      return
+    }
+
+    const targetWindow = window.open(url, '_blank')
+    if (targetWindow && action === 'print') {
+      targetWindow.onload = () => targetWindow.print()
+    }
+
+    window.setTimeout(() => {
+      window.URL.revokeObjectURL(url)
+    }, 10000)
+  }
+
+  const fetchProtectedPdfBlob = async (url: string) => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      throw new Error('Missing auth token')
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(text || 'Failed to load document')
+    }
+
+    return response.blob()
+  }
+
+  const handlePrescriptionDocumentAction = async (prescriptionId: string, action: 'view' | 'download' | 'print') => {
+    try {
+      const baseUrl = (import.meta as any).env.VITE_API_URL || 'http://localhost:5146'
+      const blob = await fetchProtectedPdfBlob(`${baseUrl}/api/prescriptions/${prescriptionId}/pdf`)
+      performPdfAction(blob, `prescription-${prescriptionId}.pdf`, action)
+    } catch (error) {
+      console.error(`Failed to ${action} prescription PDF:`, error)
+    }
+  }
+
+  const handleVisitSummaryDocumentAction = async (summaryId: string, action: 'view' | 'download' | 'print') => {
+    try {
+      const baseUrl = (import.meta as any).env.VITE_API_URL || 'http://localhost:5146'
+      const blob = await fetchProtectedPdfBlob(`${baseUrl}/api/VisitSummary/${summaryId}/pdf`)
+      performPdfAction(blob, `visit-summary-${summaryId}.pdf`, action)
+    } catch (error) {
+      console.error(`Failed to ${action} visit summary PDF:`, error)
+    }
+  }
   /* ================================
      EDIT CLIENT
   ================================ */
@@ -438,50 +568,6 @@ const saveClient = async () => {
     setNotes(prev => prev.filter(n => n.id !== id))
   }
 
-  const downloadPrescription = async (id: string) => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      alert('אין הרשאה להורדת הקובץ')
-      return
-    }
-
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(
-        `${(import.meta as any).env.VITE_API_URL}/api/prescriptions/${id}/pdf`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      )
-
-      // 👇 קריטי
-      if (!response.ok) {
-        const text = await response.text()
-        console.error('NOT PDF RESPONSE:', text)
-        alert('Server returned error instead of PDF')
-        return
-      }
-
-      const blob = await response.blob()
-
-      const url = window.URL.createObjectURL(blob)
-
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `prescription-${id}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
-   
-    } catch (error) {
-      console.error('Failed to download prescription PDF:', error)
-      alert('שגיאה בהורדת קובץ המרשם')
-    }
-  }
-
   const deletePrescription = async (id: string) => {
     const token = localStorage.getItem('token')
 
@@ -572,11 +658,6 @@ const saveClient = async () => {
   // --- Edit Modal State ---
   const [editingSummary, setEditingSummary] = useState<VisitSummary | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  const handleEdit = (summary: VisitSummary) => {
-    setEditingSummary(summary);
-    setIsEditModalOpen(true);
-  };
 
   const handleSaveEdit = async () => {
     if (!editingSummary) return;
@@ -950,30 +1031,35 @@ const saveClient = async () => {
                   flex items-center justify-between rounded-lg px-4 py-3 border
                   ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
                 `}
+                key={summary.id}
               >
                 
                 {/* צד שמאל — פעולות */}
-                <div className="flex gap-4 text-sm">
-                  <button
-                    onClick={() => visitSummariesService.openPdf(summary.id)}
-                    className="text-blue-600 hover:underline"
-                  >
-                    PDF
-                  </button>
-
-                  <button
-                    onClick={() => handleEdit(summary)}
-                    className="text-gray-600 hover:underline"
-                  >
-                    עריכה
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(summary.id)}
-                    className="text-red-500 hover:underline"
-                  >
-                    מחיקה
-                  </button>
+                <div className="flex items-center gap-3 text-sm">
+                  <ActionIconButton
+                    title={t('view')}
+                    onClick={() => void handleVisitSummaryDocumentAction(summary.id, 'view')}
+                    tone="default"
+                    icon={<Eye className="w-4 h-4" />}
+                  />
+                  <ActionIconButton
+                    title={t('download_pdf')}
+                    onClick={() => void handleVisitSummaryDocumentAction(summary.id, 'download')}
+                    tone="info"
+                    icon={<Download className="w-4 h-4" />}
+                  />
+                  <ActionIconButton
+                    title={t('common.print')}
+                    onClick={() => void handleVisitSummaryDocumentAction(summary.id, 'print')}
+                    tone="default"
+                    icon={<Printer className="w-4 h-4" />}
+                  />
+                  <ActionIconButton
+                    title={t('delete')}
+                    onClick={() => void handleDelete(summary.id)}
+                    tone="danger"
+                    icon={<Trash2 className="w-4 h-4" />}
+                  />
                 </div>
 
                 {/* צד ימין — תאריך בלבד */}
@@ -989,6 +1075,102 @@ const saveClient = async () => {
           )}
         </div>
       )}
+
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection('invoices')}
+          className="w-full p-3 md:p-6 flex items-center justify-between hover:bg-slate-50 transition-colors duration-300"
+        >
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-indigo-400" />
+            <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? 'text-right' : 'text-left'}`}>
+              חשבוניות
+            </h3>
+            <span className={getCounterClass(clientInvoices.length)}>
+              {clientInvoices.length}
+            </span>
+          </div>
+          <ChevronDown
+            className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
+              openSections.includes('invoices') ? 'rotate-180' : 'rotate-0'
+            }`}
+          />
+        </button>
+
+        {openSections.includes('invoices') && (
+          <div className="px-3 md:px-6 pb-4 md:pb-6 space-y-4">
+            {invoicesLoading ? (
+              <div className="py-6 text-slate-500">{t('common.loading')}</div>
+            ) : clientInvoices.length === 0 ? (
+              <div className="py-6 text-slate-500">לא נמצאו חשבוניות</div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-3 md:hidden">
+                  {clientInvoices.map((invoice) => (
+                    <div key={invoice.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                      <div className="text-sm text-slate-500">{t('admin.clientProfile.invoiceNumber')} <span className="font-semibold text-slate-800">{invoice.number}</span></div>
+                      <div className="text-sm text-slate-500">{t('admin.clientProfile.date')} <span className="font-semibold text-slate-800">{new Date(invoice.invoiceDate).toLocaleDateString(i18n.language)}</span></div>
+                      <div className="text-sm text-slate-500">{t('admin.clientProfile.amount')} <span className="font-semibold text-slate-800">{invoice.totalAmount.toFixed(2)}</span></div>
+                      <div className="text-sm text-slate-500">{t('common.status')} <span className="font-semibold text-slate-800">{getInvoiceStatusLabel(invoice.status)}</span></div>
+                      <div className="flex items-center gap-2 pt-1">
+                        <ActionButton label={t('view')} variant="secondary" onClick={() => void handleInvoiceDocumentAction(invoice, 'view')} />
+                        <ActionButton label={t('admin.clientProfile.download')} variant="primary" onClick={() => void handleInvoiceDocumentAction(invoice, 'download')} />
+                        <ActionButton label={t('common.print')} variant="secondary" onClick={() => void handleInvoiceDocumentAction(invoice, 'print')} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <table className="hidden md:table w-full border mt-2">
+                  <thead>
+                    <tr>
+                      <th className="text-right p-2">{t('admin.clientProfile.invoiceNumber')}</th>
+                      <th className="text-right p-2">{t('admin.clientProfile.date')}</th>
+                      <th className="text-right p-2">{t('admin.clientProfile.amount')}</th>
+                      <th className="text-right p-2">{t('common.status')}</th>
+                      <th className="text-right p-2">{t('common.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clientInvoices.map((invoice) => (
+                      <tr key={invoice.id} className="border-t">
+                        <td className="p-2 text-right font-medium">{invoice.number}</td>
+                        <td className="p-2 text-right">{new Date(invoice.invoiceDate).toLocaleDateString(i18n.language)}</td>
+                        <td className="p-2 text-right">{invoice.totalAmount.toFixed(2)}</td>
+                        <td className="p-2 text-right">{getInvoiceStatusLabel(invoice.status)}</td>
+                        <td className="p-2 text-right">
+                          <div className="flex items-center justify-end gap-3">
+                            <ActionIconButton
+                              title={t('view')}
+                              onClick={() => void handleInvoiceDocumentAction(invoice, 'view')}
+                              tone="default"
+                              icon={<Eye className="w-4 h-4" />}
+                            />
+                            <ActionIconButton
+                              title={t('admin.clientProfile.download')}
+                              onClick={() => void handleInvoiceDocumentAction(invoice, 'download')}
+                              tone="info"
+                              icon={<Download className="w-4 h-4" />}
+                            />
+                            <ActionIconButton
+                              title={t('common.print')}
+                              onClick={() => void handleInvoiceDocumentAction(invoice, 'print')}
+                              tone="default"
+                              icon={<Printer className="w-4 h-4" />}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <button
           type="button"
@@ -1100,9 +1282,31 @@ const saveClient = async () => {
                       ) : <span className="text-slate-800"> -</span>}
                     </div>
                     <div className="text-sm text-slate-500">איש צוות מטפל: <span className="font-semibold text-slate-800">{p.doctorName}</span></div>
-                    <div className="flex gap-2 pt-1">
-                      <button onClick={() => downloadPrescription(p.id)} className="px-3 py-1 rounded-lg bg-blue-600 text-white text-sm">PDF</button>
-                      <button onClick={() => deletePrescription(p.id)} className="px-3 py-1 rounded-lg bg-red-100 text-red-600 text-sm">מחק</button>
+                    <div className="flex items-center gap-3 pt-1">
+                      <ActionIconButton
+                        title={t('view')}
+                        onClick={() => void handlePrescriptionDocumentAction(p.id, 'view')}
+                        tone="default"
+                        icon={<Eye className="w-4 h-4" />}
+                      />
+                      <ActionIconButton
+                        title={t('download_pdf')}
+                        onClick={() => void handlePrescriptionDocumentAction(p.id, 'download')}
+                        tone="info"
+                        icon={<Download className="w-4 h-4" />}
+                      />
+                      <ActionIconButton
+                        title={t('common.print')}
+                        onClick={() => void handlePrescriptionDocumentAction(p.id, 'print')}
+                        tone="default"
+                        icon={<Printer className="w-4 h-4" />}
+                      />
+                      <ActionIconButton
+                        title={t('delete')}
+                        onClick={() => void deletePrescription(p.id)}
+                        tone="danger"
+                        icon={<Trash2 className="w-4 h-4" />}
+                      />
                     </div>
                   </div>
                 ))
@@ -1135,8 +1339,30 @@ const saveClient = async () => {
                     <td className="p-2 text-right">{p.doctorName}</td>
                     <td className="p-2 text-right">
                       <div className="flex items-center justify-end gap-3">
-                        <button onClick={() => downloadPrescription(p.id)} className="text-blue-600">PDF</button>
-                        <button onClick={() => deletePrescription(p.id)} className="text-red-600">מחק</button>
+                        <ActionIconButton
+                          title={t('view')}
+                          onClick={() => void handlePrescriptionDocumentAction(p.id, 'view')}
+                          tone="default"
+                          icon={<Eye className="w-4 h-4" />}
+                        />
+                        <ActionIconButton
+                          title={t('download_pdf')}
+                          onClick={() => void handlePrescriptionDocumentAction(p.id, 'download')}
+                          tone="info"
+                          icon={<Download className="w-4 h-4" />}
+                        />
+                        <ActionIconButton
+                          title={t('common.print')}
+                          onClick={() => void handlePrescriptionDocumentAction(p.id, 'print')}
+                          tone="default"
+                          icon={<Printer className="w-4 h-4" />}
+                        />
+                        <ActionIconButton
+                          title={t('delete')}
+                          onClick={() => void deletePrescription(p.id)}
+                          tone="danger"
+                          icon={<Trash2 className="w-4 h-4" />}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -1443,6 +1669,28 @@ function ActionButton({ label, onClick, variant, disabled }: any) {
       className={`${base} ${styles[variant as keyof typeof styles] || styles.secondary} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       {label}
+    </button>
+  )
+}
+
+function ActionIconButton({ title, onClick, icon, tone = 'default', disabled = false }: any) {
+  const toneClasses =
+    tone === 'info'
+      ? 'text-blue-600 hover:text-blue-800'
+      : tone === 'danger'
+      ? 'text-red-600 hover:text-red-700'
+      : 'text-slate-600 hover:text-slate-900'
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      disabled={disabled}
+      className={`${toneClasses} transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+    >
+      {icon}
     </button>
   )
 }

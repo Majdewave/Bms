@@ -14,6 +14,7 @@ import {
   Settings,
   Sliders,
   MessageCircle,
+  User,
   UserPlus,
   Users,
   CreditCard,
@@ -152,17 +153,6 @@ export default function AdminLayout() {
     }
   }
 
-  function getInitials(name?: string | null) {
-
-    if (!name) return "U"
-
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-  }
-
   const handleLogout = async () => {
     if (isLoggingOut) return
 
@@ -253,6 +243,7 @@ export default function AdminLayout() {
 
   const breadcrumbs = buildBreadcrumbs()
   const currentPageLabel = breadcrumbs[breadcrumbs.length - 1]?.label ?? t('common.home')
+  const displayName = (user?.name ?? user?.email ?? '').trim() || user?.email || 'User'
 
   function getTenantLogo(tenant: any) {
     if (tenant?.logoUrl) {
@@ -354,36 +345,25 @@ export default function AdminLayout() {
           </div>
         </nav>
 
-        {/* Sidebar footer remains with only the logout button and user info card, no dropdown */}
-        <div className="flex-shrink-0 border-t border-slate-200 p-4 space-y-4 bg-white">
-
-          <button
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+        <div className="flex-shrink-0 border-t border-slate-100 px-4 py-3 bg-white">
+          <div
+            dir="ltr"
+            style={{ direction: 'ltr', unicodeBidi: 'isolate' }}
+            className="flex flex-row items-center justify-start gap-[6px]"
           >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            <span className="block">
-              {t('common.signOut')}
-            </span>
-          </button>
-          <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
-            <div className="w-10 h-10 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold">
-              {getInitials(user?.name)}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-900">
-                {user?.name}
-              </span>
-              <span className="text-xs text-gray-500">
-                {user?.email}
-              </span>
+            <img
+              src="/favicon.png"
+              alt="Clienta"
+              className="h-5 w-5 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+              }}
+            />
+            <div className="flex items-baseline gap-1 leading-none whitespace-nowrap">
+              <span className="text-[12px] text-slate-500">Powered by</span>
+              <span className="text-[12px] font-semibold text-blue-600">Clienta</span>
             </div>
           </div>
-         <div className="ClientaBrand">
-            <span className='ClientaIcon'>C</span><span>Powered by</span><span className='ClientaText'>CLIENTA</span>
-        </div>
-
         </div>
 
       </aside>
@@ -395,10 +375,12 @@ export default function AdminLayout() {
         <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-3 md:py-4 flex justify-between items-center gap-3">
 
           <div className="min-w-0">
-
-            <h1 className="text-[21px] md:text-lg font-semibold text-slate-900 leading-tight truncate">
-              {t('layout.welcomeBack')} {getInitials(user?.name)}
-            </h1>
+            <div className="flex max-w-full items-center gap-1.5 text-sm font-bold text-slate-900 leading-tight">
+              <User className="h-4 w-4 shrink-0 text-slate-600" />
+              <span className="max-w-[220px] md:max-w-[300px] truncate" title={displayName}>
+                {displayName}
+              </span>
+            </div>
 
             <div className="mt-1 text-[11px] text-slate-500 leading-tight md:hidden truncate">
               {currentPageLabel}
