@@ -25,13 +25,48 @@ export default function AdminAppointments() {
   const [departmentFilter, setDepartmentFilter] = useState('all')
   const [showHistory, setShowHistory] = useState(true)
   const [ticketToPrint, setTicketToPrint] = useState<{ appointment: AppointmentRow; queueNumber: number } | null>(null)
+  const [draggedWaitingId, setDraggedWaitingId] = useState<string | null>(null)
+  const [reorderingQueue, setReorderingQueue] = useState(false)
+
+  const normalizeStatus = (status?: string | null) => (status ?? '').toLowerCase()
+  const isWaitingStatus = (status?: string | null) => normalizeStatus(status) === 'waiting'
+  const isInProgressStatus = (status?: string | null) => normalizeStatus(status) === 'inprogress'
+  const isSameBusinessDay = (leftDate: string, rightDate: string) => {
+    const left = new Date(leftDate)
+    const right = new Date(rightDate)
+    return (
+      left.getFullYear() === right.getFullYear() &&
+      left.getMonth() === right.getMonth() &&
+      left.getDate() === right.getDate()
+    )
+  }
+  const displayQueueNumber = (appointment: AppointmentRow, fallback: number) => {
+    if (isWaitingStatus(appointment.status) && typeof appointment.queueNumber === 'number') {
+      return appointment.queueNumber
+    }
+    return fallback
+  }
+
   // --- Queue Logic ---
-  const current = appointments.find(a => a.status === 'InProgress') || null;
-  const waitingList = appointments
-    .filter(a => a.status === 'Waiting')
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-  const next = waitingList[0] || null;
-  const waitingCount = waitingList.length;
+  const current = appointments.find((a) => isInProgressStatus(a.status)) || null
+  const waitingList = useMemo(
+    () =>
+      appointments
+        .filter((a) => isWaitingStatus(a.status))
+        .sort((a, b) => {
+          const leftQueue = typeof a.queueNumber === 'number' ? a.queueNumber : Number.MAX_SAFE_INTEGER
+          const rightQueue = typeof b.queueNumber === 'number' ? b.queueNumber : Number.MAX_SAFE_INTEGER
+
+          if (leftQueue !== rightQueue) {
+            return leftQueue - rightQueue
+          }
+
+          return new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        }),
+    [appointments]
+  )
+  const next = waitingList[0] || null
+  const waitingCount = waitingList.length
 
   
   // --- Status Actions ---
@@ -39,23 +74,90 @@ export default function AdminAppointments() {
     try {
       // If setting to inprogress, auto-complete any other inprogress
       if (status === 'InProgress') {
-        const currentInProgress = appointments.find(a => a.status === 'InProgress' && a.id !== id);
+        const currentInProgress = appointments.find((a) => isInProgressStatus(a.status) && a.id !== id)
         if (currentInProgress) {
-          await appointmentsService.updateAppointment(currentInProgress.id, { status: 'Completed' });
+          await appointmentsService.updateAppointment(currentInProgress.id, { status: 'Completed' })
         }
       }
       const appointment = appointments.find(a => a.id === id)
         if (!appointment) return
 
-        await appointmentsService.updateAppointment(id, {
-          ...appointment,
-          status
-        })
-      loadData();
+      const isEnteringWaiting = status === 'Waiting' && !isWaitingStatus(appointment.status)
+      let queueNumberPayload: number | null | undefined
+      if (isEnteringWaiting) {
+        const sameDayWaiting = appointments.filter(
+          (item) =>
+            item.id !== id &&
+            isWaitingStatus(item.status) &&
+            isSameBusinessDay(item.startTime, appointment.startTime)
+        )
+        const maxAssignedQueueNumber = sameDayWaiting.reduce((max, item) => {
+          if (typeof item.queueNumber === 'number') {
+            return Math.max(max, item.queueNumber)
+          }
+          return max
+        }, 0)
+        const fallbackMaxQueueNumber = sameDayWaiting.length
+        queueNumberPayload = Math.max(maxAssignedQueueNumber, fallbackMaxQueueNumber) + 1
+      }
+
+      await appointmentsService.updateAppointment(id, {
+        status,
+        ...(queueNumberPayload !== undefined ? { queueNumber: queueNumberPayload } : {}),
+      })
+      loadData()
     } catch (e) {
       // Optionally show error
     }
-  };
+  }
+
+  const reorderWaitingQueue = async (targetAppointmentId: string) => {
+    if (!draggedWaitingId || draggedWaitingId === targetAppointmentId) {
+      return
+    }
+
+    const sourceIndex = waitingList.findIndex((item) => item.id === draggedWaitingId)
+    const targetIndex = waitingList.findIndex((item) => item.id === targetAppointmentId)
+
+    if (sourceIndex === -1 || targetIndex === -1) {
+      setDraggedWaitingId(null)
+      return
+    }
+
+    const reordered = [...waitingList]
+    const [moved] = reordered.splice(sourceIndex, 1)
+    reordered.splice(targetIndex, 0, moved)
+
+    const renumbered = reordered.map((item, index) => ({
+      ...item,
+      queueNumber: index + 1,
+    }))
+
+    const queueLookup = new Map(renumbered.map((item) => [item.id, item.queueNumber] as const))
+    setAppointments((prev) =>
+      prev.map((appointment) => {
+        const queueNumber = queueLookup.get(appointment.id)
+        if (queueNumber === undefined) {
+          return appointment
+        }
+        return { ...appointment, queueNumber }
+      })
+    )
+
+    setReorderingQueue(true)
+    try {
+      await appointmentsService.reorderWaitingQueue(
+        renumbered.map((item) => ({ id: item.id, queueNumber: item.queueNumber as number }))
+      )
+      await loadData()
+    } catch (error) {
+      console.error(error)
+      await loadData()
+    } finally {
+      setReorderingQueue(false)
+      setDraggedWaitingId(null)
+    }
+  }
 
 const markNotDocumented = async (appointment: Appointment) => {
   try {
@@ -97,17 +199,21 @@ const markNotDocumented = async (appointment: Appointment) => {
 
       const handleAppointmentUpdated = () => {
         if (isMounted) {
-          loadData();
+          loadData()
         }
-      };
+      }
 
-      connection.on('AppointmentUpdated', handleAppointmentUpdated);
+      connection.on('AppointmentUpdated', handleAppointmentUpdated)
+      connection.on('QueueReordered', handleAppointmentUpdated)
+      connection.on('WaitingQueueReordered', handleAppointmentUpdated)
 
       return () => {
-        isMounted = false;
-        connection.off('AppointmentUpdated', handleAppointmentUpdated);
-      };
-    }, []);
+        isMounted = false
+        connection.off('AppointmentUpdated', handleAppointmentUpdated)
+        connection.off('QueueReordered', handleAppointmentUpdated)
+        connection.off('WaitingQueueReordered', handleAppointmentUpdated)
+      }
+    }, [])
       
   const loadData = async () => {
     setLoading(true)
@@ -274,13 +380,32 @@ const historyAppointments = filteredAppointments
         {/* Mobile: cards */}
         <div className="flex flex-col gap-2 md:hidden p-3">
           {rows.map((appointment, idx) => {
-            const isCurrent = appointment.status === 'InProgress';
-            const isNotDocumented = appointment.isDocumented === false;
-           // const hasConsent = signedConsents.some(c => c.appointmentId === appointment.id);
+            const isCurrent = isInProgressStatus(appointment.status)
+            const isNotDocumented = appointment.isDocumented === false
+            const isWaiting = isWaitingStatus(appointment.status)
+            const queueNumber = displayQueueNumber(appointment, idx + 1)
            const hasConsent = appointment.hasSignedConsent === true
            return (
               <div
                 key={`m-${appointment.id}`}
+                draggable={isWaiting && !reorderingQueue}
+                onDragStart={() => {
+                  if (isWaiting) {
+                    setDraggedWaitingId(appointment.id)
+                  }
+                }}
+                onDragEnd={() => setDraggedWaitingId(null)}
+                onDragOver={(event) => {
+                  if (isWaiting) {
+                    event.preventDefault()
+                  }
+                }}
+                onDrop={(event) => {
+                  if (isWaiting) {
+                    event.preventDefault()
+                    reorderWaitingQueue(appointment.id)
+                  }
+                }}
                 className={`rounded-xl px-4 py-3 flex flex-col gap-2 ${
                   isNotDocumented
                     ? 'bg-red-50 border border-red-100'
@@ -289,13 +414,13 @@ const historyAppointments = filteredAppointments
                     : idx % 2 === 0
                     ? 'bg-sky-100 border border-sky-200'
                     : 'bg-white border border-slate-100'
-                }`}
+                } ${isWaiting ? 'cursor-move' : ''}`}
               >
                 <div className="flex items-center justify-between gap-2 text-slate-500 text-sm font-medium">
-                  <span>#{idx + 1}</span>
+                  <span>#{queueNumber}</span>
                   <button
                     type="button"
-                    onClick={() => handlePrintAppointment(appointment, idx + 1)}
+                    onClick={() => handlePrintAppointment(appointment, queueNumber)}
                     className="inline-flex items-center justify-center rounded-full p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     aria-label={t('common.print')}
                     title={t('common.print')}
@@ -423,27 +548,48 @@ const historyAppointments = filteredAppointments
 
           <tbody>
              {rows.map((appointment, index) => {
-              const isCurrent = appointment.status === 'InProgress';
-              const isNotDocumented = appointment.isDocumented === false;
+              const isCurrent = isInProgressStatus(appointment.status)
+              const isNotDocumented = appointment.isDocumented === false
+              const isWaiting = isWaitingStatus(appointment.status)
+              const queueNumber = displayQueueNumber(appointment, index + 1)
               const hasConsent = appointment.hasSignedConsent === true
              const isSelected = consentAppointment?.id === appointment.id
 
               return (
                 <tr
                   key={appointment.id}
+                  draggable={isWaiting && !reorderingQueue}
+                  onDragStart={() => {
+                    if (isWaiting) {
+                      setDraggedWaitingId(appointment.id)
+                    }
+                  }}
+                  onDragEnd={() => setDraggedWaitingId(null)}
+                  onDragOver={(event) => {
+                    if (isWaiting) {
+                      event.preventDefault()
+                    }
+                  }}
+                  onDrop={(event) => {
+                    if (isWaiting) {
+                      event.preventDefault()
+                      reorderWaitingQueue(appointment.id)
+                    }
+                  }}
                   className={`transition
                     ${isSelected ? 'bg-blue-50 border border-blue-100' : ''}
                     ${isCurrent ? 'bg-blue-50 border border-blue-100' : ''}
                     ${isNotDocumented ? 'bg-red-50' : ''}
+                    ${isWaiting ? 'cursor-move' : ''}
                   `}
                 >
 
                   <td className="px-3 py-3 text-center text-slate-500 font-medium">
                       <div className="flex items-center justify-center gap-2">
-                        <span>{index + 1}</span>
+                        <span>{queueNumber}</span>
                         <button
                           type="button"
-                          onClick={() => handlePrintAppointment(appointment, index + 1)}
+                          onClick={() => handlePrintAppointment(appointment, queueNumber)}
                           className="inline-flex items-center justify-center rounded-full p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                           aria-label={t('common.print')}
                           title={t('common.print')}
@@ -621,7 +767,7 @@ const historyAppointments = filteredAppointments
           {next ? (
             <div className="flex items-center gap-2 font-semibold text-yellow-700">
               <ArrowRight className="w-5 h-5 text-yellow-500" />
-              {next.clientName}
+              #{next.queueNumber ?? '-'} {next.clientName}
             </div>
           ) : (
             <div className="text-gray-400">{t('none')}</div>

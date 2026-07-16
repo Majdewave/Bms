@@ -16,6 +16,7 @@ export interface Appointment {
   startTime: string
   endTime: string
   status: AppointmentStatus
+  queueNumber?: number | null
   notes?: string
   createdAt: string
   createdByUserId: string
@@ -134,6 +135,7 @@ export const updateAppointment = async (
     startTime: string
     endTime: string
     status: string
+    queueNumber?: number | null
     notes?: string
     isDocumented?: boolean 
   }>

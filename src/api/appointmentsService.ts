@@ -29,6 +29,7 @@ export interface Appointment {
   staffId?: string | null
   staffName?: string | null
   status: string
+  queueNumber?: number | null
   isDocumented: boolean
   hasSignedConsent?: boolean
 }
@@ -76,9 +77,16 @@ export const appointmentsService = {
       staffId?: string | null
       serviceId?: string | null
       isDocumented?: boolean
+      queueNumber?: number | null
     }>
   ): Promise<void> {
     return await put<void>(`/api/appointments/${id}`, payload)
+  },
+
+  async reorderWaitingQueue(
+    items: Array<{ id: string; queueNumber: number }>
+  ): Promise<void> {
+    await post<void>('/api/appointments/waiting-queue/reorder', { items })
   },
 
   async deleteAppointment(id: string): Promise<void> {
