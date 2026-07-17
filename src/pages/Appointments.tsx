@@ -25,12 +25,17 @@ export default function AdminAppointments() {
   const [departmentFilter, setDepartmentFilter] = useState('all')
   const [showHistory, setShowHistory] = useState(true)
   const [ticketToPrint, setTicketToPrint] = useState<{ appointment: AppointmentRow; queueNumber: number } | null>(null)
-  const [draggedWaitingId, setDraggedWaitingId] = useState<string | null>(null)
+  const [draggedActiveId, setDraggedActiveId] = useState<string | null>(null)
   const [reorderingQueue, setReorderingQueue] = useState(false)
+  const [reorderError, setReorderError] = useState<string | null>(null)
 
   const normalizeStatus = (status?: string | null) => (status ?? '').toLowerCase()
   const isWaitingStatus = (status?: string | null) => normalizeStatus(status) === 'waiting'
   const isInProgressStatus = (status?: string | null) => normalizeStatus(status) === 'inprogress'
+  const isActiveQueueStatus = (status?: string | null) => {
+    const normalized = normalizeStatus(status)
+    return normalized === 'scheduled' || normalized === 'waiting' || normalized === 'inprogress'
+  }
   const isSameBusinessDay = (leftDate: string, rightDate: string) => {
     const left = new Date(leftDate)
     const right = new Date(rightDate)
@@ -41,7 +46,7 @@ export default function AdminAppointments() {
     )
   }
   const displayQueueNumber = (appointment: AppointmentRow, fallback: number) => {
-    if (isWaitingStatus(appointment.status) && typeof appointment.queueNumber === 'number') {
+    if (isActiveQueueStatus(appointment.status) && typeof appointment.queueNumber === 'number') {
       return appointment.queueNumber
     }
     return fallback
@@ -53,6 +58,22 @@ export default function AdminAppointments() {
     () =>
       appointments
         .filter((a) => isWaitingStatus(a.status))
+        .sort((a, b) => {
+          const leftQueue = typeof a.queueNumber === 'number' ? a.queueNumber : Number.MAX_SAFE_INTEGER
+          const rightQueue = typeof b.queueNumber === 'number' ? b.queueNumber : Number.MAX_SAFE_INTEGER
+
+          if (leftQueue !== rightQueue) {
+            return leftQueue - rightQueue
+          }
+
+          return new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        }),
+    [appointments]
+  )
+  const activeQueueList = useMemo(
+    () =>
+      appointments
+        .filter((a) => isActiveQueueStatus(a.status))
         .sort((a, b) => {
           const leftQueue = typeof a.queueNumber === 'number' ? a.queueNumber : Number.MAX_SAFE_INTEGER
           const rightQueue = typeof b.queueNumber === 'number' ? b.queueNumber : Number.MAX_SAFE_INTEGER
@@ -79,31 +100,8 @@ export default function AdminAppointments() {
           await appointmentsService.updateAppointment(currentInProgress.id, { status: 'Completed' })
         }
       }
-      const appointment = appointments.find(a => a.id === id)
-        if (!appointment) return
-
-      const isEnteringWaiting = status === 'Waiting' && !isWaitingStatus(appointment.status)
-      let queueNumberPayload: number | null | undefined
-      if (isEnteringWaiting) {
-        const sameDayWaiting = appointments.filter(
-          (item) =>
-            item.id !== id &&
-            isWaitingStatus(item.status) &&
-            isSameBusinessDay(item.startTime, appointment.startTime)
-        )
-        const maxAssignedQueueNumber = sameDayWaiting.reduce((max, item) => {
-          if (typeof item.queueNumber === 'number') {
-            return Math.max(max, item.queueNumber)
-          }
-          return max
-        }, 0)
-        const fallbackMaxQueueNumber = sameDayWaiting.length
-        queueNumberPayload = Math.max(maxAssignedQueueNumber, fallbackMaxQueueNumber) + 1
-      }
-
       await appointmentsService.updateAppointment(id, {
         status,
-        ...(queueNumberPayload !== undefined ? { queueNumber: queueNumberPayload } : {}),
       })
       loadData()
     } catch (e) {
@@ -111,26 +109,48 @@ export default function AdminAppointments() {
     }
   }
 
-  const reorderWaitingQueue = async (targetAppointmentId: string) => {
-    if (!draggedWaitingId || draggedWaitingId === targetAppointmentId) {
+  const reorderActiveQueue = async (targetAppointmentId: string) => {
+    if (!draggedActiveId || draggedActiveId === targetAppointmentId) {
       return
     }
 
-    const sourceIndex = waitingList.findIndex((item) => item.id === draggedWaitingId)
-    const targetIndex = waitingList.findIndex((item) => item.id === targetAppointmentId)
+    const draggedAppointment = activeQueueList.find((item) => item.id === draggedActiveId)
+    const targetAppointment = activeQueueList.find((item) => item.id === targetAppointmentId)
+
+    if (!draggedAppointment || !targetAppointment) {
+      setDraggedActiveId(null)
+      return
+    }
+
+    if (!isSameBusinessDay(draggedAppointment.startTime, targetAppointment.startTime)) {
+      setDraggedActiveId(null)
+      return
+    }
+
+    const sameDayActiveQueue = activeQueueList.filter((item) =>
+      isSameBusinessDay(item.startTime, draggedAppointment.startTime)
+    )
+
+    const sourceIndex = sameDayActiveQueue.findIndex((item) => item.id === draggedActiveId)
+    const targetIndex = sameDayActiveQueue.findIndex((item) => item.id === targetAppointmentId)
 
     if (sourceIndex === -1 || targetIndex === -1) {
-      setDraggedWaitingId(null)
+      setDraggedActiveId(null)
       return
     }
 
-    const reordered = [...waitingList]
+    const reordered = [...sameDayActiveQueue]
     const [moved] = reordered.splice(sourceIndex, 1)
     reordered.splice(targetIndex, 0, moved)
 
+    const previousAppointments = appointments
+    const preservedQueueNumbers = sameDayActiveQueue.map((item, index) =>
+      typeof item.queueNumber === 'number' ? item.queueNumber : index + 1
+    )
+
     const renumbered = reordered.map((item, index) => ({
       ...item,
-      queueNumber: index + 1,
+      queueNumber: preservedQueueNumbers[index],
     }))
 
     const queueLookup = new Map(renumbered.map((item) => [item.id, item.queueNumber] as const))
@@ -145,6 +165,7 @@ export default function AdminAppointments() {
     )
 
     setReorderingQueue(true)
+    setReorderError(null)
     try {
       await appointmentsService.reorderWaitingQueue(
         renumbered.map((item) => ({ id: item.id, queueNumber: item.queueNumber as number }))
@@ -152,10 +173,11 @@ export default function AdminAppointments() {
       await loadData()
     } catch (error) {
       console.error(error)
-      await loadData()
+      setAppointments(previousAppointments)
+      setReorderError('Failed to save queue order. Please try again.')
     } finally {
       setReorderingQueue(false)
-      setDraggedWaitingId(null)
+      setDraggedActiveId(null)
     }
   }
 
@@ -373,33 +395,44 @@ const historyAppointments = filteredAppointments
 
     return (
       <>
+        {reorderingQueue && (
+          <div className="mx-3 mb-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 flex items-center gap-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            <span>Saving queue order...</span>
+          </div>
+        )}
+        {reorderError && !reorderingQueue && (
+          <div className="mx-3 mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {reorderError}
+          </div>
+        )}
         {/* Mobile: cards */}
         <div className="flex flex-col gap-2 md:hidden p-3">
           {rows.map((appointment, idx) => {
             const isCurrent = isInProgressStatus(appointment.status)
             const isNotDocumented = appointment.isDocumented === false
-            const isWaiting = isWaitingStatus(appointment.status)
+            const isActiveQueueItem = isActiveQueueStatus(appointment.status)
             const queueNumber = displayQueueNumber(appointment, idx + 1)
            const hasConsent = appointment.hasSignedConsent === true
            return (
               <div
                 key={`m-${appointment.id}`}
-                draggable={isWaiting && !reorderingQueue}
+                draggable={isActiveQueueItem && !reorderingQueue}
                 onDragStart={() => {
-                  if (isWaiting) {
-                    setDraggedWaitingId(appointment.id)
+                  if (isActiveQueueItem) {
+                    setDraggedActiveId(appointment.id)
                   }
                 }}
-                onDragEnd={() => setDraggedWaitingId(null)}
+                onDragEnd={() => setDraggedActiveId(null)}
                 onDragOver={(event) => {
-                  if (isWaiting) {
+                  if (isActiveQueueItem) {
                     event.preventDefault()
                   }
                 }}
                 onDrop={(event) => {
-                  if (isWaiting) {
+                  if (isActiveQueueItem) {
                     event.preventDefault()
-                    reorderWaitingQueue(appointment.id)
+                    reorderActiveQueue(appointment.id)
                   }
                 }}
                 className={`rounded-xl px-4 py-3 flex flex-col gap-2 ${
@@ -410,7 +443,7 @@ const historyAppointments = filteredAppointments
                     : idx % 2 === 0
                     ? 'bg-sky-100 border border-sky-200'
                     : 'bg-white border border-slate-100'
-                } ${isWaiting ? 'cursor-move' : ''}`}
+                } ${isActiveQueueItem ? 'cursor-move' : ''}`}
               >
                 <div className="flex items-center justify-between gap-2 text-slate-500 text-sm font-medium">
                   <span>#{queueNumber}</span>
@@ -546,7 +579,7 @@ const historyAppointments = filteredAppointments
              {rows.map((appointment, index) => {
               const isCurrent = isInProgressStatus(appointment.status)
               const isNotDocumented = appointment.isDocumented === false
-              const isWaiting = isWaitingStatus(appointment.status)
+              const isActiveQueueItem = isActiveQueueStatus(appointment.status)
               const queueNumber = displayQueueNumber(appointment, index + 1)
               const hasConsent = appointment.hasSignedConsent === true
              const isSelected = consentAppointment?.id === appointment.id
@@ -554,29 +587,29 @@ const historyAppointments = filteredAppointments
               return (
                 <tr
                   key={appointment.id}
-                  draggable={isWaiting && !reorderingQueue}
+                  draggable={isActiveQueueItem && !reorderingQueue}
                   onDragStart={() => {
-                    if (isWaiting) {
-                      setDraggedWaitingId(appointment.id)
+                    if (isActiveQueueItem) {
+                      setDraggedActiveId(appointment.id)
                     }
                   }}
-                  onDragEnd={() => setDraggedWaitingId(null)}
+                  onDragEnd={() => setDraggedActiveId(null)}
                   onDragOver={(event) => {
-                    if (isWaiting) {
+                    if (isActiveQueueItem) {
                       event.preventDefault()
                     }
                   }}
                   onDrop={(event) => {
-                    if (isWaiting) {
+                    if (isActiveQueueItem) {
                       event.preventDefault()
-                      reorderWaitingQueue(appointment.id)
+                      reorderActiveQueue(appointment.id)
                     }
                   }}
                   className={`transition
                     ${isSelected ? 'bg-blue-50 border border-blue-100' : ''}
                     ${isCurrent ? 'bg-blue-50 border border-blue-100' : ''}
                     ${isNotDocumented ? 'bg-red-50' : ''}
-                    ${isWaiting ? 'cursor-move' : ''}
+                    ${isActiveQueueItem ? 'cursor-move' : ''}
                   `}
                 >
 
