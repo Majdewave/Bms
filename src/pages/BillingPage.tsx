@@ -4,9 +4,11 @@ import { createBillingPortal } from '@/services/billingService'
 import { Alert } from '@/components/UI'
 import { useTranslation } from 'react-i18next'
 import { createCheckoutSession } from '@/services/billingService'
+import { usePlatformConfig } from '@/hooks/usePlatformConfig'
 
 export default function BillingPage() {
   const { tenant, daysLeft, loading, error } = useTenant()
+  const { config } = usePlatformConfig()
   const isCanceling =
   tenant?.subscriptionStatus === 'Active' &&
   tenant?.subscriptionEndsAt &&
@@ -158,7 +160,7 @@ const handleUpgrade = async () => {
       {tenant.trialEndsAt && (
         <div className="bg-blue-50 border border-blue-200 text-blue-800 px-6 py-4 rounded-xl mb-10 text-center max-w-md w-full">
           <div className="font-medium">
-            ⚡ {t('billing.trial', { days: daysLeft })}
+            ⚡ {t('billing.trial', { days: daysLeft ?? config.defaultTrialDays })}
           </div>
 
           <div className="text-sm mt-1 text-blue-700">
@@ -214,7 +216,7 @@ const handleUpgrade = async () => {
 
         <div className="mb-5">
           <div className="text-[42px] font-semibold text-gray-900">
-            {billingCycle === 'Monthly' ? '46€' : '460€'}
+            {billingCycle === 'Monthly' ? `${config.proMonthlyPrice}€` : `${config.proAnnualPrice}€`}
           </div>
           <div className="text-base text-gray-500 mt-1">
             {billingCycle === 'Monthly' ? t('billing.perMonth') : t('billing.yearly')}

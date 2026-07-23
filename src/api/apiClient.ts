@@ -4,6 +4,11 @@ import { logout as doLogout } from './auth'
 import { toast } from 'react-toastify';
 let isTrialRedirecting = false;
 
+const navigateWithinApp = (path: string) => {
+  window.history.pushState({}, '', path)
+  window.dispatchEvent(new PopStateEvent('popstate'))
+}
+
 const BASE_URL = (import.meta as any).env.VITE_API_URL || 'https://clienta.digitalpenpro.com'
 
 type RequestOptions = RequestInit & {
@@ -32,7 +37,7 @@ async function request<T>(
   // Idle timeout check
   if (isSessionExpired()) {
     await doLogout()
-    window.location.href = '/login'
+    navigateWithinApp('/login')
     throw new Error('Session expired due to inactivity')
   }
 
@@ -43,6 +48,7 @@ async function request<T>(
   const isFormDataRequest = options.isFormData === true || options.body instanceof FormData
   let headers: Record<string, string> = {
     'Content-Type': 'application/json; charset=utf-8',
+    'Accept-Language': localStorage.getItem('language') || 'en',
     ...(options.headers as Record<string, string>),
   };
   if (isFormDataRequest) {
@@ -80,18 +86,18 @@ async function request<T>(
         } else {
           // Still 401 after refresh, logout
           await doLogout()
-          window.location.href = '/login'
+          navigateWithinApp('/login')
           throw new ApiError('Unauthorized after refresh', 401)
         }
       } else {
         // Refresh failed, logout
         await doLogout()
-        window.location.href = '/login'
+        navigateWithinApp('/login')
         throw new ApiError('Session expired', 401)
       }
     } catch (e) {
       await doLogout()
-      window.location.href = '/login'
+      navigateWithinApp('/login')
       throw new ApiError('Session expired', 401)
     }
   }
@@ -124,13 +130,33 @@ async function request<T>(
         localStorage.removeItem("token");
         setTimeout(() => {
           const tenantId = localStorage.getItem("tenantId");
-          window.location.href = `/upgrade?tenantId=${tenantId}`;
+          navigateWithinApp(`/upgrade?tenantId=${tenantId}`);
         }, 3500);
         return Promise.reject(new ApiError("Trial expired", 402, errorData));
       }
     }
     if (response.status === 403) {
-      return { forbidden: true } as T;
+      let errorMessage = `Request failed with status ${response.status}`
+      let errorData: any = {}
+      try {
+        const text = await response.text()
+        if (text) {
+          try {
+            errorData = JSON.parse(text)
+            errorMessage = errorData.message || errorData.error || errorMessage
+          } catch {
+            errorMessage = text
+          }
+        }
+      } catch {
+        // ignore parse errors and keep fallback message
+      }
+
+      if (isAuthRelatedEndpoint(url)) {
+        throw new ApiError(errorMessage, 403, errorData)
+      }
+
+      return { forbidden: true, ...errorData } as T;
     }
     let errorMessage = `Request failed with status ${response.status}`
     let errorData: any

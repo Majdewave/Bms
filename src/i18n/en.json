@@ -379,6 +379,51 @@
       "bottom": "Suitable for clinics, beauty centers, treatment centers, and service-based businesses."
     }
   },
+  "register": {
+    "startFreeTrialTitle": "Create your Clienta account",
+    "businessName": "Business Name",
+    "fullName": "Full Name",
+    "email": "Email",
+    "phoneNumber": "Phone Number",
+    "phoneHelper": "Example: +1 (555) 123-4567",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "startFreeTrial": "Create Account",
+    "creatingAccount": "Creating your account...",
+    "noCreditCardRequired": "No credit card required",
+    "alreadyHaveAccount": "Already have an account?",
+    "login": "Login",
+    "trialIncludes": "Trial includes",
+    "features": {
+      "businessManagementTools": "Unlimited business management tools",
+      "clientManagement": "Client management",
+      "appointmentScheduling": "Appointment scheduling",
+      "teamManagement": "Team management",
+      "documentsAndPdfs": "Documents & PDFs",
+      "invoicing": "Invoicing",
+      "reportsAndDashboard": "Reports & Dashboard",
+      "fullSystemAccess": "Full system access",
+      "upgradeAnytime": "Upgrade anytime to unlock full features",
+      "plansStartingFrom": "Plans starting from 46EUR/month"
+    },
+    "marketing": {
+      "title": "Manage your business smarter",
+      "subtitle": "Manage clients, appointments, services, invoices, documents, team members, reports and daily operations — all from one secure platform.",
+      "guidedTrial21Days": "21-Day Guided Trial",
+      "personalOnboardingAssistance": "Personal onboarding assistance",
+      "trustedByPros": "Trusted by growing businesses to simplify daily operations."
+    },
+    "errors": {
+      "requiredField": "Required field",
+      "phoneRequired": "Phone number is required",
+      "invalidPhone": "Invalid phone number",
+      "invalidEmail": "Invalid email",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordTooShort": "Password too short",
+      "registrationFailed": "Registration failed. Please try again.",
+      "emailExists": "This email is already registered."
+    }
+  },
   "unauthorized": {
     "title": "Access Denied",
     "subtitle": "You don't have permission to view this page.",

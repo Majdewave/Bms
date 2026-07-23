@@ -9,6 +9,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { FeatureProvider } from '@/contexts/FeatureContext';
 import { DepartmentFeatureProvider } from '@/contexts/DepartmentFeatureContext';
 import { TenantProvider } from '@/contexts/TenantContext';
+import { PlatformAuthProvider } from '@/platform/auth/PlatformAuthContext';
 import { router } from '@/router';
 import '@/styles/index.css';
 
@@ -36,7 +37,9 @@ export default function App() {
       <TenantProvider>
         <FeatureProvider>
           <DepartmentFeatureProvider>
-            <RouterProvider router={router} />
+            <PlatformAuthProvider>
+              <RouterProvider router={router} />
+            </PlatformAuthProvider>
             <ToastContainer position="top-center" />
           </DepartmentFeatureProvider>
         </FeatureProvider>

@@ -1,7 +1,9 @@
 import { stripeService } from "../api";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Upgrade() {
+  const navigate = useNavigate();
 
     useEffect(() => {
   // מונע redirect אוטומטי
@@ -27,7 +29,7 @@ export default function Upgrade() {
         if (data?.url) {
         window.location.href = data.url;
       } else {
-        window.location.href = "/billing";
+        navigate('/billing');
       }
     } catch (e) {
       console.error(e);

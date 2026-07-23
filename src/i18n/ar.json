@@ -380,6 +380,51 @@
       "bottom": "مناسب للعيادات، مراكز التجميل، مراكز العلاج والأعمال القائمة على الخدمات."
     }
   },
+  "register": {
+    "startFreeTrialTitle": "أنشئ حسابك في Clienta",
+    "businessName": "اسم النشاط التجاري",
+    "fullName": "الاسم الكامل",
+    "email": "البريد الإلكتروني",
+    "phoneNumber": "رقم الهاتف",
+    "phoneHelper": "مثال: +966 50 123 4567",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "startFreeTrial": "إنشاء الحساب",
+    "creatingAccount": "جاري إنشاء حسابك...",
+    "noCreditCardRequired": "لا حاجة لبطاقة ائتمان",
+    "alreadyHaveAccount": "هل لديك حساب بالفعل؟",
+    "login": "تسجيل الدخول",
+    "trialIncludes": "التجربة تشمل",
+    "features": {
+      "businessManagementTools": "أدوات إدارة أعمال غير محدودة",
+      "clientManagement": "إدارة العملاء",
+      "appointmentScheduling": "جدولة المواعيد",
+      "teamManagement": "إدارة الفريق",
+      "documentsAndPdfs": "المستندات وملفات PDF",
+      "invoicing": "الفوترة",
+      "reportsAndDashboard": "التقارير ولوحة التحكم",
+      "fullSystemAccess": "وصول كامل للنظام",
+      "upgradeAnytime": "يمكنك الترقية في أي وقت لفتح كل الميزات",
+      "plansStartingFrom": "الباقات تبدأ من 46 يورو شهريًا"
+    },
+    "marketing": {
+      "title": "أدر عملك بذكاء أكبر",
+      "subtitle": "أدر العملاء والمواعيد والخدمات والفواتير والمستندات وأعضاء الفريق والتقارير والعمليات اليومية من منصة آمنة واحدة.",
+      "guidedTrial21Days": "تجربة إرشادية لمدة 21 يومًا",
+      "personalOnboardingAssistance": "مساعدة شخصية في التهيئة والانطلاق",
+      "trustedByPros": "موثوق لدى الشركات المتنامية لتبسيط العمليات اليومية."
+    },
+    "errors": {
+      "requiredField": "حقل مطلوب",
+      "phoneRequired": "رقم الهاتف مطلوب",
+      "invalidPhone": "رقم هاتف غير صالح",
+      "invalidEmail": "بريد إلكتروني غير صالح",
+      "passwordsDoNotMatch": "كلمتا المرور غير متطابقتين",
+      "passwordTooShort": "كلمة المرور قصيرة جدًا",
+      "registrationFailed": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
+      "emailExists": "هذا البريد الإلكتروني مسجل بالفعل."
+    }
+  },
   "unauthorized": {
     "title": "تم رفض الوصول",
     "subtitle": "ليس لديك إذن لعرض هذه الصفحة.",

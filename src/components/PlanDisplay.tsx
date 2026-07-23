@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Zap, ArrowRight, Loader } from 'lucide-react'
 import type { BillingStatus } from '@/api/dashboardService'
+import { usePlatformConfig } from '@/hooks/usePlatformConfig'
 
 interface PlanDisplayProps {
   billingStatus: BillingStatus
@@ -16,6 +17,7 @@ export default function PlanDisplay({
   onUpgrade,
 }: PlanDisplayProps) {
   const [isUpgrading, setIsUpgrading] = useState(false)
+  const { config } = usePlatformConfig()
   const planName = billingStatus.plan
 
   const handleUpgradeClick = async () => {
@@ -118,7 +120,7 @@ export default function PlanDisplay({
                 <p className="text-sm text-gray-600 mt-1">₪39/month</p>
               )}
               {planName === 'Pro' && (
-                <p className="text-sm text-gray-600 mt-1">₪69/month</p>
+                <p className="text-sm text-gray-600 mt-1">{config.proMonthlyPrice}€/month</p>
               )}
             </div>
             {planName === 'Trial' && (

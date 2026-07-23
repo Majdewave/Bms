@@ -371,6 +371,51 @@
       "bottom": "מתאים למרפאות, קליניקות Beauty, מרכזי טיפולים ועסקים מבוססי שירות."
     }
   },
+  "register": {
+    "startFreeTrialTitle": "צור את חשבון ה-Clienta שלך",
+    "businessName": "שם העסק",
+    "fullName": "שם מלא",
+    "email": "אימייל",
+    "phoneNumber": "מספר טלפון",
+    "phoneHelper": "לדוגמה: +972 50-123-4567",
+    "password": "סיסמה",
+    "confirmPassword": "אימות סיסמה",
+    "startFreeTrial": "צור חשבון",
+    "creatingAccount": "יוצר את החשבון שלך...",
+    "noCreditCardRequired": "אין צורך בכרטיס אשראי",
+    "alreadyHaveAccount": "כבר יש לך חשבון?",
+    "login": "התחברות",
+    "trialIncludes": "הניסיון כולל",
+    "features": {
+      "businessManagementTools": "כלי ניהול עסקי מלאים",
+      "clientManagement": "ניהול לקוחות",
+      "appointmentScheduling": "תזמון פגישות",
+      "teamManagement": "ניהול צוות",
+      "documentsAndPdfs": "מסמכים ו-PDF",
+      "invoicing": "חשבוניות",
+      "reportsAndDashboard": "דוחות ולוח בקרה",
+      "fullSystemAccess": "גישה מלאה למערכת",
+      "upgradeAnytime": "אפשר לשדרג בכל זמן כדי לפתוח את כל היכולות",
+      "plansStartingFrom": "תוכניות החל מ-46 אירו לחודש"
+    },
+    "marketing": {
+      "title": "נהל את העסק שלך בצורה חכמה יותר",
+      "subtitle": "נהל לקוחות, פגישות, שירותים, חשבוניות, מסמכים, אנשי צוות, דוחות ותפעול יומיומי - הכל ממערכת מאובטחת אחת.",
+      "guidedTrial21Days": "תקופת ניסיון מודרכת ל-21 יום",
+      "personalOnboardingAssistance": "ליווי אישי בתהליך ההטמעה",
+      "trustedByPros": "עסקים בצמיחה סומכים על Clienta כדי לפשט את העבודה היומיומית."
+    },
+    "errors": {
+      "requiredField": "שדה חובה",
+      "phoneRequired": "מספר טלפון הוא שדה חובה",
+      "invalidPhone": "מספר טלפון לא תקין",
+      "invalidEmail": "אימייל לא תקין",
+      "passwordsDoNotMatch": "הסיסמאות אינן תואמות",
+      "passwordTooShort": "הסיסמה קצרה מדי",
+      "registrationFailed": "ההרשמה נכשלה. נסה שוב.",
+      "emailExists": "האימייל כבר רשום במערכת."
+    }
+  },
   "unauthorized": {
     "title": "גישה נדחתה",
     "subtitle": "אין לך הרשאה לצפות בדף זה.",

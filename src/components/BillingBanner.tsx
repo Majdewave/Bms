@@ -1,8 +1,9 @@
-import { useTenant } from "@/hooks/useTenant";
+import { useNavigate } from "react-router-dom";
 
 import { useTenant } from "@/hooks/useTenant";
 
 export default function BillingBanner() {
+  const navigate = useNavigate();
   const { tenant, daysLeft } = useTenant();
 
   if (!tenant) return null;
@@ -42,7 +43,7 @@ export default function BillingBanner() {
         <span>Trial · {daysLeft} days left ⚡</span>
 
         <button
-          onClick={() => (window.location.href = "/billing")}
+          onClick={() => navigate('/billing')}
           className="text-blue-600 font-semibold hover:underline"
         >
           Upgrade
@@ -56,7 +57,7 @@ export default function BillingBanner() {
       <span>Subscription expired</span>
 
       <button
-        onClick={() => (window.location.href = "/billing")}
+        onClick={() => navigate('/billing')}
         className="text-red-600 font-semibold hover:underline"
       >
         Upgrade

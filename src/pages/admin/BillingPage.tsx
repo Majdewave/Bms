@@ -4,9 +4,11 @@ import { createBillingPortal } from '@/services/billingService'
 import { Alert } from '@/components/UI'
 import { useTranslation } from 'react-i18next'
 import { createCheckoutSession } from '@/services/billingService'
+import { usePlatformConfig } from '@/hooks/usePlatformConfig'
 
 export default function BillingPage() {
   const { tenant, daysLeft, loading, error } = useTenant()
+  const { config } = usePlatformConfig()
   const isCanceling =
   tenant?.subscriptionStatus === 'Active' &&
   tenant?.subscriptionEndsAt &&
@@ -214,7 +216,7 @@ const handleUpgrade = async () => {
 
         <div className="mb-5">
           <div className="text-[42px] font-semibold text-gray-900">
-            {billingCycle === 'Monthly' ? '46€' : '460€'}
+            {billingCycle === 'Monthly' ? `${config.proMonthlyPrice}€` : `${config.proAnnualPrice}€`}
           </div>
           <div className="text-base text-gray-500 mt-1">
             {billingCycle === 'Monthly' ? t('billing.perMonth') : t('billing.yearly')}

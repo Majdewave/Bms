@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { ClientaWordmark } from '@/components/Logo'
 import { get } from "../api/apiClient";
+import { usePlatformConfig } from '@/hooks/usePlatformConfig'
 
 
 import { post } from "../api/apiClient";
@@ -25,6 +26,7 @@ export default function Login() {
   const navigate = useNavigate()
   const { login: authLogin, user } = useAuth()
   const { t, i18n } = useTranslation()
+  const { config } = usePlatformConfig()
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -215,9 +217,13 @@ else navigate('/', { replace: true });
       // Show success message
       setSuccessMessage(t('login.success'))
     } catch (error) {
+      const apiMessage =
+        (error as any)?.response?.message ||
+        (error as any)?.message ||
+        t('login.invalidCredentials')
       setErrors((prev) => ({
         ...prev,
-        submit: t('login.invalidCredentials'),
+        submit: apiMessage,
       }))
     } finally {
       setLoading(false)
@@ -587,6 +593,9 @@ else navigate('/', { replace: true });
                 >
               הצטרפות
           </a>
+          </p>
+          <p className="text-center text-slate-500 text-xs mt-2 mobile-footer-text">
+            {config.supportPhone || config.supportEmail}
           </p>
         </div>
       </div>

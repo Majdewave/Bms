@@ -53,6 +53,15 @@ import React from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useFeatures } from '@/contexts/FeatureContext'
 import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
+import { PlatformProtectedRoute } from '@/platform/components/PlatformProtectedRoute'
+import PlatformLayout from '@/platform/layouts/PlatformLayout'
+import PlatformBusinessesPage from '@/platform/pages/PlatformBusinessesPage'
+import PlatformBusinessDetailsPage from '@/platform/pages/PlatformBusinessDetailsPage'
+import PlatformDashboardPage from '@/platform/pages/PlatformDashboardPage'
+import PlatformLoginPage from '@/platform/pages/PlatformLoginPage'
+import PlatformPendingApprovalsPage from '@/platform/pages/PlatformPendingApprovalsPage'
+import PlatformUsersPage from '@/platform/pages/PlatformUsersPage'
+import PlatformSettingsPage from '@/platform/pages/PlatformSettingsPage'
 import Register from './pages/Register';
 
 const QuotesEntryRedirect = () => {
@@ -102,6 +111,51 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+
+  {
+    path: '/platform/login',
+    element: <PlatformLoginPage />,
+  },
+
+  {
+    path: '/platform',
+    element: (
+      <PlatformProtectedRoute>
+        <PlatformLayout />
+      </PlatformProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
+      {
+        path: 'dashboard',
+        element: <PlatformDashboardPage />,
+      },
+      {
+        path: 'businesses',
+        element: <PlatformBusinessesPage />,
+      },
+      {
+        path: 'businesses/:tenantId',
+        element: <PlatformBusinessDetailsPage />,
+      },
+      {
+        path: 'pending-approvals',
+        element: <PlatformPendingApprovalsPage />,
+      },
+      {
+        path: 'pending-approvals/:tenantId',
+        element: <PlatformBusinessDetailsPage />,
+      },
+      {
+        path: 'users',
+        element: <PlatformUsersPage />,
+      },
+      {
+        path: 'settings',
+        element: <PlatformSettingsPage />,
+      },
+    ],
   },
 
   {
