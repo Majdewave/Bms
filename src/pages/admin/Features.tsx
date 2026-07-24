@@ -1,20 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Sliders, CheckCircle, X, BarChart2, Receipt, Pill, Database, Image as ImageIcon, FileText, MessageCircle } from 'lucide-react'
+import { Sliders, CheckCircle, X, BarChart2, Receipt, Pill, Database, Image as ImageIcon, FileText, MessageCircle, Tv } from 'lucide-react'
 import * as apiClient from '@/api/apiClient'
 import type { Features } from '@/contexts/FeatureContext'
 import { useFeatures } from '@/contexts/FeatureContext'
-
-const defaultFeatures: Features = {
-  reportsEnabled: true,
-  invoicesEnabled: true,
-  quotesEnabled: false,
-  prescriptionsEnabled: true,
-  drugsEnabled: false,
-  beforeAfterPhotosEnabled: false,
-  visitSummariesEnabled: true,
-  teamChatEnabled: false,
-}
 
 interface ToggleRowProps {
   label: string
@@ -65,6 +54,13 @@ export default function AdminFeatures() {
   const [toastError, setToastError] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
+  const notify = (message: string, isError = false) => {
+    setToastError(isError)
+    setToastMessage(message)
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 3000)
+  }
+
   useEffect(() => {
     apiClient
       .get<Features>('/api/features')
@@ -88,6 +84,7 @@ export default function AdminFeatures() {
         key === 'beforeAfterPhotosEnabled' ? value : settings.beforeAfterPhotosEnabled,
       visitSummariesEnabled: key === 'visitSummariesEnabled' ? value : settings.visitSummariesEnabled,
       teamChatEnabled: key === 'teamChatEnabled' ? value : settings.teamChatEnabled,
+      queueDisplayEnabled: key === 'queueDisplayEnabled' ? value : settings.queueDisplayEnabled,
     }
 
     setSettings(updated)
@@ -97,16 +94,12 @@ export default function AdminFeatures() {
       await apiClient.put('/api/features', updated)
       reload()
 
-      setToastError(false)
-      setToastMessage(isRTL ? 'ההגדרות נשמרו בהצלחה' : 'Settings saved successfully')
+      notify(isRTL ? 'ההגדרות נשמרו בהצלחה' : 'Settings saved successfully')
     } catch {
       setSettings(settings) // rollback
-      setToastError(true)
-      setToastMessage(isRTL ? 'שגיאה בשמירת ההגדרות' : 'Failed to save settings')
+      notify(isRTL ? 'שגיאה בשמירת ההגדרות' : 'Failed to save settings', true)
     } finally {
       setSaving(false)
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
     }
   }
 
@@ -220,6 +213,15 @@ export default function AdminFeatures() {
           onChange={(val) => handleToggle('teamChatEnabled', val)}
           disabled={saving}
           icon={<MessageCircle className="w-5 h-5 text-indigo-500" />}
+        />
+
+        <ToggleRow
+          label="Queue Display"
+          description="מסך תור ציבורי בזמן אמת (למסך המתנה/טלוויזיה) עם קישור מאובטח לפי עסק."
+          checked={settings.queueDisplayEnabled}
+          onChange={(val) => handleToggle('queueDisplayEnabled', val)}
+          disabled={saving}
+          icon={<Tv className="w-5 h-5 text-cyan-500" />}
         />
       </div>
     </div>

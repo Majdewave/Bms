@@ -14,6 +14,11 @@ import {
   Percent,
   Receipt,
   ShieldAlert,
+  Tv,
+  ExternalLink,
+  Copy,
+  RefreshCw,
+  MonitorSmartphone,
   Upload,
   Wallet,
   X,
@@ -25,8 +30,15 @@ import ServicesSection from './ServicesSection'
 import type { Department } from '@/api/departmentService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
+import { useFeatures, type Features } from '@/contexts/FeatureContext'
 import * as apiClient from '@/api/apiClient'
 import { get, put, post, del } from '@/api/apiClient'
+import {
+  queueDisplayApi,
+  QueueDisplayPrivacyMode,
+  QueueDisplayTheme,
+  type QueueDisplaySettings,
+} from '@/api/queueDisplay'
 
 interface TenantContactSettings {
   name?: string
@@ -92,6 +104,7 @@ export default function BusinessSettings() {
   const { t, i18n } = useTranslation()
   const { user, hasPermission } = useAuth()
   const { setTenant } = useTenant()
+  const { reload: reloadFeatures } = useFeatures()
   const isAdmin = user?.role === 'admin'
   const canManageDepartments = hasPermission('manage_business_settings')
   const isRTL = i18n.language === 'he' || i18n.language === 'ar'
@@ -143,6 +156,12 @@ export default function BusinessSettings() {
   const [deletingLogo, setDeletingLogo] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [featureSettings, setFeatureSettings] = useState<Features | null>(null)
+  const [queueSettings, setQueueSettings] = useState<QueueDisplaySettings | null>(null)
+  const [queueLoading, setQueueLoading] = useState(false)
+  const [queueSaving, setQueueSaving] = useState(false)
+  const [refreshIntervalSeconds, setRefreshIntervalSeconds] = useState(12)
+  const [slideshowEnabled, setSlideshowEnabled] = useState(false)
   const [departments, setDepartments] = useState<Department[]>([])
   const [openCards, setOpenCards] = useState({
     business: true,
@@ -150,6 +169,7 @@ export default function BusinessSettings() {
     branding: false,
     departments: false,
     services: false,
+    queueDisplay: false,
     autoDelete: false,
   })
   const [invoiceValidationErrors, setInvoiceValidationErrors] = useState<Partial<Record<
@@ -174,6 +194,10 @@ export default function BusinessSettings() {
     other: '📄 אחר',
   }
 
+  const publicQueueUrl = queueSettings
+    ? `${window.location.origin}/queue-display/${queueSettings.publicToken}`
+    : ''
+
   const toggleCard = (key: keyof typeof openCards) => {
     setOpenCards((prev) => ({
       ...prev,
@@ -192,9 +216,44 @@ export default function BusinessSettings() {
     return `${baseUrl}${separator}v=${logoVersion}`
   }
 
+  const loadFeatureSettings = async () => {
+    try {
+      const data = await apiClient.get<Features>('/api/features')
+      setFeatureSettings(data)
+      return data
+    } catch (error) {
+      console.error('Failed to load feature settings:', error)
+      setFeatureSettings(null)
+      return null
+    }
+  }
+
+  const loadQueueSettings = async () => {
+    if (!featureSettings?.queueDisplayEnabled) {
+      setQueueSettings(null)
+      return
+    }
+
+    setQueueLoading(true)
+    try {
+      const data = await queueDisplayApi.getSettings()
+      setQueueSettings(data)
+    } catch (error) {
+      console.error('Failed to load queue display settings:', error)
+      setQueueSettings(null)
+    } finally {
+      setQueueLoading(false)
+    }
+  }
+
   useEffect(() => {
     loadSettings()
+    void loadFeatureSettings()
   }, [])
+
+  useEffect(() => {
+    void loadQueueSettings()
+  }, [featureSettings?.queueDisplayEnabled])
 
   useEffect(() => {
     const load = async () => {
@@ -440,6 +499,90 @@ export default function BusinessSettings() {
     setToastMessage(message)
     setShowToast(true)
     setTimeout(() => setShowToast(false), 3000)
+  }
+
+  const openQueueDisplay = () => {
+    if (!publicQueueUrl) {
+      return
+    }
+
+    window.open(publicQueueUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const copyQueueDisplayLink = async () => {
+    if (!publicQueueUrl) {
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(publicQueueUrl)
+      showToastNotification(t('queueDisplay.linkCopied'))
+    } catch {
+      showToastNotification(t('queueDisplay.linkCopyFailed'))
+    }
+  }
+
+  const toggleQueueDisplayFeature = async (enabled: boolean) => {
+    if (!featureSettings) {
+      return
+    }
+
+    setQueueSaving(true)
+    const previous = featureSettings
+    const updated = { ...featureSettings, queueDisplayEnabled: enabled }
+    setFeatureSettings(updated)
+
+    try {
+      await apiClient.put('/api/features', updated)
+      reloadFeatures()
+      showToastNotification(t('queueDisplay.featureSaved'))
+      if (!enabled) {
+        setQueueSettings(null)
+      }
+    } catch (error) {
+      console.error('Failed to update queue display feature:', error)
+      setFeatureSettings(previous)
+      showToastNotification(t('queueDisplay.featureSaveFailed'))
+    } finally {
+      setQueueSaving(false)
+    }
+  }
+
+  const saveQueueDisplaySettings = async () => {
+    if (!queueSettings) {
+      return
+    }
+
+    setQueueSaving(true)
+    try {
+      const updated = await queueDisplayApi.updateSettings({
+        privacyMode: queueSettings.privacyMode,
+        theme: queueSettings.theme,
+        logoOverrideUrl: queueSettings.logoOverrideUrl,
+        advertisementImageUrl: queueSettings.advertisementImageUrl,
+      })
+      setQueueSettings(updated)
+      showToastNotification(t('queueDisplay.settingsSaved'))
+    } catch (error) {
+      console.error('Failed to save queue display settings:', error)
+      showToastNotification(t('queueDisplay.settingsSaveFailed'))
+    } finally {
+      setQueueSaving(false)
+    }
+  }
+
+  const regenerateQueueDisplayToken = async () => {
+    setQueueSaving(true)
+    try {
+      const updated = await queueDisplayApi.regenerateToken()
+      setQueueSettings(updated)
+      showToastNotification(t('queueDisplay.regenerated'))
+    } catch (error) {
+      console.error('Failed to regenerate queue display token:', error)
+      showToastNotification(t('queueDisplay.regenerateFailed'))
+    } finally {
+      setQueueSaving(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1179,6 +1322,268 @@ export default function BusinessSettings() {
             />
           </div>
           <div className="order-6 mt-0">
+            <SectionCard
+              title={t('queueDisplay.settingsTitle')}
+              icon={<Tv className="w-5 h-5" />}
+              headerClassName="bg-cyan-700 hover:bg-cyan-800"
+              isOpen={openCards.queueDisplay}
+              onToggle={() => toggleCard('queueDisplay')}
+            >
+              <div className="p-6 space-y-5">
+                <div className="flex items-center justify-between gap-4 rounded-xl border border-cyan-100 bg-cyan-50/70 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-cyan-900">{t('queueDisplay.enableTitle')}</p>
+                    <p className="text-xs text-cyan-700 mt-1">{t('queueDisplay.enableDescription')}</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={featureSettings?.queueDisplayEnabled === true}
+                    disabled={queueSaving || !featureSettings}
+                    onClick={() => toggleQueueDisplayFeature(!(featureSettings?.queueDisplayEnabled === true))}
+                    className={`relative h-7 w-14 rounded-full transition ${featureSettings?.queueDisplayEnabled ? 'bg-cyan-600' : 'bg-slate-300'} disabled:opacity-60`}
+                  >
+                    <span
+                      className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${featureSettings?.queueDisplayEnabled ? 'translate-x-8 rtl:-translate-x-8' : 'translate-x-1 rtl:-translate-x-1'}`}
+                    />
+                  </button>
+                </div>
+
+                {!featureSettings?.queueDisplayEnabled && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    {t('queueDisplay.disabledHint')}
+                  </div>
+                )}
+
+                {featureSettings?.queueDisplayEnabled && (
+                  <>
+                    {queueLoading && (
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        {t('queueDisplay.loading')}
+                      </div>
+                    )}
+
+                    {!queueLoading && queueSettings && (
+                      <>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{t('queueDisplay.publicUrl')}</p>
+                          <input
+                            readOnly
+                            value={publicQueueUrl}
+                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                          />
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={openQueueDisplay}
+                              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              {t('queueDisplay.openDisplay')}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={copyQueueDisplayLink}
+                              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                            >
+                              <Copy className="h-4 w-4" />
+                              {t('queueDisplay.copyLink')}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={regenerateQueueDisplayToken}
+                              disabled={queueSaving}
+                              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                              {t('queueDisplay.regenerateLink')}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <label className="text-sm text-slate-700">
+                            {t('queueDisplay.theme')}
+                            <select
+                              value={queueSettings.theme}
+                              onChange={(e) => setQueueSettings({ ...queueSettings, theme: Number(e.target.value) as QueueDisplayTheme })}
+                              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                            >
+                              <option value={QueueDisplayTheme.Default}>{t('queueDisplay.themeDefault')}</option>
+                              <option value={QueueDisplayTheme.Light}>{t('queueDisplay.themeLight')}</option>
+                              <option value={QueueDisplayTheme.Dark}>{t('queueDisplay.themeDark')}</option>
+                              <option value={QueueDisplayTheme.Blue}>{t('queueDisplay.themeBlue')}</option>
+                            </select>
+                          </label>
+
+                          <label className="text-sm text-slate-700">
+                            {t('queueDisplay.privacyMode')}
+                            <select
+                              value={queueSettings.privacyMode}
+                              onChange={(e) => setQueueSettings({ ...queueSettings, privacyMode: Number(e.target.value) as QueueDisplayPrivacyMode })}
+                              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                            >
+                              <option value={QueueDisplayPrivacyMode.FullName}>{t('queueDisplay.privacyFullName')}</option>
+                              <option value={QueueDisplayPrivacyMode.FirstNameOnly}>{t('queueDisplay.privacyFirstName')}</option>
+                              <option value={QueueDisplayPrivacyMode.QueueNumberOnly}>{t('queueDisplay.privacyQueueOnly')}</option>
+                            </select>
+                          </label>
+
+                          <label className="text-sm text-slate-700">
+                            {t('queueDisplay.refreshInterval')}
+                            <input
+                              type="number"
+                              min={5}
+                              max={60}
+                              value={refreshIntervalSeconds}
+                              onChange={(e) => setRefreshIntervalSeconds(Number(e.target.value) || 12)}
+                              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                            />
+                            <span className="mt-1 block text-xs text-slate-500">{t('queueDisplay.refreshIntervalHint')}</span>
+                          </label>
+
+                          <label className="text-sm text-slate-700">
+                            {t('queueDisplay.slideshow')}
+                            <div className="mt-1 flex items-center justify-between rounded-lg border border-dashed border-slate-300 px-3 py-2">
+                              <span className="text-xs text-slate-600">{t('queueDisplay.slideshowHint')}</span>
+                              <input
+                                type="checkbox"
+                                checked={slideshowEnabled}
+                                onChange={(e) => setSlideshowEnabled(e.target.checked)}
+                                className="h-4 w-4"
+                              />
+                            </div>
+                          </label>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="rounded-xl border border-slate-200 p-4">
+                            <p className="text-sm font-medium text-slate-800">{t('queueDisplay.logoOverride')}</p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+                                <Upload className="h-4 w-4" />
+                                {t('queueDisplay.uploadLogo')}
+                                <input
+                                  type="file"
+                                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0]
+                                    if (!file) return
+                                    setQueueSaving(true)
+                                    try {
+                                      const updated = await queueDisplayApi.uploadLogoOverride(file)
+                                      setQueueSettings(updated)
+                                      showToastNotification(t('queueDisplay.logoUploaded'))
+                                    } catch (error) {
+                                      console.error('Failed to upload logo override:', error)
+                                      showToastNotification(t('queueDisplay.logoUploadFailed'))
+                                    } finally {
+                                      e.target.value = ''
+                                      setQueueSaving(false)
+                                    }
+                                  }}
+                                />
+                              </label>
+
+                              <button
+                                type="button"
+                                disabled={queueSaving || !queueSettings.logoOverrideUrl}
+                                onClick={async () => {
+                                  setQueueSaving(true)
+                                  try {
+                                    const updated = await queueDisplayApi.deleteLogoOverride()
+                                    setQueueSettings(updated)
+                                    showToastNotification(t('queueDisplay.logoRemoved'))
+                                  } catch (error) {
+                                    console.error('Failed to delete logo override:', error)
+                                    showToastNotification(t('queueDisplay.logoRemoveFailed'))
+                                  } finally {
+                                    setQueueSaving(false)
+                                  }
+                                }}
+                                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                              >
+                                {t('queueDisplay.remove')}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="rounded-xl border border-slate-200 p-4">
+                            <p className="text-sm font-medium text-slate-800">{t('queueDisplay.advertisement')}</p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+                                <MonitorSmartphone className="h-4 w-4" />
+                                {t('queueDisplay.uploadAdvertisement')}
+                                <input
+                                  type="file"
+                                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0]
+                                    if (!file) return
+                                    setQueueSaving(true)
+                                    try {
+                                      const updated = await queueDisplayApi.uploadAdvertisementImage(file)
+                                      setQueueSettings(updated)
+                                      showToastNotification(t('queueDisplay.adUploaded'))
+                                    } catch (error) {
+                                      console.error('Failed to upload advertisement image:', error)
+                                      showToastNotification(t('queueDisplay.adUploadFailed'))
+                                    } finally {
+                                      e.target.value = ''
+                                      setQueueSaving(false)
+                                    }
+                                  }}
+                                />
+                              </label>
+
+                              <button
+                                type="button"
+                                disabled={queueSaving || !queueSettings.advertisementImageUrl}
+                                onClick={async () => {
+                                  setQueueSaving(true)
+                                  try {
+                                    const updated = await queueDisplayApi.deleteAdvertisementImage()
+                                    setQueueSettings(updated)
+                                    showToastNotification(t('queueDisplay.adRemoved'))
+                                  } catch (error) {
+                                    console.error('Failed to delete advertisement image:', error)
+                                    showToastNotification(t('queueDisplay.adRemoveFailed'))
+                                  } finally {
+                                    setQueueSaving(false)
+                                  }
+                                }}
+                                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                              >
+                                {t('queueDisplay.remove')}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            disabled={queueSaving}
+                            onClick={saveQueueDisplaySettings}
+                            className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                          >
+                            {queueSaving ? t('common.saving') : t('queueDisplay.saveSettings')}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            </SectionCard>
+          </div>
+
+          <div className="order-7 mt-0">
             <SectionCard
               title={t('settings.autoDeleteTitle')}
               icon={<ShieldAlert className="w-5 h-5" />}

@@ -9,6 +9,7 @@ import { RoleBasedRoute } from '@/components/RoleBasedRoute'
 import { PermissionBasedRoute } from '@/components/PermissionBasedRoute'
 
 import Login from '@/pages/Login'
+import QueueDisplayPage from '@/pages/QueueDisplay'
 import Unauthorized from '@/pages/Unauthorized'
 import BillingSuccess from '@/pages/BillingSuccess'
 import BillingPage from '@/pages/BillingPage'
@@ -111,6 +112,11 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+
+  {
+    path: '/queue-display/:token',
+    element: <QueueDisplayPage />,
   },
 
   {

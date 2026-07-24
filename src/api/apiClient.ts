@@ -2,6 +2,7 @@
 import { updateLastActivity, getLastActivity, isSessionExpired, resetSession } from './sessionManager'
 import { logout as doLogout } from './auth'
 import { toast } from 'react-toastify';
+import { getApiBaseUrl } from '@/lib/apiBaseUrl'
 let isTrialRedirecting = false;
 
 const navigateWithinApp = (path: string) => {
@@ -9,7 +10,7 @@ const navigateWithinApp = (path: string) => {
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
-const BASE_URL = (import.meta as any).env.VITE_API_URL || 'https://clienta.digitalpenpro.com'
+const BASE_URL = getApiBaseUrl()
 
 type RequestOptions = RequestInit & {
   isFormData?: boolean

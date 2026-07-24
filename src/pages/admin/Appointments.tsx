@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature, ChevronDown, ChevronUp, Printer } from 'lucide-react'
+import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature, ChevronDown, ChevronUp, Printer, Monitor } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { AppointmentTicket, CreateAppointmentModal, SignConsentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
@@ -9,6 +9,8 @@ import ActionButton from '@/components/ActionButton'
 import { useTranslation } from 'react-i18next'
 import { scheduleAppointmentTicketPrint } from '@/utils/appointmentTicketPrint'
 import { useTenant } from '@/contexts/TenantContext'
+import { useFeatures } from '@/contexts/FeatureContext'
+import { queueDisplayApi } from '@/api/queueDisplay'
 
 type AppointmentRow = Appointment
 
@@ -17,6 +19,7 @@ export default function AdminAppointments() {
   const { t } = useTranslation()
   const { hasPermission } = useAuth()
   const { tenant } = useTenant()
+  const { features } = useFeatures()
 
   const [appointments, setAppointments] = useState<AppointmentRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -191,6 +194,7 @@ const markNotDocumented = async (appointment: Appointment) => {
 }
 
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [openingQueueDisplay, setOpeningQueueDisplay] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRow | null>(null)
   const [consentAppointment, setConsentAppointment] = useState<AppointmentRow | null>(null)
 
@@ -372,6 +376,23 @@ const historyAppointments = filteredAppointments
 
   const handlePrintAppointment = (appointment: AppointmentRow, queueNumber: number) => {
     setTicketToPrint({ appointment, queueNumber })
+  }
+
+  const openQueueDisplay = async () => {
+    if (!features?.queueDisplayEnabled || openingQueueDisplay) {
+      return
+    }
+
+    setOpeningQueueDisplay(true)
+    try {
+      const link = await queueDisplayApi.getAccessLink()
+      const url = `${window.location.origin}/queue-display/${link.publicToken}`
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (error) {
+      console.error('Failed to open queue display', error)
+    } finally {
+      setOpeningQueueDisplay(false)
+    }
   }
 
 
@@ -820,13 +841,27 @@ const historyAppointments = filteredAppointments
           </div>
 
           <div className="w-full md:w-auto">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="btn-primary btn-md gap-2 w-full justify-center md:w-auto"
-            >
-              <Plus className="w-4 h-4" />
-              {t('appointments.new')}
-            </button>
+            <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:justify-end">
+              {features?.queueDisplayEnabled && (
+                <button
+                  type="button"
+                  onClick={openQueueDisplay}
+                  disabled={openingQueueDisplay}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Monitor className="h-4 w-4" />
+                  {openingQueueDisplay ? t('common.loading') : t('queueDisplay.openDisplay')}
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="btn-primary btn-md gap-2 w-full justify-center md:w-auto"
+              >
+                <Plus className="w-4 h-4" />
+                {t('appointments.new')}
+              </button>
+            </div>
           </div>
         </div>
       </div>
