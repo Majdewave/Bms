@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { ChevronDown, Download, Eye, FileCheck, FileText, Image as ImageIcon, MessageSquare, Pill, Printer, Trash2, User } from "lucide-react"
+import { ChevronDown, Download, Edit, Eye, FileCheck, FileText, Image as ImageIcon, MessageSquare, Pill, Printer, Trash2, User } from "lucide-react"
 import { visitSummariesService, type VisitSummary } from '@/api/visitSummaries'
-import { invoicesService } from '@/api'
+import { clientsService, invoicesService } from '@/api'
 import type { Invoice } from '@/api/invoices'
 import { useAuth } from "@/contexts/AuthContext"
 import { useDepartmentFeatures } from "@/contexts/DepartmentFeatureContext"
@@ -36,7 +36,129 @@ interface Prescription {
   id: string
   date: string
   doctorName: string
-  drugs?: Array<string | { display: string }>
+  drugs?: Array<string | { drugId?: string; name?: string; dosage?: string; frequency?: string; duration?: string; display: string }>
+  instructions?: string
+  notes?: string
+  nationalId?: string
+  signature?: string
+}
+
+type PrescriptionDrugInput = {
+  drugId: string
+  name: string
+  dosage: string
+  display: string
+  frequency?: string
+  duration?: string
+}
+
+const emptyPrescriptionDrug = (): PrescriptionDrugInput => ({
+  drugId: '',
+  name: '',
+  dosage: '',
+  display: '',
+})
+
+const pickString = (...values: unknown[]): string => {
+  for (const value of values) {
+    if (typeof value === 'string') {
+      return value
+    }
+  }
+  return ''
+}
+
+const normalizePrescriptionDrug = (raw: any): string | PrescriptionDrugInput | null => {
+  if (typeof raw === 'string') {
+    return raw.trim()
+  }
+
+  if (!raw || typeof raw !== 'object') {
+    return null
+  }
+
+  const name = pickString(raw.name, raw.Name, raw.drugName, raw.DrugName)
+  const dosage = pickString(raw.dosage, raw.Dosage)
+  const frequency = pickString(raw.frequency, raw.Frequency)
+  const duration = pickString(raw.duration, raw.Duration)
+  const explicitDisplay = pickString(raw.display, raw.Display, raw.text, raw.Text)
+  const compositeDisplay = [name, dosage, frequency, duration].filter(Boolean).join(' ').trim()
+  const display = explicitDisplay || compositeDisplay || name
+
+  if (!display) {
+    return null
+  }
+
+  return {
+    drugId: pickString(raw.drugId, raw.DrugId, raw.id, raw.Id) || 'custom',
+    name: name || display,
+    dosage,
+    frequency,
+    duration,
+    display,
+  }
+}
+
+const normalizePrescription = (raw: any): Prescription => {
+  const item = raw?.data ?? raw
+  const rawDrugs = item?.drugs ?? item?.Drugs ?? item?.medications ?? item?.Medications
+  const drugs = Array.isArray(rawDrugs)
+    ? rawDrugs
+        .map(normalizePrescriptionDrug)
+        .filter((drug): drug is string | PrescriptionDrugInput => Boolean(drug))
+    : []
+
+  return {
+    id: pickString(item?.id, item?.Id),
+    date: pickString(item?.date, item?.Date, item?.prescriptionDate, item?.PrescriptionDate),
+    doctorName: pickString(item?.doctorName, item?.DoctorName, item?.staffName, item?.StaffName),
+    drugs,
+    instructions: pickString(item?.instructions, item?.Instructions, item?.usageInstructions, item?.UsageInstructions),
+    notes: pickString(item?.notes, item?.Notes),
+    nationalId: pickString(item?.nationalId, item?.NationalId, item?.idNumber, item?.IdNumber),
+    signature: pickString(item?.signature, item?.Signature),
+  }
+}
+
+const parsePrescriptionNotes = (rawNotes?: string | null) => {
+  const parts = (rawNotes || '')
+    .split('|')
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  let nationalId = ''
+  let signature = ''
+  const freeNotes: string[] = []
+
+  for (const part of parts) {
+    if (part.startsWith('ת.ז:')) {
+      nationalId = part.replace('ת.ז:', '').trim()
+      continue
+    }
+
+    if (part.toLowerCase().startsWith('id:')) {
+      nationalId = part.slice(3).trim()
+      continue
+    }
+
+    if (part.startsWith('חתימה:')) {
+      signature = part.replace('חתימה:', '').trim()
+      continue
+    }
+
+    if (part.toLowerCase().startsWith('signature:')) {
+      signature = part.slice(10).trim()
+      continue
+    }
+
+    freeNotes.push(part)
+  }
+
+  return {
+    nationalId,
+    signature,
+    notes: freeNotes.join(' | '),
+  }
 }
 
 interface CurrentStaff {
@@ -74,16 +196,23 @@ export default function ClientProfile() {
   const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
   const [selectedConsent, setSelectedConsent] = useState<ConsentViewRecord | null>(null)
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false)
-  const [drugs, setDrugs] = useState([
-    { drugId: '', name: '', dosage: '', display: '' }
-  ])
+  const [drugs, setDrugs] = useState<PrescriptionDrugInput[]>([emptyPrescriptionDrug()])
   const [loading, setLoading] = useState(true)
   const [editingClient, setEditingClient] = useState(false)
   const [savingClient, setSavingClient] = useState(false)
+  const [checkingClientIdNumber, setCheckingClientIdNumber] = useState(false)
+  const [duplicateClientName, setDuplicateClientName] = useState<string | null>(null)
+  const [showDuplicateClientModal, setShowDuplicateClientModal] = useState(false)
+  const [clientIdNumberError, setClientIdNumberError] = useState<string | null>(null)
+  const lastCheckedClientIdNumber = useRef('')
   const [newNote, setNewNote] = useState("")
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false)
+  const [prescriptionMode, setPrescriptionMode] = useState<'create' | 'edit'>('create')
+  const [editingPrescriptionId, setEditingPrescriptionId] = useState<string | null>(null)
+  const [loadingPrescriptionData, setLoadingPrescriptionData] = useState(false)
   const [savingPrescription, setSavingPrescription] = useState(false)
   const [instructions, setInstructions] = useState("")
+  const [prescriptionNotes, setPrescriptionNotes] = useState("")
   // drugs input validation state
   const [errors, setErrors] = useState({
     drugs: false
@@ -120,13 +249,13 @@ export default function ClientProfile() {
   }
 
   useEffect(() => {
-    if (!showPrescriptionModal || !client) return
+    if (!showPrescriptionModal || !client || prescriptionMode === 'edit') return
 
     setPrescriptionForm((prev) => ({
       ...prev,
       nationalId: client.idNumber ?? '',
     }))
-  }, [showPrescriptionModal, client])
+  }, [showPrescriptionModal, client, prescriptionMode])
 
   /* ================================
      LOAD DATA
@@ -175,8 +304,8 @@ export default function ClientProfile() {
               (v, i, arr) => arr.findIndex(x => x.id === v.id) === i
             )
           : []
-        
-        setPrescriptions(unique)
+
+        setPrescriptions(unique.map(normalizePrescription))
         if (departmentFeatures?.consentFormsEnabled) {
           await reloadConsents(id)
         } else {
@@ -194,13 +323,13 @@ export default function ClientProfile() {
   }, [id, departmentFeatures?.prescriptionsEnabled, departmentFeatures?.consentFormsEnabled])
 
   useEffect(() => {
-  if (currentStaff?.fullName && !prescriptionForm.doctorName) {
+  if (prescriptionMode !== 'edit' && currentStaff?.fullName && !prescriptionForm.doctorName) {
     setPrescriptionForm(prev => ({
       ...prev,
       doctorName: currentStaff.fullName!,
     }))
   }
-}, [currentStaff])
+}, [currentStaff, prescriptionForm.doctorName, prescriptionMode])
 
 
   useEffect(() => {
@@ -223,14 +352,14 @@ export default function ClientProfile() {
   }, [user?.id])
 
   const addDrug = () => {
-    setDrugs(prev => [...prev, { drugId: '', name: '', dosage: '', display: '' }]);
+    setDrugs(prev => [...prev, emptyPrescriptionDrug()]);
   }
 
   const removeDrug = (index: number) => {
     setDrugs(prev => {
       const updated =
         prev.length === 1
-          ? [{ drugId: '', name: '', dosage: '', display: '' }]
+          ? [emptyPrescriptionDrug()]
           : prev.filter((_, i) => i !== index);
 
       const hasDrug = updated.some(d => d.display.trim() !== '');
@@ -243,7 +372,7 @@ export default function ClientProfile() {
     });
   }
 
-  const updateDrug = (index: number, drugObj: { drugId: string; name: string; dosage: string; display: string }) => {
+  const updateDrug = (index: number, drugObj: PrescriptionDrugInput) => {
     setDrugs(prev => prev.map((d, i) => (i === index ? drugObj : d)));
   }
 
@@ -427,8 +556,65 @@ useEffect(() => {
     setClient({ ...client, [name]: value })
   }
 
+  const isDuplicateConflictError = (err: any) => {
+    return err?.status === 409 && err?.response?.code === 'DUPLICATE_CLIENT_ID_NUMBER'
+  }
+
+  const clearClientIdDuplicateState = () => {
+    setDuplicateClientName(null)
+    setClientIdNumberError(null)
+  }
+
+  const applyClientIdDuplicateState = (clientName?: string | null) => {
+    setDuplicateClientName(clientName || null)
+    setClientIdNumberError(t('admin.clients.form.duplicateIdNumberInline'))
+    setShowDuplicateClientModal(true)
+  }
+
+  const checkDuplicateClientIdNumber = async (rawIdNumber?: string | null) => {
+    if (!client?.id) return false
+
+    const normalizedIdNumber = (rawIdNumber || '').trim()
+
+    if (!normalizedIdNumber) {
+      clearClientIdDuplicateState()
+      lastCheckedClientIdNumber.current = ''
+      return false
+    }
+
+    if (checkingClientIdNumber || lastCheckedClientIdNumber.current === normalizedIdNumber) {
+      return Boolean(clientIdNumberError)
+    }
+
+    setCheckingClientIdNumber(true)
+    try {
+      const result = await clientsService.checkDuplicateClientIdNumber(normalizedIdNumber, client.id)
+      lastCheckedClientIdNumber.current = normalizedIdNumber
+      if (result?.exists) {
+        applyClientIdDuplicateState(result.clientName)
+        return true
+      }
+
+      clearClientIdDuplicateState()
+      return false
+    } catch (err: any) {
+      if (isDuplicateConflictError(err)) {
+        applyClientIdDuplicateState(err?.response?.clientName)
+        return true
+      }
+      return false
+    } finally {
+      setCheckingClientIdNumber(false)
+    }
+  }
+
 const saveClient = async () => {
   if (!client) return
+
+  const hasDuplicateIdNumber = await checkDuplicateClientIdNumber(client.idNumber)
+  if (hasDuplicateIdNumber) {
+    return
+  }
 
   setSavingClient(true)
 
@@ -445,7 +631,11 @@ const saveClient = async () => {
     await apiClient.put(`/api/clients/${client.id}`, payload)
 
     setEditingClient(false)
-  } catch (err) {
+  } catch (err: any) {
+    if (isDuplicateConflictError(err)) {
+      applyClientIdDuplicateState(err?.response?.clientName)
+      return
+    }
     console.error("Save failed", err)
   } finally {
     setSavingClient(false)
@@ -495,7 +685,99 @@ const saveClient = async () => {
   }
 
   const closePrescriptionModal = () => {
+    setLoadingPrescriptionData(false)
+    setPrescriptionMode('create')
+    setEditingPrescriptionId(null)
     setShowPrescriptionModal(false);
+  }
+
+  const openCreatePrescriptionModal = () => {
+    if (!client) return
+
+    setPrescriptionMode('create')
+    setEditingPrescriptionId(null)
+    setLoadingPrescriptionData(false)
+    setPrescriptionForm({
+      date: new Date().toISOString().split('T')[0],
+      nationalId: client.idNumber ?? '',
+      doctorName: currentStaff?.fullName ?? '',
+      signature: '',
+    })
+    setDrugs([emptyPrescriptionDrug()])
+    setInstructions('')
+    setPrescriptionNotes('')
+    setErrors({ drugs: false })
+    setShowPrescriptionModal(true)
+  }
+
+  const mapDrugsForForm = (sourceDrugs?: Prescription['drugs']) => {
+    const normalized = Array.isArray(sourceDrugs)
+      ? sourceDrugs
+          .map(normalizePrescriptionDrug)
+          .filter((drug): drug is string | PrescriptionDrugInput => Boolean(drug))
+      : []
+
+    if (normalized.length === 0) {
+      return [emptyPrescriptionDrug()]
+    }
+
+    return normalized.map((drug) => {
+      if (typeof drug === 'string') {
+        return {
+          drugId: 'custom',
+          name: drug,
+          dosage: '',
+          display: drug,
+        }
+      }
+
+      return {
+        drugId: drug.drugId || 'custom',
+        name: drug.name || drug.display,
+        dosage: drug.dosage || '',
+        frequency: drug.frequency || '',
+        duration: drug.duration || '',
+        display: drug.display,
+      }
+    })
+  }
+
+  const applyPrescriptionToForm = (prescription: Prescription) => {
+    const parsedNotes = parsePrescriptionNotes(prescription.notes)
+    const dateOnly = (prescription.date || '').includes('T')
+      ? prescription.date.split('T')[0]
+      : prescription.date || new Date().toISOString().split('T')[0]
+
+    setPrescriptionForm({
+      date: dateOnly,
+      nationalId: prescription.nationalId || parsedNotes.nationalId || client?.idNumber || '',
+      doctorName: prescription.doctorName || currentStaff?.fullName || '',
+      signature: prescription.signature || parsedNotes.signature || '',
+    })
+    setInstructions(prescription.instructions || '')
+    setPrescriptionNotes(parsedNotes.notes)
+    setDrugs(mapDrugsForForm(prescription.drugs))
+    setErrors({ drugs: false })
+  }
+
+  const openEditPrescriptionModal = async (prescription: Prescription) => {
+    if (!prescription?.id) return
+
+    setPrescriptionMode('edit')
+    setEditingPrescriptionId(prescription.id)
+    setLoadingPrescriptionData(true)
+    setShowPrescriptionModal(true)
+
+    try {
+      const response = await apiClient.get<any>(`/api/prescriptions/${prescription.id}`)
+      const normalized = normalizePrescription(response)
+      applyPrescriptionToForm(normalized.id ? normalized : normalizePrescription(prescription))
+    } catch (error) {
+      console.error('Load prescription for edit failed:', error)
+      applyPrescriptionToForm(normalizePrescription(prescription))
+    } finally {
+      setLoadingPrescriptionData(false)
+    }
   }
 
   const savePrescription = async () => {
@@ -520,9 +802,10 @@ const saveClient = async () => {
       const extraNotes = [
         prescriptionForm.nationalId ? `ת.ז: ${prescriptionForm.nationalId}` : null,
         prescriptionForm.signature ? `חתימה: ${prescriptionForm.signature}` : null,
+        prescriptionNotes.trim() ? prescriptionNotes.trim() : null,
       ].filter(Boolean).join(' | ')
 
-      await apiClient.post('/api/prescriptions', {
+      const payload = {
         clientId: client.id,
         staffId: user?.id,
         date: prescriptionForm.date,
@@ -530,7 +813,13 @@ const saveClient = async () => {
         instructions: instructions,
         doctorName: prescriptionForm.doctorName,
         notes: extraNotes,
-      })
+      }
+
+      if (prescriptionMode === 'edit' && editingPrescriptionId) {
+        await apiClient.put(`/api/prescriptions/${editingPrescriptionId}`, payload)
+      } else {
+        await apiClient.post('/api/prescriptions', payload)
+      }
 
       if (id) {
         const prescriptionsData = await apiClient.get<Prescription[]>(
@@ -543,8 +832,8 @@ const saveClient = async () => {
               (v, i, arr) => arr.findIndex(x => x.id === v.id) === i
             )
           : []
-        
-        setPrescriptions(unique)
+
+        setPrescriptions(unique.map(normalizePrescription))
       }
 
       closePrescriptionModal()
@@ -655,23 +944,16 @@ const saveClient = async () => {
     }
   };
 
-  // --- Edit Modal State ---
-  const [editingSummary, setEditingSummary] = useState<VisitSummary | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  const handleSaveEdit = async () => {
-    if (!editingSummary) return;
-    try {
-      await visitSummariesService.update(editingSummary.id, editingSummary);
-      setVisitSummaries(prev =>
-        prev.map(s => s.id === editingSummary.id ? editingSummary : s)
-      );
-      setIsEditModalOpen(false);
-    } catch (err) {
-      console.error(err);
-      alert('שגיאה בעדכון');
+  const handleEditSummary = (summary: VisitSummary) => {
+    if (!client?.id) return
+    const params = new URLSearchParams()
+    if (summary.appointmentId) {
+      params.set('appointmentId', summary.appointmentId)
     }
-  };
+    params.set('summaryId', summary.id)
+    params.set('mode', 'edit')
+    navigate(`/staff/visit-summary/${client.id}?${params.toString()}`)
+  }
       
 
   /* ================================
@@ -714,20 +996,7 @@ const saveClient = async () => {
 
           {departmentFeatures.prescriptionsEnabled === true && (
           <button
-            onClick={() => {
-              setPrescriptionForm({
-                date: new Date().toISOString().split('T')[0],
-                nationalId: client.idNumber ?? '',
-                doctorName: currentStaff?.fullName ?? '',
-                signature: '',
-              });
-
-              setDrugs([{ drugId: '', name: '', dosage: '', display: '' }]);
-              setInstructions('');
-              setErrors({ drugs: false });
-
-              setShowPrescriptionModal(true);
-            }}
+            onClick={openCreatePrescriptionModal}
             className="flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl shadow-md hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg text-sm"
           >
             <FileText className="w-4 h-4" />
@@ -753,68 +1022,6 @@ const saveClient = async () => {
 
         </div>
       </div>
-
-
-{isEditModalOpen && editingSummary && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg space-y-4" dir="rtl">
-            <h3 className="text-lg font-bold">עריכת סיכום ביקור</h3>
-              <div className="space-y-1 text-right">
-                <label className="text-sm font-semibold text-gray-700">
-                  בדיקה
-                </label>
-
-                <textarea
-                  value={editingSummary.examination}
-                  onChange={(e) =>
-                    setEditingSummary({ ...editingSummary, examination: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="space-y-1 text-right">
-                <label className="text-sm font-semibold text-gray-700">
-                  אבחנה
-                </label>
-
-                <textarea
-                  value={editingSummary.diagnosis}
-                  onChange={(e) =>
-                    setEditingSummary({ ...editingSummary, diagnosis: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="space-y-1 text-right">
-                <label className="text-sm font-semibold text-gray-700">
-                  המלצות וטיפול
-                </label>
-
-                <textarea
-                  value={editingSummary.recommendations}
-                  onChange={(e) =>
-                    setEditingSummary({ ...editingSummary, recommendations: e.target.value })
-                  }
-                  className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 bg-gray-300 rounded"
-              >
-                ביטול
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
-              >
-                שמירה
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {/* CLIENT CARD */}
@@ -864,12 +1071,32 @@ const saveClient = async () => {
           <input
             type="text"
             value={client.idNumber || ''}
-            onChange={(e) => setClient({ ...client, idNumber: e.target.value })}
+            onChange={(e) => {
+              const nextValue = e.target.value
+              setClient({ ...client, idNumber: nextValue })
+              clearClientIdDuplicateState()
+              lastCheckedClientIdNumber.current = ''
+            }}
+            onBlur={() => {
+              if (editingClient) {
+                void checkDuplicateClientIdNumber(client.idNumber)
+              }
+            }}
             disabled={!editingClient}
             className={`w-full border rounded-lg p-3 ${
               isRTL ? "text-right" : "text-left"
-            } ${!editingClient ? "bg-slate-50 text-slate-500" : ""}`}
+            } ${!editingClient ? "bg-slate-50 text-slate-500" : ""} ${clientIdNumberError ? 'border-red-500' : ''}`}
           />
+          {checkingClientIdNumber && editingClient && (
+            <p className="text-xs text-slate-500 mt-1">
+              {t('admin.clients.form.checkingIdNumber')}
+            </p>
+          )}
+          {clientIdNumberError && editingClient && (
+            <p className="text-sm text-red-500 mt-1">
+              {clientIdNumberError}
+            </p>
+          )}
         </div>
 
         <div>
@@ -975,11 +1202,32 @@ const saveClient = async () => {
             </button>
             <button
               onClick={saveClient}
-              disabled={savingClient}
+              disabled={savingClient || checkingClientIdNumber}
               className="px-6 py-2 bg-green-600 text-white rounded-lg"
             >
               {savingClient ? t("common.saving") : t("common.save")}
             </button>
+          </div>
+        )}
+
+        {showDuplicateClientModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" dir="rtl">
+            <div className="w-full max-w-sm rounded-xl border border-amber-200 bg-white p-4 shadow-lg">
+              <h3 className="text-base font-semibold text-slate-900">{t('admin.clients.form.duplicateIdNumberTitle')}</h3>
+              <p className="mt-2 text-sm text-slate-700">{t('admin.clients.form.duplicateIdNumberMessage')}</p>
+              {duplicateClientName ? (
+                <p className="mt-1 text-sm text-slate-600">{t('admin.clients.form.duplicateIdNumberClientName', { clientName: duplicateClientName })}</p>
+              ) : null}
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-sm font-medium"
+                  onClick={() => setShowDuplicateClientModal(false)}
+                >
+                  {t('common.close')}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -1053,6 +1301,12 @@ const saveClient = async () => {
                     onClick={() => void handleVisitSummaryDocumentAction(summary.id, 'print')}
                     tone="default"
                     icon={<Printer className="w-4 h-4" />}
+                  />
+                  <ActionIconButton
+                    title={t('common.edit')}
+                    onClick={() => handleEditSummary(summary)}
+                    tone="info"
+                    icon={<Edit className="w-4 h-4" />}
                   />
                   <ActionIconButton
                     title={t('delete')}
@@ -1302,6 +1556,12 @@ const saveClient = async () => {
                         icon={<Printer className="w-4 h-4" />}
                       />
                       <ActionIconButton
+                        title={t('common.edit')}
+                        onClick={() => void openEditPrescriptionModal(p)}
+                        tone="info"
+                        icon={<Edit className="w-4 h-4" />}
+                      />
+                      <ActionIconButton
                         title={t('delete')}
                         onClick={() => void deletePrescription(p.id)}
                         tone="danger"
@@ -1356,6 +1616,12 @@ const saveClient = async () => {
                           onClick={() => void handlePrescriptionDocumentAction(p.id, 'print')}
                           tone="default"
                           icon={<Printer className="w-4 h-4" />}
+                        />
+                        <ActionIconButton
+                          title={t('common.edit')}
+                          onClick={() => void openEditPrescriptionModal(p)}
+                          tone="info"
+                          icon={<Edit className="w-4 h-4" />}
                         />
                         <ActionIconButton
                           title={t('delete')}
@@ -1486,7 +1752,14 @@ const saveClient = async () => {
       {showPrescriptionModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto" dir="rtl">
-            <h3 className="text-xl font-bold sticky top-0 bg-white z-10 pb-2">כתיבת מרשם</h3>
+            <h3 className="text-xl font-bold sticky top-0 bg-white z-10 pb-2">
+              {prescriptionMode === 'edit' ? 'עריכת מרשם' : 'כתיבת מרשם'}
+            </h3>
+
+            {loadingPrescriptionData ? (
+              <div className="py-10 text-center text-gray-500">טוען פרטי מרשם...</div>
+            ) : (
+              <>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -1588,6 +1861,17 @@ const saveClient = async () => {
                 onChange={(e) => setInstructions(e.target.value)}
                 className="w-full border p-2 rounded h-24"
               />
+
+              {prescriptionMode === 'edit' && (
+                <>
+                  <label className="mt-4 block text-sm mb-1">הערות</label>
+                  <textarea
+                    value={prescriptionNotes}
+                    onChange={(e) => setPrescriptionNotes(e.target.value)}
+                    className="w-full border p-2 rounded h-20"
+                  />
+                </>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1631,9 +1915,11 @@ const saveClient = async () => {
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white"
                 disabled={savingPrescription || !prescriptionForm.doctorName.trim()}
               >
-                {savingPrescription ? 'שומר...' : 'שמירה'}
+                {savingPrescription ? 'שומר...' : prescriptionMode === 'edit' ? 'עדכן מרשם' : 'שמירה'}
               </button>
             </div>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -56,6 +56,7 @@ export type {
   ClientAppointment,
   ClientInvoice,
   ClientFile,
+  DuplicateClientIdNumberCheckResponse,
   ClientNote,
 } from './clients'
 export type {

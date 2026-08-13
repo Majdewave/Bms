@@ -15,7 +15,10 @@ export default function VisitSummaryEntry() {
   const navigate = useNavigate()
 
   const appointmentId = searchParams.get('appointmentId') || ''
-  const [loading, setLoading] = useState(!appointmentId)
+  const summaryId = searchParams.get('summaryId') || ''
+  const mode = searchParams.get('mode') || ''
+  const isEditMode = mode === 'edit' && Boolean(summaryId)
+  const [loading, setLoading] = useState(!appointmentId && !isEditMode)
   const [appointments, setAppointments] = useState<AppointmentChoice[]>([])
   const [showCreateAppointment, setShowCreateAppointment] = useState(false)
 
@@ -44,6 +47,11 @@ export default function VisitSummaryEntry() {
   }
 
   useEffect(() => {
+    if (isEditMode) {
+      setLoading(false)
+      return
+    }
+
     if (appointmentId) {
       setLoading(false)
       return
@@ -88,13 +96,17 @@ export default function VisitSummaryEntry() {
     return () => {
       cancelled = true
     }
-  }, [appointmentId, clientId, navigate])
+  }, [appointmentId, clientId, isEditMode, navigate])
 
   const handleCreateSuccess = (createdAppointment?: Appointment) => {
     if (!clientId || !createdAppointment?.id) return
 
     setShowCreateAppointment(false)
     navigate(`/staff/visit-summary/${clientId}?appointmentId=${createdAppointment.id}`, { replace: true })
+  }
+
+  if (isEditMode) {
+    return <VisitSummaryForm />
   }
 
   if (appointmentId) {

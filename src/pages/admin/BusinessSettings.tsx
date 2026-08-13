@@ -37,6 +37,7 @@ import {
   queueDisplayApi,
   QueueDisplayPrivacyMode,
   QueueDisplayTheme,
+  type UploadProgress,
   type QueueDisplaySettings,
 } from '@/api/queueDisplay'
 
@@ -62,6 +63,13 @@ interface TenantContactSettings {
   nextQuoteNumber?: number | null
   autoDeleteNotDocumentedAfterDays?: number | null
   enableAutoDeleteNotDocumented?: boolean | null
+}
+
+type AdvertisementUploadState = {
+  fileCount: number
+  percent: number
+  loadedBytes: number
+  totalBytes: number | null
 }
 
 type SectionCardProps = {
@@ -160,6 +168,8 @@ export default function BusinessSettings() {
   const [queueSettings, setQueueSettings] = useState<QueueDisplaySettings | null>(null)
   const [queueLoading, setQueueLoading] = useState(false)
   const [queueSaving, setQueueSaving] = useState(false)
+  const [advertisementUpload, setAdvertisementUpload] = useState<AdvertisementUploadState | null>(null)
+  const [pendingDeleteAdvertisementImageId, setPendingDeleteAdvertisementImageId] = useState<string | null>(null)
   const [refreshIntervalSeconds, setRefreshIntervalSeconds] = useState(12)
   const [slideshowEnabled, setSlideshowEnabled] = useState(false)
   const [departments, setDepartments] = useState<Department[]>([])
@@ -197,6 +207,7 @@ export default function BusinessSettings() {
   const publicQueueUrl = queueSettings
     ? `${window.location.origin}/queue-display/${queueSettings.publicToken}`
     : ''
+  const isAdvertisementUploading = advertisementUpload !== null
 
   const toggleCard = (key: keyof typeof openCards) => {
     setOpenCards((prev) => ({
@@ -559,7 +570,6 @@ export default function BusinessSettings() {
         privacyMode: queueSettings.privacyMode,
         theme: queueSettings.theme,
         logoOverrideUrl: queueSettings.logoOverrideUrl,
-        advertisementImageUrl: queueSettings.advertisementImageUrl,
       })
       setQueueSettings(updated)
       showToastNotification(t('queueDisplay.settingsSaved'))
@@ -580,6 +590,131 @@ export default function BusinessSettings() {
     } catch (error) {
       console.error('Failed to regenerate queue display token:', error)
       showToastNotification(t('queueDisplay.regenerateFailed'))
+    } finally {
+      setQueueSaving(false)
+    }
+  }
+
+  const formatUploadSize = (bytes: number) => {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  const uploadAdvertisementWithProgress = async (files: File[]) => {
+    if (isAdvertisementUploading) {
+      return
+    }
+
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0)
+
+    setQueueSaving(true)
+    setAdvertisementUpload({
+      fileCount: files.length,
+      percent: 0,
+      loadedBytes: 0,
+      totalBytes,
+    })
+
+    const onProgress = (progress: UploadProgress) => {
+      setAdvertisementUpload((previous) => {
+        if (!previous) {
+          return previous
+        }
+
+        return {
+          ...previous,
+          percent: progress.percent,
+          loadedBytes: progress.loaded,
+          totalBytes: progress.total,
+        }
+      })
+    }
+
+    try {
+      const updated = await queueDisplayApi.uploadAdvertisementImagesWithProgress(files, onProgress)
+
+      setAdvertisementUpload({
+        fileCount: files.length,
+        percent: 100,
+        loadedBytes: totalBytes,
+        totalBytes,
+      })
+      setQueueSettings(updated)
+      showToastNotification(t('queueDisplay.adUploaded'))
+    } catch (error) {
+      console.error('Failed to upload advertisement images:', error)
+      showToastNotification(t('queueDisplay.adUploadFailed'))
+    } finally {
+      setTimeout(() => {
+        setAdvertisementUpload(null)
+      }, 500)
+      setQueueSaving(false)
+    }
+  }
+
+  const handleAdvertisementImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
+
+    if (isAdvertisementUploading) {
+      e.target.value = ''
+      return
+    }
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+    const hasInvalidType = files.some((file) => !allowedTypes.includes(file.type))
+    if (hasInvalidType) {
+      showToastNotification(t('queueDisplay.invalidAdvertisementImageType'))
+      e.target.value = ''
+      return
+    }
+
+    const hasLargeImage = files.some((file) => file.size > 8 * 1024 * 1024)
+    if (hasLargeImage) {
+      showToastNotification(t('queueDisplay.adImageTooLarge'))
+      e.target.value = ''
+      return
+    }
+
+    await uploadAdvertisementWithProgress(files)
+    e.target.value = ''
+  }
+
+  const handleDeleteAdvertisementImage = async (imageId: string) => {
+    setPendingDeleteAdvertisementImageId(imageId)
+  }
+
+  const confirmDeleteAdvertisementImage = async () => {
+    if (!pendingDeleteAdvertisementImageId) {
+      return
+    }
+
+    setQueueSaving(true)
+    try {
+      const updated = await queueDisplayApi.deleteAdvertisementImage(pendingDeleteAdvertisementImageId)
+      setQueueSettings(updated)
+      showToastNotification(t('queueDisplay.adRemoved'))
+    } catch (error) {
+      console.error('Failed to delete advertisement image:', error)
+      showToastNotification(t('queueDisplay.adRemoveFailed'))
+    } finally {
+      setPendingDeleteAdvertisementImageId(null)
+      setQueueSaving(false)
+    }
+  }
+
+  const handleClearAdvertisementImages = async () => {
+    if (!queueSettings || queueSettings.advertisementImages.length === 0) {
+      return
+    }
+
+    setQueueSaving(true)
+    try {
+      const updated = await queueDisplayApi.clearAdvertisementImages()
+      setQueueSettings(updated)
+      showToastNotification(t('queueDisplay.adRemoved'))
+    } catch (error) {
+      console.error('Failed to clear advertisement images:', error)
+      showToastNotification(t('queueDisplay.adRemoveFailed'))
     } finally {
       setQueueSaving(false)
     }
@@ -724,6 +859,33 @@ export default function BusinessSettings() {
               >
                 <X className="w-4 h-4" />
               </button>
+            </div>
+          </div>
+        )}
+
+        {pendingDeleteAdvertisementImageId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
+            <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
+              <h3 className="text-base font-semibold text-slate-900">{t('queueDisplay.deleteImageConfirmTitle')}</h3>
+              <p className="mt-2 text-sm text-slate-600">{t('queueDisplay.deleteImageConfirmBody')}</p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPendingDeleteAdvertisementImageId(null)}
+                  disabled={queueSaving}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteAdvertisementImage}
+                  disabled={queueSaving}
+                  className="rounded-lg border border-red-200 bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                >
+                  {t('common.delete')}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1514,49 +1676,78 @@ export default function BusinessSettings() {
 
                           <div className="rounded-xl border border-slate-200 p-4">
                             <p className="text-sm font-medium text-slate-800">{t('queueDisplay.advertisement')}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {t('queueDisplay.adFormatsHint')}
+                            </p>
+                            <p className="mt-1 text-xs font-medium text-slate-600">
+                              {queueSettings.advertisementImages.length > 0
+                                ? t('queueDisplay.activeMediaImage')
+                                : t('queueDisplay.noAdvertisement')}
+                            </p>
+                            {advertisementUpload && (
+                              <div className="mt-3 rounded-lg border border-cyan-100 bg-cyan-50/70 p-3">
+                                <p className="text-xs font-semibold text-cyan-900">
+                                  {t('queueDisplay.uploadingAdvertisementImage')}
+                                </p>
+                                <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-cyan-100">
+                                  <div
+                                    className="h-full rounded-full bg-cyan-600 transition-all duration-150"
+                                    style={{ width: `${advertisementUpload.percent}%` }}
+                                  />
+                                </div>
+                                <p className="mt-2 text-xs text-cyan-800">
+                                  {advertisementUpload.totalBytes
+                                    ? `${advertisementUpload.percent}% • ${formatUploadSize(advertisementUpload.loadedBytes)} / ${formatUploadSize(advertisementUpload.totalBytes)}`
+                                    : `${advertisementUpload.percent}%`}
+                                </p>
+                              </div>
+                            )}
+                            {queueSettings.advertisementImages.length > 0 && (
+                              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                {queueSettings.advertisementImages.map((image, index) => (
+                                  <div key={image.id} className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                                    <div className="flex h-20 items-center justify-center overflow-hidden rounded-md bg-white">
+                                      <img
+                                        src={image.imageUrl}
+                                        alt={`${t('queueDisplay.advertisement')} ${index + 1}`}
+                                        className="h-full w-full object-contain"
+                                      />
+                                    </div>
+                                    <div className="mt-2 flex items-center justify-between gap-2">
+                                      <span className="text-[11px] text-slate-500">#{index + 1}</span>
+                                      <button
+                                        type="button"
+                                        disabled={queueSaving}
+                                        onClick={() => handleDeleteAdvertisementImage(image.id)}
+                                        className="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-medium text-red-600 hover:bg-red-100 disabled:opacity-60"
+                                      >
+                                        {t('queueDisplay.remove')}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                             <div className="mt-3 flex flex-wrap gap-2">
-                              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+                              <label className={`inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 ${queueSaving ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-slate-100'}`}>
                                 <MonitorSmartphone className="h-4 w-4" />
-                                {t('queueDisplay.uploadAdvertisement')}
+                                {queueSettings.advertisementImages.length > 0
+                                  ? t('queueDisplay.addMoreAdvertisementImages')
+                                  : t('queueDisplay.addAdvertisementImages')}
                                 <input
                                   type="file"
-                                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                                  multiple
                                   className="hidden"
-                                  onChange={async (e) => {
-                                    const file = e.target.files?.[0]
-                                    if (!file) return
-                                    setQueueSaving(true)
-                                    try {
-                                      const updated = await queueDisplayApi.uploadAdvertisementImage(file)
-                                      setQueueSettings(updated)
-                                      showToastNotification(t('queueDisplay.adUploaded'))
-                                    } catch (error) {
-                                      console.error('Failed to upload advertisement image:', error)
-                                      showToastNotification(t('queueDisplay.adUploadFailed'))
-                                    } finally {
-                                      e.target.value = ''
-                                      setQueueSaving(false)
-                                    }
-                                  }}
+                                  onChange={handleAdvertisementImageUpload}
+                                  disabled={queueSaving}
                                 />
                               </label>
 
                               <button
                                 type="button"
-                                disabled={queueSaving || !queueSettings.advertisementImageUrl}
-                                onClick={async () => {
-                                  setQueueSaving(true)
-                                  try {
-                                    const updated = await queueDisplayApi.deleteAdvertisementImage()
-                                    setQueueSettings(updated)
-                                    showToastNotification(t('queueDisplay.adRemoved'))
-                                  } catch (error) {
-                                    console.error('Failed to delete advertisement image:', error)
-                                    showToastNotification(t('queueDisplay.adRemoveFailed'))
-                                  } finally {
-                                    setQueueSaving(false)
-                                  }
-                                }}
+                                disabled={queueSaving || queueSettings.advertisementImages.length === 0}
+                                onClick={handleClearAdvertisementImages}
                                 className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
                               >
                                 {t('queueDisplay.remove')}

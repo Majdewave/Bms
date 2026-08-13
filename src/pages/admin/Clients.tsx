@@ -7,7 +7,7 @@ import { clientsService } from '@/api'
 import type { Client } from '@/api'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
-import { Search, Filter, Plus, Mail, Phone, Users, Edit, ShieldOff, ShieldCheck, Trash2, ChevronDown, ChevronUp, User } from 'lucide-react'
+import { Search, Plus, Mail, Phone, Users, Edit, ShieldOff, ShieldCheck, Trash2, User } from 'lucide-react'
 
 export default function Clients() {
   const navigate = useNavigate()
@@ -20,7 +20,6 @@ export default function Clients() {
   const [error, setError] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showNotDocumentedOnly, setShowNotDocumentedOnly] = useState(false)
-  const [openMobileCards, setOpenMobileCards] = useState<Record<string, boolean>>({})
 
   const canView =
     hasPermission?.('view_clients') ||
@@ -106,10 +105,10 @@ export default function Clients() {
   return (
     <Container maxWidth="xl">
       {user?.role === 'staff' && (
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+        <div className="mb-4 rounded-xl border border-primary-200 bg-primary-50 p-4">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-blue-900">
+            <Users className="h-5 w-5 text-primary-700" />
+            <h3 className="font-semibold text-primary-900">
               {t('staff.clients.viewTitle')}
             </h3>
           </div>
@@ -117,23 +116,24 @@ export default function Clients() {
       )}
 
       <div className="mb-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-slate-900">{t('admin.clients.title')}</h1>
-            <p className="text-base text-slate-600 mt-2">{t('admin.clients.subtitle')}</p>
-          </div>
-
+        <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           {hasPermission?.('manage_clients') && (
-            <div className="w-full md:w-auto">
+            <div className="order-2 w-full md:order-1 md:w-auto md:self-center">
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg w-full md:w-auto"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary-600 px-5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(37,99,235,0.2)] transition-colors hover:bg-primary-700 md:w-auto"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="h-4 w-4" />
                 {t('admin.clients.add')}
               </button>
             </div>
           )}
+
+          <div className="flex-1">
+            <h1 className="text-5xl font-semibold leading-tight tracking-tight text-slate-900">{t('admin.clients.title')}</h1>
+            <p className="mt-2 text-lg text-slate-500">{t('admin.clients.subtitle')}</p>
+          </div>
+
         </div>
       </div>
 
@@ -147,31 +147,15 @@ export default function Clients() {
         />
       )}
 
-      <Card>
-        <CardHeader title={t('admin.clients.directoryTitle')} />
+      <Card className="rounded-xl border border-slate-200 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+        <CardHeader title={t('admin.clients.directoryTitle')} className="pb-0" />
 
         <CardContent>
 
-          <div className="mb-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-red-600">
-                {t('notDocumentedClients', { count: notDocumentedCount })}
-              </div>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={showNotDocumentedOnly}
-                  onChange={(e) => setShowNotDocumentedOnly(e.target.checked)}
-                  className="h-4 w-4"
-                />
-                <span className="text-sm font-medium">{t('showOnlyNotDocumented')}</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <div className="mb-6 rounded-md border border-slate-200 bg-white p-3 shadow-[0_6px_14px_rgba(15,23,42,0.04)]">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <div className="relative flex-1">
+              <Search className="absolute start-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
 
               <Autocomplete
                 items={safeClients}
@@ -183,7 +167,7 @@ export default function Clients() {
                 getItemSecondaryText={(client) => client.email || client.phone || undefined}
                 getItemSearchText={(client) => `${client.fullName ?? ''} ${client.email ?? ''} ${client.phone ?? ''} ${client.idNumber ?? ''}`}
                 placeholder={t('admin.clients.searchPlaceholder')}
-                inputClassName="input ps-10"
+                inputClassName="h-11 w-full rounded-md border border-slate-200 bg-white ps-12 pe-4 text-sm text-slate-800 transition-colors focus:border-primary-300 focus:ring-2 focus:ring-primary-500/10"
                 noResultsText="לא נמצאו לקוחות"
                 minQueryLength={0}
                 emptyQueryShowsAll={false}
@@ -191,10 +175,21 @@ export default function Clients() {
               />
             </div>
 
-            <button className="btn btn-secondary btn-md">
-              <Filter className="w-4 h-4" />
-              {t('admin.clients.filter')}
-            </button>
+              <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                <label className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3">
+                  <input
+                    type="checkbox"
+                    checked={showNotDocumentedOnly}
+                    onChange={(e) => setShowNotDocumentedOnly(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <span className="whitespace-nowrap text-sm font-medium text-slate-700">{t('showOnlyNotDocumented')}</span>
+                </label>
+                <div className="basis-full text-sm font-medium text-red-500 lg:basis-auto lg:whitespace-nowrap">
+                  {t('notDocumentedClients', { count: notDocumentedCount })}
+                </div>
+              </div>
+            </div>
           </div>
 
           {filteredClients.length === 0 ? (
@@ -207,13 +202,12 @@ export default function Clients() {
           ) : (
             <>
               {/* Mobile: cards */}
-              <div className="hidden max-[540px]:flex flex-col gap-2">
+              <div className="hidden max-[540px]:flex flex-col gap-2.5">
                 {filteredClients.map((client, idx) => {
                   const rowNumber = idx + 1
                   const clientId = client?.id ?? ''
                   const isBlocked = client?.isActive === false || client?.status === 'blocked' || client?.status === 'inactive';
                   const isNotDocumented = Boolean(client?.isNotDocumented || (client as any)?.isDocumented === false);
-                  const isOpen = Boolean(openMobileCards[clientId]);
                   const handleBlock = async (e: React.MouseEvent) => {
                     e.stopPropagation();
                     await clientsService.updateClient(clientId, { ...client, isActive: !client.isActive });
@@ -229,28 +223,16 @@ export default function Clients() {
                     }
                   };
 
-                  const toggleMobileCard = () => {
-                    setOpenMobileCards((current) => ({
-                      ...current,
-                      [clientId]: !current[clientId],
-                    }));
-                  };
-
                   return (
                     <div
                       key={clientId}
-                      className="rounded-xl border border-slate-200 shadow-md overflow-hidden"
+                      onClick={() => clientId && navigate(`/admin/clients/${clientId}`)}
+                      className="cursor-pointer overflow-hidden rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:bg-slate-50"
                     >
-                      <button
-                        type="button"
-                        onClick={toggleMobileCard}
-                        className={`w-full px-4 py-3 transition-colors ${
-                          isNotDocumented ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
-                        }`}
-                      >
+                      <div className="w-full border-b border-slate-200 bg-slate-50 px-4 py-3">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="min-w-0 flex items-center gap-2 text-white font-semibold">
-                            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-white/20 px-1 text-xs font-bold">
+                          <div className="min-w-0 flex items-center gap-2 font-semibold text-slate-900">
+                            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-200 px-1 text-xs font-bold text-slate-700">
                               {rowNumber}
                             </span>
                             <User className="w-4 h-4 shrink-0" />
@@ -261,20 +243,16 @@ export default function Clients() {
                               {isBlocked ? t('admin.clients.blocked', 'Blocked') : t('admin.clients.active', 'Active')}
                             </span>
                           </div>
-                          <span className={`text-white transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
-                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                          </span>
                         </div>
-                      </button>
+                      </div>
 
-                      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[520px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                        <div className={`px-4 py-3 space-y-3 ${
-                          client.isNotDocumented
-                            ? 'bg-red-50 border-t border-red-100'
-                            : idx % 2 === 0
-                            ? 'bg-sky-100 border-t border-sky-200'
-                            : 'bg-white border-t border-slate-100'
-                        }`}>
+                      <div className={`px-4 py-3 space-y-3 ${
+                        client.isNotDocumented
+                          ? 'bg-red-50 border-t border-red-100'
+                          : idx % 2 === 0
+                          ? 'bg-slate-50 border-t border-slate-100'
+                          : 'bg-white border-t border-slate-100'
+                      }`}>
                           <div className="flex flex-col gap-1 text-sm text-slate-500">
                             <div className="flex items-center gap-2">
                               <Mail className="w-3.5 h-3.5" /><span className="text-slate-700"><span className="text-slate-500">Email:</span> {client?.email ?? '-'}</span>
@@ -294,51 +272,51 @@ export default function Clients() {
                           </div>
                           <div className="flex gap-3 items-center" onClick={e => e.stopPropagation()}>
                             <Edit
-                              className="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer"
+                              className="w-5 h-5 text-slate-500 hover:text-primary-700 cursor-pointer"
                               onClick={e => { e.stopPropagation(); navigate(`/admin/clients/${clientId}`); }}
                             />
                             {isBlocked
                               ? <ShieldCheck className="w-5 h-5 text-green-500 hover:text-green-700 cursor-pointer" onClick={handleBlock} />
-                              : <ShieldOff className="w-5 h-5 text-yellow-500 hover:text-yellow-700 cursor-pointer" onClick={handleBlock} />
+                              : <ShieldOff className="w-5 h-5 text-amber-500 hover:text-amber-700 cursor-pointer" onClick={handleBlock} />
                             }
                             <Trash2 className="w-5 h-5 text-red-500 hover:text-red-700 cursor-pointer" onClick={handleDelete} />
                           </div>
                         </div>
-                      </div>
                     </div>
                   );
                 })}
               </div>
 
               {/* Desktop: original table */}
-              <div className="max-[540px]:hidden overflow-x-auto">
+              <div className="max-[540px]:hidden overflow-x-auto rounded-md border border-slate-200/70 bg-white shadow-[0_8px_22px_rgba(15,23,42,0.045)]">
                 <table className="w-full text-sm">
 
-                  <thead className="bg-slate-50 border-b">
+                  <thead className="border-b border-slate-200 bg-slate-50/90">
                     <tr>
-                      <th className="w-12 min-w-12 text-center py-3 px-2">#</th>
-                      <th className="text-start py-3 px-4">
+                      <th className="w-12 min-w-12 px-3 py-3.5 text-center text-xs font-semibold text-slate-500">#</th>
+                      <th className="px-6 py-3.5 text-start text-xs font-semibold text-slate-500">
                         {t('admin.clients.table.client')}
                       </th>
 
-                      <th className="text-start py-3 px-4">
-                        {t('admin.clients.table.contact')}
+                      <th className="px-6 py-3.5 text-start text-xs font-semibold text-slate-500">
+                        {t('admin.clients.table.phone', 'Phone')}
                       </th>
 
-                      <th className="text-start py-3 px-4">
+                      <th className="px-6 py-3.5 text-start text-xs font-semibold text-slate-500">
+                        {t('admin.clients.table.lastVisit')}
+                      </th>
+
+                      <th className="px-6 py-3.5 text-start text-xs font-semibold text-slate-500">
                         {t('common.status')}
                       </th>
 
-                      <th className="text-start py-3 px-4">
-                        {t('admin.clients.table.lastVisit')}
-                      </th>
-                      <th className="text-start py-3 px-4">
+                      <th className="px-6 py-3.5 text-start text-xs font-semibold text-slate-500">
                         {t('common.actions')}
                       </th>
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-slate-100">
                     {filteredClients.map((client, idx) => {
                       const rowNumber = idx + 1
                       const clientId = client?.id ?? ''
@@ -363,21 +341,23 @@ export default function Clients() {
                       return (
                         <tr
                           key={clientId}
-                          className={`border-b cursor-pointer ${
-                            client.isNotDocumented ? 'bg-red-50 text-red-600' : 'hover:bg-slate-50'
+                          className={`cursor-pointer transition-[background-color,box-shadow] duration-200 ${
+                            client.isNotDocumented
+                              ? 'hover:bg-red-50/35 hover:shadow-[inset_0_1px_0_rgba(248,113,113,0.16)]'
+                              : 'hover:bg-primary-50/35 hover:shadow-[inset_0_1px_0_rgba(37,99,235,0.12)]'
                           }`}
                           onClick={() => clientId && navigate(`/admin/clients/${clientId}`)}
                         >
-                          <td className="w-12 min-w-12 py-4 px-2 text-center font-semibold text-slate-500">
+                          <td className="w-12 min-w-12 px-3 py-5 text-center align-middle font-semibold text-slate-500">
                             {rowNumber}
                           </td>
-                          <td className="py-4 px-4">
+                          <td className="px-6 py-5 align-middle">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-primary-600 text-white rounded-lg flex items-center justify-center text-sm font-semibold">
+                              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-primary-300/40 bg-gradient-to-b from-primary-500 to-primary-600 text-sm font-semibold text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.22),0_2px_6px_rgba(37,99,235,0.18)]">
                                 {getInitials(client?.fullName)}
                               </div>
                               <div>
-                                <p className="font-semibold">
+                                <p className="text-[15px] font-semibold text-slate-900">
                                   {client?.fullName ?? 'Unnamed'}
                                 </p>
                                 <p className="text-xs text-slate-500">
@@ -386,68 +366,76 @@ export default function Clients() {
                               </div>
                             </div>
                           </td>
-                          <td className="py-4 px-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-sm">
-                                <Mail className="w-4 h-4 text-slate-400" />
-                                {client?.email ?? '-'}
-                              </div>
-                              <div className="flex items-center gap-2 text-sm">
-                                <Phone className="w-4 h-4 text-slate-400" />
-                                {client?.phone ?? '-'}
-                              </div>
+                          <td className="px-6 py-5 align-middle">
+                            <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                              <Phone className="h-4 w-4 text-slate-400" />
+                              {client?.phone ?? '-'}
                             </div>
                           </td>
-                          <td className="py-4 px-4">
-                            <span
-                              className={
-                                isBlocked
-                                  ? 'inline-block px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700'
-                                  : 'inline-block px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-700'
-                              }
-                            >
-                              {isBlocked ? t('admin.clients.blocked', 'Blocked') : t('admin.clients.active', 'Active')}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4">
+                          <td className="px-6 py-5 align-middle text-sm text-slate-700">
                             {formatDate(client?.lastVisit)}
                           </td>
-                          <td className="py-4 px-4">
-                            <div className="flex gap-3 items-center">
-                              <Edit
-                                className="w-5 h-5 text-blue-500 hover:text-blue-700 cursor-pointer"
+                          <td className="px-6 py-5 align-middle">
+                            <span
+                              className={
+                                client.isNotDocumented
+                                  ? 'inline-flex rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700'
+                                  : isBlocked
+                                  ? 'inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600'
+                                  : 'inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700'
+                              }
+                            >
+                              {client.isNotDocumented
+                                ? t('admin.clients.missingDocumentation', 'Missing documentation')
+                                : isBlocked
+                                ? t('admin.clients.blocked', 'Inactive')
+                                : t('admin.clients.active', 'Active')}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 align-middle">
+                            <div className="flex items-center gap-2.5">
+                              <button
+                                type="button"
                                 aria-label={t('common.edit')}
                                 title={t('common.edit')}
-                                role="button"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-all duration-200 ease-out hover:-translate-y-px hover:bg-[#2563EB] hover:text-white"
                                 onClick={e => {
                                   e.stopPropagation();
                                   navigate(`/admin/clients/${clientId}`);
                                 }}
-                              />
+                              >
+                                <Edit className="h-4.5 w-4.5" />
+                              </button>
                               {isBlocked ? (
-                                <ShieldCheck
-                                  className="w-5 h-5 text-green-500 hover:text-green-700 cursor-pointer"
+                                <button
+                                  type="button"
                                   aria-label={t('admin.clients.activate', 'Activate')}
                                   title={t('admin.clients.activate', 'Activate')}
-                                  role="button"
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-all duration-200 ease-out hover:-translate-y-px hover:bg-[#2563EB] hover:text-white"
                                   onClick={handleBlock}
-                                />
+                                >
+                                  <ShieldCheck className="h-4.5 w-4.5" />
+                                </button>
                               ) : (
-                                <ShieldOff
-                                  className="w-5 h-5 text-yellow-500 hover:text-yellow-700 cursor-pointer"
+                                <button
+                                  type="button"
                                   aria-label={t('admin.clients.block', 'Block')}
                                   title={t('admin.clients.block', 'Block')}
-                                  role="button"
+                                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600 transition-all duration-200 ease-out hover:-translate-y-px hover:bg-amber-500 hover:text-white"
                                   onClick={handleBlock}
-                                />
+                                >
+                                  <ShieldOff className="h-4.5 w-4.5" />
+                                </button>
                               )}
-                              <Trash2
-                                className="w-5 h-5 text-red-500 hover:text-red-700 cursor-pointer"
+                              <button
+                                type="button"
                                 aria-label={t('common.delete')}
                                 title={t('common.delete')}
-                                role="button"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-600 transition-all duration-200 ease-out hover:-translate-y-px hover:bg-red-500 hover:text-white"
                                 onClick={handleDelete}
-                              />
+                              >
+                                <Trash2 className="h-4.5 w-4.5" />
+                              </button>
                             </div>
                           </td>
                         </tr>

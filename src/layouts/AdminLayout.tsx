@@ -256,7 +256,7 @@ export default function AdminLayout() {
 
   return (
 
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
 
       {isLoggingOut && (
         <div className="fixed inset-0 z-[100] bg-slate-900/25 backdrop-blur-[1px] flex items-center justify-center pointer-events-auto">
@@ -279,18 +279,17 @@ export default function AdminLayout() {
 
       <aside
         className={`
-          bg-white border-s border-slate-200 flex flex-col h-screen min-h-0
-          fixed inset-y-0 right-0 z-40 w-72 transform transition-transform duration-300
-          md:static md:w-64 md:translate-x-0 md:z-auto
+          fixed inset-y-0 right-0 z-40 flex h-screen min-h-0 w-72 transform flex-col border-s border-slate-200 bg-white shadow-[-10px_0_24px_rgba(15,23,42,0.04)] transition-transform duration-300
+          md:static md:z-auto md:w-64 md:translate-x-0
           ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
 
         {/* Mobile close button */}
-        <div className="md:hidden flex justify-start p-3 border-b border-slate-100">
+        <div className="flex justify-start border-b border-slate-100 p-3 md:hidden">
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-2 rounded-lg hover:bg-slate-100 transition"
+            className="rounded-md p-2 transition hover:bg-slate-100"
             aria-label="סגור תפריט"
           >
             <X className="w-5 h-5 text-slate-600" />
@@ -312,7 +311,7 @@ export default function AdminLayout() {
           </Link>
         </div>
 
-        <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-6">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-5">
 
           <div className="space-y-1">
           {menuItems.map((item) => {
@@ -328,14 +327,18 @@ export default function AdminLayout() {
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm ${
+                className={`group relative flex items-center gap-3 rounded-md px-3.5 py-2.5 text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-primary-50 text-primary-700 shadow-[inset_0_0_0_1px_rgba(37,99,235,0.14)]'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
 
-                <Icon className="w-5 h-5" />
+                <span
+                  className={`absolute right-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-l ${isActive ? 'bg-primary-600' : 'bg-transparent'}`}
+                />
+
+                <Icon className={`h-5 w-5 ${isActive ? 'text-primary-700' : 'text-slate-400 group-hover:text-slate-600'}`} />
 
                 {getMenuLabel(item.label)}
 
@@ -345,7 +348,7 @@ export default function AdminLayout() {
           </div>
         </nav>
 
-        <div className="flex-shrink-0 border-t border-slate-100 px-4 py-3 bg-white">
+        <div className="flex-shrink-0 border-t border-slate-100 bg-white px-4 py-3">
           <div
             dir="ltr"
             style={{ direction: 'ltr', unicodeBidi: 'isolate' }}
@@ -372,7 +375,7 @@ export default function AdminLayout() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
 
-        <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-3 md:py-4 flex justify-between items-center gap-3">
+        <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 md:px-6 md:py-3.5">
 
           <div className="min-w-0">
             <div className="flex max-w-full items-center gap-1.5 text-sm font-bold text-slate-900 leading-tight">
@@ -422,7 +425,7 @@ export default function AdminLayout() {
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="flex items-center justify-center md:justify-start gap-2 px-2.5 md:px-3 py-2 text-sm text-rose-700 bg-rose-50/70 border border-rose-100 hover:text-rose-800 hover:bg-rose-100/80 rounded-lg transition md:ml-2"
+              className="flex items-center justify-center gap-2 rounded-md border border-rose-100 bg-rose-50/70 px-2.5 py-2 text-sm text-rose-700 transition hover:bg-rose-100/80 hover:text-rose-800 md:ml-2 md:justify-start md:px-3"
               style={{ fontSize: '15px' }}
               aria-label={t('header.logout')}
             >
@@ -431,7 +434,7 @@ export default function AdminLayout() {
             </button>
             {/* Hamburger – mobile only */}
             <button
-              className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition"
+              className="rounded-md p-2 transition hover:bg-slate-100 md:hidden"
               onClick={() => setSidebarOpen(true)}
               aria-label="פתח תפריט"
             >
@@ -440,7 +443,7 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-2 md:p-6">
+        <main className="flex-1 overflow-auto p-2.5 md:p-6">
 
           <Outlet />
 

@@ -154,9 +154,16 @@ export const deleteAppointment = async (id: string): Promise<void> => {
 export interface AppointmentClient {
   id: string
   fullName: string
-  email: string
+  email?: string | null
+  idNumber?: string | null
+  phone?: string | null
 }
 
-export const getClientsForAppointment = async (): Promise<AppointmentClient[]> => {
-  return get<AppointmentClient[]>('/api/clients')
+export const getClientsForAppointment = async (searchTerm?: string): Promise<AppointmentClient[]> => {
+  const query = searchTerm?.trim()
+  const endpoint = query
+    ? `/api/clients?searchTerm=${encodeURIComponent(query)}`
+    : '/api/clients'
+
+  return get<AppointmentClient[]>(endpoint)
 }

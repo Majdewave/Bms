@@ -471,7 +471,7 @@ const historyAppointments = filteredAppointments
                 } ${isActiveQueueItem ? 'cursor-move' : ''}`}
               >
                 <div className="flex items-center justify-between gap-2 text-slate-500 text-sm font-medium">
-                  <span>#{queueNumber}</span>
+                  <span>{queueNumber}</span>
                   <button
                     type="button"
                     onClick={() => handlePrintAppointment(appointment, queueNumber)}

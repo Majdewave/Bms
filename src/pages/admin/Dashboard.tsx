@@ -24,9 +24,11 @@ import { useTranslation } from 'react-i18next'
 import {
   Users,
   Calendar,
+  Clock3,
   UserPlus,
   CheckCircle,
   AlertCircle,
+  Trash2,
 } from 'lucide-react'
 import BillingBanner from '@/components/BillingBanner'
 
@@ -41,12 +43,13 @@ export default function AdminDashboard() {
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [selectedActivity, setSelectedActivity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [now, setNow] = useState(new Date())
 
-  const activityConfig: Record<string, { icon: string; color: string }> = {
-    staff_created: { icon: '👤', color: 'text-green-600' },
-    staff_deleted: { icon: '🗑️', color: 'text-red-600' },
-    client_created: { icon: '👥', color: 'text-blue-600' },
-    appointment_created: { icon: '📅', color: 'text-purple-600' },
+  const activityConfig: Record<string, { icon: any; color: string }> = {
+    staff_created: { icon: UserPlus, color: 'text-primary-700' },
+    staff_deleted: { icon: Trash2, color: 'text-red-600' },
+    client_created: { icon: Users, color: 'text-primary-700' },
+    appointment_created: { icon: Calendar, color: 'text-primary-700' },
   }
 
   useEffect(() => {
@@ -76,12 +79,18 @@ export default function AdminDashboard() {
     loadDashboardData()
   }, [])
 
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(new Date()), 30000)
+    return () => window.clearInterval(interval)
+  }, [])
+
   const getActivityIcon = (type: string) => {
     const config = activityConfig[type]
     if (config) {
+      const Icon = config.icon
       return (
-        <span className={`w-5 h-5 inline-flex items-center justify-center ${config.color}`}>
-          {config.icon}
+        <span className={`inline-flex h-5 w-5 items-center justify-center ${config.color}`}>
+          <Icon className="h-4 w-4" />
         </span>
       )
     }
@@ -132,84 +141,147 @@ export default function AdminDashboard() {
     );
   }
 
+  const locale = i18n.language === 'he' ? 'he-IL' : i18n.language === 'ar' ? 'ar-EG' : 'en-US'
+  const dayLabel = now.toLocaleDateString(locale, { weekday: 'long' })
+  const dateLabel = now.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const timeLabel = now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })
+
   return (
     <Container>
-      <div className="space-y-4">
+      <div className="space-y-4 pb-4">
         <BillingBanner />
-        <PageHeader
-          title={t('admin.dashboard.title', { name: user?.name })}
-          description={t('admin.dashboard.subtitle')}
-          titleClassName="text-[21px] md:text-3xl font-bold text-slate-900"
-        />
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]" dir={dir}>
+        <section className="relative overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 via-[#f5f9ff] to-white px-5 py-6 shadow-[0_2px_10px_rgba(15,23,42,0.05)] md:px-7 md:py-7">
+          <div className="pointer-events-none absolute inset-0 opacity-70">
+            <div className="absolute -top-14 right-[-12%] h-44 w-72 rounded-full bg-primary-200/25 blur-3xl" />
+            <div className="absolute -bottom-16 left-[-8%] h-48 w-72 rounded-full bg-primary-100/30 blur-3xl" />
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-[radial-gradient(70%_100%_at_50%_100%,rgba(37,99,235,0.12),transparent_68%)]" />
+          </div>
+
+          <div className="relative z-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-[1.55rem] font-semibold tracking-tight text-slate-900 md:text-[2rem]">
+                {t('admin.dashboard.title', { name: user?.name })}
+              </h1>
+              <p className="mt-2 text-sm text-slate-600 md:text-base">{t('admin.dashboard.subtitle')}</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => navigate('/admin/clients')}
+                className="inline-flex h-10 min-w-[144px] items-center justify-center rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+              >
+                {t('admin.clients.add')}
+              </button>
+              <button
+                onClick={() => navigate('/admin/appointments')}
+                className="inline-flex h-10 min-w-[144px] items-center justify-center rounded-lg bg-primary-600 px-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700"
+              >
+                {t('appointments.new')}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-xl bg-gradient-to-br from-primary-600 via-primary-600 to-[#4f8cff] px-5 py-5 text-white shadow-[0_10px_22px_rgba(37,99,235,0.28)]">
+          <div className="flex h-full items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-blue-100">{t('dashboard.totalClients')}</p>
+              <p className="mt-2 text-5xl font-semibold leading-none tracking-tight">{stats?.totalClients?.count ?? 0}</p>
+              <p className="mt-2 text-xs text-blue-100">{t('dashboard.activeClients')}</p>
+            </div>
+            <div className="rounded-lg border border-white/25 bg-white/15 p-2.5">
+              <Users className="h-6 w-6" />
+            </div>
+          </div>
+        </section>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Card
-          className="hover:shadow-lg transition-shadow cursor-pointer"
+          className="cursor-pointer rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[transform,box-shadow] duration-200 hover:scale-[1.01] hover:shadow-sm"
           onClick={() => navigate('/admin/appointments')}
         >
           <CardContent>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm text-slate-500 font-medium">{t('dashboard.appointmentsToday')}</p>
-                <p className="text-3xl font-bold text-slate-900 mt-2">
+                <p className="text-xs font-medium text-slate-500 md:text-sm">{t('dashboard.appointmentsToday')}</p>
+                <p className="mt-1.5 text-3xl font-semibold tracking-tight text-slate-900">
                   {stats?.appointmentsToday?.count ?? 0}
                 </p>
               </div>
-              <div className="p-3 rounded-lg bg-green-50 text-green-600">
-                <Calendar className="w-6 h-6" />
+              <div className="rounded-lg border border-primary-200 bg-primary-50 p-2 text-primary-700">
+                <Calendar className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[transform,box-shadow] duration-200 hover:scale-[1.01] hover:shadow-sm">
           <CardContent>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm text-slate-500 font-medium">{t('dashboard.completedToday')}</p>
-                <p className="text-3xl font-bold text-slate-900 mt-2">
+                <p className="text-xs font-medium text-slate-500 md:text-sm">{t('dashboard.completedToday')}</p>
+                <p className="mt-1.5 text-3xl font-semibold tracking-tight text-slate-900">
                   {stats?.completedToday?.count ?? 0}
                 </p>
               </div>
-              <div className="p-3 rounded-lg bg-blue-50 text-blue-600">
-                <CheckCircle className="w-6 h-6" />
+              <div className="rounded-lg border border-primary-200 bg-primary-50 p-2 text-primary-700">
+                <CheckCircle className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card
-          className="hover:shadow-lg transition-shadow cursor-pointer"
+          className="cursor-pointer rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[transform,box-shadow] duration-200 hover:scale-[1.01] hover:shadow-sm"
           onClick={() => navigate('/admin/clients')}
         >
           <CardContent>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm text-slate-500 font-medium">{t('dashboard.totalClients')}</p>
-                <p className="text-3xl font-bold text-slate-900 mt-2">
+                <p className="text-xs font-medium text-slate-500 md:text-sm">{t('dashboard.totalClients')}</p>
+                <p className="mt-1.5 text-3xl font-semibold tracking-tight text-slate-900">
                   {stats?.totalClients?.count ?? 0}
                 </p>
               </div>
-              <div className="p-3 rounded-lg bg-purple-50 text-purple-600">
-                <Users className="w-6 h-6" />
+              <div className="rounded-lg border border-primary-200 bg-primary-50 p-2 text-primary-700">
+                <Users className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[transform,box-shadow] duration-200 hover:scale-[1.01] hover:shadow-sm">
           <CardContent>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm text-slate-500 font-medium">{t('dashboard.notDocumentedClients')}</p>
-                <p className="text-3xl font-bold text-slate-900 mt-2">
+                <p className="text-xs font-medium text-slate-500 md:text-sm">{t('dashboard.notDocumentedClients')}</p>
+                <p className="mt-1.5 text-3xl font-semibold tracking-tight text-slate-900">
                   {stats?.notDocumentedClients?.count ?? 0}
                 </p>
               </div>
-              <div className="p-3 rounded-lg bg-red-50 text-red-600">
-                <AlertCircle className="w-6 h-6" />
+              <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-600">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[transform,box-shadow] duration-200 hover:scale-[1.01] hover:shadow-sm">
+          <CardContent>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-xs font-medium text-slate-500 md:text-sm">{t('dashboard.dateTime')}</p>
+                <p className="mt-1 text-xs text-slate-500">{dayLabel}</p>
+                <p className="text-sm font-medium text-slate-700">{dateLabel}</p>
+                <p className="mt-1.5 text-3xl font-semibold tracking-tight text-slate-900">{timeLabel}</p>
+              </div>
+              <div className="rounded-lg border border-primary-200 bg-primary-50 p-2 text-primary-700">
+                <Clock3 className="h-5 w-5" />
               </div>
             </div>
           </CardContent>
@@ -217,7 +289,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Upcoming Appointments Section */}
-      <Card className="mb-8">
+      <Card className="mb-8 rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <CardHeader title={t('dashboard.upcomingAppointments')} />
         <CardContent>
           {(!stats?.upcomingAppointmentsList || stats.upcomingAppointmentsList.length === 0) ? (
@@ -225,14 +297,14 @@ export default function AdminDashboard() {
           ) : (
             <>
               {/* Mobile: cards */}
-              <div className="flex flex-col gap-2 md:hidden" dir={dir}>
+              <div className="flex flex-col gap-2.5 md:hidden" dir={dir}>
                 {stats.upcomingAppointmentsList.slice(0, 5).map((apt: any, idx: number) => {
                   const time = new Date(apt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                   return (
                     <div
                       key={`m-${apt.id}-${idx}`}
-                      className={`rounded-xl px-4 py-3 flex flex-col gap-1 ${
-                        idx % 2 === 0 ? 'bg-sky-100 border border-sky-200' : 'bg-white border border-slate-100'
+                      className={`flex flex-col gap-1.5 rounded-xl border px-4 py-3 ${
+                        idx % 2 === 0 ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'
                       }`}
                     >
                       <div className="text-sm text-slate-700">
@@ -251,7 +323,7 @@ export default function AdminDashboard() {
                       )}
                       <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
                         <span className="text-slate-500">{t('dashboard.status')}:</span>
-                        <span className="inline-block px-2 py-0.5 rounded-full text-sm font-semibold bg-slate-100 text-slate-600 capitalize">
+                        <span className="inline-block rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-sm font-semibold text-slate-700 capitalize">
                           {apt.status}
                         </span>
                       </div>
@@ -264,7 +336,7 @@ export default function AdminDashboard() {
               <div className="hidden md:block overflow-x-auto" dir={dir}>
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-100">
+                    <tr className="bg-slate-50">
                       <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.time')}</th>
                       <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.client')}</th>
                       <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.service')}</th>
@@ -276,13 +348,13 @@ export default function AdminDashboard() {
                     {stats.upcomingAppointmentsList.slice(0, 5).map((apt: any, idx: number) => {
                       const time = new Date(apt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                       return (
-                        <tr key={`d-${apt.id}-${idx}`} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100 transition-colors`}>
+                        <tr key={`d-${apt.id}-${idx}`} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} transition-colors hover:bg-slate-100`}>
                           <td className={`px-4 py-2 font-mono ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{time}</td>
                           <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.clientName}</td>
                           <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.serviceName}</td>
                           <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.staffName}</td>
                           <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
-                            <span className="inline-block px-2 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700 capitalize">{apt.status}</span>
+                            <span className="inline-block rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 capitalize">{apt.status}</span>
                           </td>
                         </tr>
                       );
@@ -296,14 +368,14 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Recent Activity */}
-      <Card>
+      <Card className="rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <CardHeader 
           title={t('admin.dashboard.activity.title')}
           description={t('admin.dashboard.activity.subtitle')}
         />
         <CardContent>
           {/* Mobile: activity cards */}
-          <div className="flex flex-col gap-2 md:hidden">
+          <div className="flex flex-col gap-2.5 md:hidden">
             {recentActivity.map((activity, idx) => {
               const action = getActionLabel(activity.type, t);
               let entity = '';
@@ -328,8 +400,8 @@ export default function AdminDashboard() {
                 <div
                   key={`m-${activity.id}-${idx}`}
                   onClick={() => setSelectedActivity({ ...activity, title: activityTitle, performedBy })}
-                  className={`rounded-xl px-4 py-3 flex flex-col gap-1 cursor-pointer ${
-                    idx % 2 === 0 ? 'bg-sky-100 border border-sky-200' : 'bg-white border border-slate-100'
+                  className={`cursor-pointer rounded-xl border px-4 py-3 flex flex-col gap-1.5 ${
+                    idx % 2 === 0 ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'
                   }`}
                 >
                   <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
@@ -359,7 +431,7 @@ export default function AdminDashboard() {
           <div className="hidden md:block overflow-x-auto">
             <table dir={dir} className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-100">
+                <tr className="bg-slate-50">
                   {isRTL ? (
                     <>
                       <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.action')}</th>
@@ -418,14 +490,14 @@ export default function AdminDashboard() {
                     <tr
                       key={`${activity.id}-${idx}`}
                       onClick={() => setSelectedActivity({ ...activity, title: activityTitle, performedBy })}
-                      className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} cursor-pointer hover:bg-gray-100 transition transform`}
+                      className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} cursor-pointer transition-colors hover:bg-slate-100`}
                     >
                       {isRTL ? (
                         <>
                           <td className="px-4 py-2 text-right">
                             <div className="flex items-center gap-2 justify-start">
                               {getActivityIcon(activity.type)}
-                              <span className={config.color || 'text-slate-900'}>{config.icon ? `${activityTitle}` : activityTitle}</span>
+                              <span className={config.color || 'text-slate-900'}>{activityTitle}</span>
                             </div>
                           </td>
                           <td className="px-4 py-2 text-right">{entity}</td>
@@ -437,7 +509,7 @@ export default function AdminDashboard() {
                           <td className="px-4 py-2 text-left">
                             <div className="flex items-center gap-2">
                               {getActivityIcon(activity.type)}
-                              <span className={config.color || 'text-slate-900'}>{config.icon ? `${config.icon} ${activityTitle}` : activityTitle}</span>
+                              <span className={config.color || 'text-slate-900'}>{activityTitle}</span>
                             </div>
                           </td>
                           <td className="px-4 py-2 text-left">{entity}</td>
@@ -455,8 +527,8 @@ export default function AdminDashboard() {
       </Card>
 
       {selectedActivity && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" dir={dir}>
-          <div className="bg-white rounded-xl p-6 w-[400px] shadow-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45" dir={dir}>
+          <div className="w-[400px] rounded-xl border border-slate-200 bg-white p-6 shadow-[0_12px_24px_rgba(15,23,42,0.12)]">
             <h2 className="text-lg font-bold mb-4">
               {selectedActivity.title}
             </h2>
@@ -496,7 +568,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={() => setSelectedActivity(null)}
-              className="mt-4 w-full bg-primary-600 text-white py-2 rounded"
+              className="mt-4 w-full rounded-xl bg-primary-600 py-2 text-white transition-colors hover:bg-primary-700"
             >
               סגור
             </button>

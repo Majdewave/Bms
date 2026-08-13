@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { visitSummariesService } from '@/api/visitSummaries';
+import { visitSummariesService, type VisitSummary } from '@/api/visitSummaries';
 import { getClientDetails, type ClientDetails } from '@/api/clients';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -11,13 +11,28 @@ export default function VisitSummaryForm() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const appointmentId = searchParams.get('appointmentId') || '';
+  const summaryId = searchParams.get('summaryId') || '';
+  const mode = searchParams.get('mode') || '';
+  const isEditMode = mode === 'edit' && Boolean(summaryId);
 
   const [examination, setExamination] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingSummary, setLoadingSummary] = useState(isEditMode);
   const [client, setClient] = useState<ClientDetails | null>(null);
+  const [existingSummary, setExistingSummary] = useState<VisitSummary | null>(null);
+  const [hasLoadedSummary, setHasLoadedSummary] = useState(!isEditMode);
   const [error, setError] = useState<string | null>(null);
+
+  const formatVisitDate = (summary: VisitSummary | null) => {
+    const rawDate = summary?.visitDate || summary?.createdAt;
+    if (!rawDate) return new Date().toLocaleDateString('he-IL');
+    const parsed = new Date(rawDate);
+    return Number.isNaN(parsed.getTime())
+      ? new Date().toLocaleDateString('he-IL')
+      : parsed.toLocaleDateString('he-IL');
+  };
 
   useEffect(() => {
     if (!clientId) return;
@@ -26,25 +41,92 @@ export default function VisitSummaryForm() {
       .catch(() => setError('שגיאה בטעינת פרטי מטופל'));
   }, [clientId]);
 
+  useEffect(() => {
+    if (!isEditMode) {
+      setHasLoadedSummary(true);
+      setLoadingSummary(false);
+      return;
+    }
+
+    if (!isEditMode || !summaryId) return;
+
+    let cancelled = false;
+
+    const loadSummary = async () => {
+      setLoadingSummary(true);
+      try {
+        const summary = await visitSummariesService.getById(summaryId);
+        if (cancelled) return;
+
+        if (!summary) {
+          setError('סיכום ביקור לא נמצא');
+          return;
+        }
+
+        const normalizedSummary: VisitSummary = {
+          ...summary,
+          id: summary.id || summaryId,
+        };
+
+        setExistingSummary(normalizedSummary);
+        setExamination(summary.examination || '');
+        setDiagnosis(summary.diagnosis || '');
+        setRecommendations(summary.recommendations || '');
+        setHasLoadedSummary(true);
+      } catch (e) {
+        if (!cancelled) {
+          console.error(e);
+          if ((e as any)?.status === 404) {
+            setError('סיכום ביקור לא נמצא');
+          } else {
+            setError('שגיאה בטעינת סיכום ביקור');
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingSummary(false);
+        }
+      }
+    };
+
+    void loadSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditMode, summaryId]);
+
   const handleSubmit = async () => {
     if (!clientId) return;
-    if (!appointmentId) {
+    if (!isEditMode && !appointmentId) {
       alert('סיכום ביקור חייב להיות משויך לפגישה');
       return;
     }
+
     setLoading(true);
     try {
-      await visitSummariesService.create({
-        clientId,
-        appointmentId,
-        examination,
-        diagnosis,
-        recommendations
-      });
+      if (isEditMode && summaryId) {
+        await visitSummariesService.update(summaryId, {
+          clientId,
+          appointmentId: appointmentId || existingSummary?.appointmentId || null,
+          examination,
+          diagnosis,
+          recommendations,
+        });
+      } else {
+        await visitSummariesService.create({
+          clientId,
+          appointmentId,
+          examination,
+          diagnosis,
+          recommendations
+        });
+      }
+
       navigate(-1);
     } catch (e) {
       console.error(e);
-      alert('שגיאה בשמירת סיכום ביקור');
+      alert(isEditMode ? 'שגיאה בעדכון סיכום ביקור' : 'שגיאה בשמירת סיכום ביקור');
     } finally {
       setLoading(false);
     }
@@ -57,10 +139,16 @@ export default function VisitSummaryForm() {
     return <div className="p-10 text-center text-gray-500">טוען פרטי מטופל...</div>;
   }
 
+  if (isEditMode && (loadingSummary || !hasLoadedSummary)) {
+    return <div className="p-10 text-center text-gray-500">טוען סיכום ביקור...</div>;
+  }
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto" dir="rtl">
-        <h3 className="text-xl font-bold sticky top-0 bg-white z-10 pb-2">סיכום ביקור חדש</h3>
+        <h3 className="text-xl font-bold sticky top-0 bg-white z-10 pb-2">
+          {isEditMode ? 'עריכת סיכום ביקור' : 'סיכום ביקור חדש'}
+        </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -95,7 +183,7 @@ export default function VisitSummaryForm() {
             <label className="block text-sm mb-1">תאריך</label>
             <input
               type="text"
-              value={new Date().toLocaleDateString('he-IL')}
+              value={isEditMode ? formatVisitDate(existingSummary) : new Date().toLocaleDateString('he-IL')}
               readOnly
               className="w-full border rounded-lg p-2 bg-slate-50"
             />
@@ -164,7 +252,7 @@ export default function VisitSummaryForm() {
             disabled={loading}
             className="px-4 py-2 rounded-lg bg-blue-600 text-white"
           >
-            {loading ? 'שומר...' : 'שמירה'}
+            {loading ? 'שומר...' : isEditMode ? 'עדכן סיכום' : 'שמירה'}
           </button>
         </div>
       </div>

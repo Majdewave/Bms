@@ -8,6 +8,7 @@ export interface VisitSummary {
   examination: string;
   diagnosis: string;
   recommendations: string;
+  visitDate?: string;
   createdAt?: string;
 }
 
@@ -15,17 +16,81 @@ export type CreateVisitSummaryRequest = Omit<VisitSummary, 'id' | 'createdAt'> &
   appointmentId: string;
 }
 
+const pickString = (...values: unknown[]): string | undefined => {
+  for (const value of values) {
+    if (typeof value === 'string') {
+      return value
+    }
+  }
+  return undefined
+}
+
+const pickNullableString = (...values: unknown[]): string | null | undefined => {
+  for (const value of values) {
+    if (typeof value === 'string') {
+      return value
+    }
+    if (value === null) {
+      return null
+    }
+  }
+  return undefined
+}
+
+const normalizeVisitSummary = (raw: any): VisitSummary => {
+  const item = raw?.data ?? raw
+  const createdAt = pickString(item?.createdAt, item?.CreatedAt)
+  const fallbackId = pickString(
+    item?.id,
+    item?.Id,
+    item?.visitSummaryId,
+    item?.VisitSummaryId,
+    item?.summaryId,
+    item?.SummaryId,
+  )
+
+  return {
+    id: fallbackId || '',
+    clientId: pickString(item?.clientId, item?.ClientId) || '',
+    appointmentId: pickNullableString(item?.appointmentId, item?.AppointmentId) ?? null,
+    staffId: pickNullableString(item?.staffId, item?.StaffId) ?? null,
+    examination: pickString(item?.examination, item?.Examination, item?.exam, item?.Exam) || '',
+    diagnosis: pickString(item?.diagnosis, item?.Diagnosis) || '',
+    recommendations:
+      pickString(
+        item?.recommendations,
+        item?.Recommendations,
+        item?.treatmentRecommendations,
+        item?.TreatmentRecommendations,
+      ) || '',
+    visitDate: pickString(item?.visitDate, item?.VisitDate, item?.date, item?.Date, createdAt),
+    createdAt,
+  }
+}
+
 export const visitSummariesService = {
   create: async (payload: CreateVisitSummaryRequest) => {
-    return await post<VisitSummary>('/api/VisitSummary', payload);
+    const response = await post<any>('/api/VisitSummary', payload)
+    return normalizeVisitSummary(response)
   },
 
   getById: async (id: string) => {
-    return await get<VisitSummary>(`/api/VisitSummary/${id}`);
+    const cacheBust = Date.now()
+    const response = await get<any>(`/api/VisitSummary/${id}?_=${cacheBust}`)
+    return normalizeVisitSummary(response)
   },
 
   getByClientId: async (clientId: string) => {
-    return await get<VisitSummary[]>(`/api/VisitSummary/client/${clientId}`);
+    const response = await get<any>(`/api/VisitSummary/client/${clientId}`)
+    const list = Array.isArray(response)
+      ? response
+      : Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response?.items)
+      ? response.items
+      : []
+
+    return list.map(normalizeVisitSummary)
   },
 
 

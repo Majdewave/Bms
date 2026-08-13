@@ -49,6 +49,12 @@ export interface ClientDetails extends Client {
   notes?: ClientNote[]
 }
 
+export interface DuplicateClientIdNumberCheckResponse {
+  exists: boolean
+  clientId?: string | null
+  clientName?: string | null
+}
+
 const mockClients_DEPRECATED: any[] = [
   {
     id: '1',
@@ -106,6 +112,8 @@ export const getClientDetails = async (clientId: string): Promise<ClientDetails>
 
 export const createClient = async (client: {
   fullName: string
+  idNumber?: string | null
+  birthDate?: string | null
   email?: string
   phone?: string
   address?: string
@@ -118,6 +126,8 @@ export const updateClient = async (
   id: string,
   client: Partial<{
     fullName: string
+    idNumber?: string | null
+    birthDate?: string | null
     email?: string
     phone?: string
     address?: string
@@ -130,6 +140,18 @@ export const updateClient = async (
 
 export const deleteClient = async (id: string): Promise<void> => {
   return del<void>(`/api/clients/${id}`)
+}
+
+export const checkDuplicateClientIdNumber = async (
+  idNumber: string,
+  excludeClientId?: string
+): Promise<DuplicateClientIdNumberCheckResponse> => {
+  const params = new URLSearchParams({ idNumber })
+  if (excludeClientId) {
+    params.set('excludeClientId', excludeClientId)
+  }
+
+  return get<DuplicateClientIdNumberCheckResponse>(`/api/clients/check-id-number?${params.toString()}`)
 }
 
 // Note: These legacy methods are deprecated, use notes.ts API instead

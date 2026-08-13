@@ -73,10 +73,17 @@ export default function CreateAppointmentModal({
   const isStaffContextReadyForEdit = !formData.staffId || staffMembers.some((staff) => staff.id === formData.staffId)
 
   useEffect(() => {
-    loadClients()
     loadServices()
     loadStaffMembers()
   }, [])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      loadClients(clientQuery)
+    }, 300)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [clientQuery])
 
   useEffect(() => {
     if (mode === 'edit' && appointment) {
@@ -214,9 +221,23 @@ export default function CreateAppointmentModal({
     loadSignedConsents()
   }, [mode, formData.clientId])
 
-  const loadClients = async () => {
-    const data = await appointmentsService.getClientsForAppointment()
+  const loadClients = async (searchTerm?: string) => {
+    const data = await appointmentsService.getClientsForAppointment(searchTerm)
     setClients(Array.isArray(data) ? data : [])
+  }
+
+  const buildClientSecondaryText = (client: AppointmentClient) => {
+    const details: string[] = []
+
+    if (client.idNumber?.trim()) {
+      details.push(`${t('appointments.form.idNumberShort')}: ${client.idNumber.trim()}`)
+    }
+
+    if (client.phone?.trim()) {
+      details.push(client.phone.trim())
+    }
+
+    return details.length > 0 ? details.join(' • ') : undefined
   }
 
   const loadServices = async () => {
@@ -344,15 +365,16 @@ if (!formData.date || !formData.time) {
                 }}
                 getItemId={(client) => client.id}
                 getItemLabel={(client) => client.fullName || client.email || ''}
-                getItemSecondaryText={(client) => client.email || undefined}
-                getItemSearchText={(client) => `${client.fullName || ''} ${client.email || ''}`}
-                placeholder={t('appointments.form.selectClient')}
+                getItemSecondaryText={(client) => buildClientSecondaryText(client)}
+                getItemSearchText={(client) => `${client.fullName || ''} ${client.idNumber || ''}`}
+                secondaryTextBelow={true}
+                placeholder={t('appointments.form.clientSearchPlaceholder')}
                 inputClassName={`w-full rounded-lg px-3 py-2 border ${
                   errors.clientId
                     ? 'border-red-500 focus:ring-1 focus:ring-red-500'
                     : 'border-slate-300'
                 }`}
-                noResultsText="לא נמצאו לקוחות"
+                noResultsText={t('common.noResults')}
                 minQueryLength={0}
                 emptyQueryShowsAll={true}
                 maxResults={30}

@@ -19,6 +19,7 @@ interface AutocompleteProps<TItem> {
   maxResults?: number
   emptyQueryShowsAll?: boolean
   disabled?: boolean
+  secondaryTextBelow?: boolean
 }
 
 const DEFAULT_INPUT_CLASS =
@@ -81,6 +82,7 @@ export default function Autocomplete<TItem>({
   maxResults = 50,
   emptyQueryShowsAll = false,
   disabled = false,
+  secondaryTextBelow = false,
 }: AutocompleteProps<TItem>) {
   const [isOpen, setIsOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -249,7 +251,7 @@ export default function Autocomplete<TItem>({
 
       {(shouldShowList || shouldShowNoResults) && (
         <div
-          className={`absolute inset-x-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto ${dropdownClassName}`}
+          className={`absolute inset-x-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-[70] max-h-56 overflow-y-auto overflow-x-hidden ${dropdownClassName}`}
           role="listbox"
         >
           {shouldShowList && (
@@ -265,16 +267,31 @@ export default function Autocomplete<TItem>({
                     role="option"
                     aria-selected={isActive}
                     onMouseDown={() => handleSelect(item)}
-                    className={`px-3 py-2 cursor-pointer flex items-start justify-between gap-3 ${isActive ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
+                    className={`px-3 py-3 cursor-pointer ${isActive ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
                   >
-                    <span className="text-sm text-slate-900 break-words">
-                      {renderHighlightedText(label, query)}
-                    </span>
-                    {secondaryText ? (
-                      <span className="text-xs text-slate-500 shrink-0 text-end">
-                        {renderHighlightedText(secondaryText, query)}
-                      </span>
-                    ) : null}
+                    {secondaryTextBelow ? (
+                      <div className="min-w-0 w-full">
+                        <div className="text-sm text-slate-900 break-words text-start" dir="auto">
+                          {renderHighlightedText(label, query)}
+                        </div>
+                        {secondaryText ? (
+                          <div className="mt-1 text-xs text-slate-500 break-words text-start" dir="auto">
+                            {renderHighlightedText(secondaryText, query)}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-3 min-w-0 w-full">
+                        <span className="text-sm text-slate-900 break-words text-start" dir="auto">
+                          {renderHighlightedText(label, query)}
+                        </span>
+                        {secondaryText ? (
+                          <span className="text-xs text-slate-500 shrink-0 text-end" dir="auto">
+                            {renderHighlightedText(secondaryText, query)}
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
                   </li>
                 )
               })}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { clientsService } from '@/api'
 import { useTranslation } from 'react-i18next'
 
@@ -16,9 +16,73 @@ export default function CreateClientModal({ onClose, onCreated }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [checkingIdNumber, setCheckingIdNumber] = useState(false)
+  const [duplicateClientName, setDuplicateClientName] = useState<string | null>(null)
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false)
+  const lastCheckedIdNumber = useRef('')
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const isDuplicateConflictError = (err: any) => {
+    return err?.status === 409 && err?.response?.code === 'DUPLICATE_CLIENT_ID_NUMBER'
+  }
+
+  const applyDuplicateValidation = (clientName?: string | null) => {
+    setDuplicateClientName(clientName || null)
+    setErrors((prev) => ({
+      ...prev,
+      idNumber: t('admin.clients.form.duplicateIdNumberInline'),
+    }))
+    setShowDuplicateModal(true)
+  }
+
+  const clearDuplicateValidation = () => {
+    setDuplicateClientName(null)
+    setErrors((prev) => {
+      const next = { ...prev }
+      if (next.idNumber === t('admin.clients.form.duplicateIdNumberInline')) {
+        delete next.idNumber
+      }
+      return next
+    })
+  }
+
+  const checkDuplicateIdNumber = async (rawValue: string) => {
+    const normalizedIdNumber = rawValue.trim()
+
+    if (!normalizedIdNumber) {
+      clearDuplicateValidation()
+      lastCheckedIdNumber.current = ''
+      return false
+    }
+
+    if (checkingIdNumber || lastCheckedIdNumber.current === normalizedIdNumber) {
+      return Boolean(errors.idNumber)
+    }
+
+    setCheckingIdNumber(true)
+    try {
+      const result = await clientsService.checkDuplicateClientIdNumber(normalizedIdNumber)
+      lastCheckedIdNumber.current = normalizedIdNumber
+
+      if (result?.exists) {
+        applyDuplicateValidation(result.clientName)
+        return true
+      }
+
+      clearDuplicateValidation()
+      return false
+    } catch (err: any) {
+      if (isDuplicateConflictError(err)) {
+        applyDuplicateValidation(err?.response?.clientName)
+        return true
+      }
+      return false
+    } finally {
+      setCheckingIdNumber(false)
+    }
   }
 
 
@@ -31,6 +95,10 @@ export default function CreateClientModal({ onClose, onCreated }) {
 
   if (!form.phone.trim()) {
     newErrors.phone = t('validation.required')
+  }
+
+  if (errors.idNumber === t('admin.clients.form.duplicateIdNumberInline')) {
+    newErrors.idNumber = t('admin.clients.form.duplicateIdNumberInline')
   }
     // if (!form.idNumber.trim()) {
     // newErrors.idNumber = t('validation.required')
@@ -46,17 +114,28 @@ export default function CreateClientModal({ onClose, onCreated }) {
     if (!validateForm()) {
       return
     }
+
+    const duplicateFound = await checkDuplicateIdNumber(form.idNumber || '')
+    if (duplicateFound) {
+      return
+    }
+
     setSaving(true)
     setError('')
     try {
       const payload = {
           ...form,
+          idNumber: form.idNumber?.trim() || null,
           birthDate: form.birthDate ? form.birthDate : null,
         }
 
       const client = await clientsService.createClient(payload)
       onCreated(client)
-    } catch (err) {
+    } catch (err: any) {
+      if (isDuplicateConflictError(err)) {
+        applyDuplicateValidation(err?.response?.clientName)
+        return
+      }
       setError(t('admin.clients.createError') || 'Failed to create client')
     } finally {
       setSaving(false)
@@ -98,7 +177,13 @@ export default function CreateClientModal({ onClose, onCreated }) {
               name="idNumber"
               type="text"
               value={form.idNumber || ''}
-              onChange={(e) => setForm(prev => ({ ...prev, idNumber: e.target.value }))}
+              onChange={(e) => {
+                const nextValue = e.target.value
+                setForm(prev => ({ ...prev, idNumber: nextValue }))
+                lastCheckedIdNumber.current = ''
+                clearDuplicateValidation()
+              }}
+              onBlur={() => void checkDuplicateIdNumber(form.idNumber || '')}
               placeholder={t('admin.clients.form.idNumberPlaceholder')}
               className={`w-full rounded-lg px-3 py-2 border ${
                 errors.idNumber
@@ -106,6 +191,9 @@ export default function CreateClientModal({ onClose, onCreated }) {
                   : 'border-slate-300'
               }`}
             />
+            {checkingIdNumber && (
+              <p className="text-xs text-slate-500 mt-1">{t('admin.clients.form.checkingIdNumber')}</p>
+            )}
             {errors.idNumber && (
               <p className="text-sm text-red-500 mt-1">
                 {errors.idNumber}
@@ -149,13 +237,34 @@ export default function CreateClientModal({ onClose, onCreated }) {
             <button type="button" className="btn btn-secondary" onClick={onClose}>{t('common.cancel')}</button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || checkingIdNumber}
               className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-primary-600 text-white font-medium shadow-sm hover:bg-primary-700 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {saving ? t('common.saving') : t('admin.clients.form.submit')}
             </button>
           </div>
         </form>
+
+        {showDuplicateModal && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 rounded-lg">
+            <div className="w-full max-w-sm rounded-xl border border-amber-200 bg-white p-4 shadow-lg">
+              <h3 className="text-base font-semibold text-slate-900">{t('admin.clients.form.duplicateIdNumberTitle')}</h3>
+              <p className="mt-2 text-sm text-slate-700">{t('admin.clients.form.duplicateIdNumberMessage')}</p>
+              {duplicateClientName ? (
+                <p className="mt-1 text-sm text-slate-600">{t('admin.clients.form.duplicateIdNumberClientName', { clientName: duplicateClientName })}</p>
+              ) : null}
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-sm font-medium"
+                  onClick={() => setShowDuplicateModal(false)}
+                >
+                  {t('common.close')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
