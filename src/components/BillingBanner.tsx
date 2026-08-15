@@ -37,7 +37,7 @@ export default function BillingBanner() {
     );
   }
 
-  if (tenant.trialEndsAt) {
+  if (tenant.plan === "Trial" && tenant.trialEndsAt) {
     return (
       <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-2 rounded-xl mb-4 flex justify-between items-center">
         <span>Trial · {daysLeft} days left ⚡</span>

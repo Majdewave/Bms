@@ -157,7 +157,7 @@ const handleUpgrade = async () => {
       </div>
 
       {/* TRIAL */}
-      {tenant.trialEndsAt && (
+      {tenant.plan === 'Trial' && tenant.trialEndsAt && (
         <div className="bg-blue-50 border border-blue-200 text-blue-800 px-6 py-4 rounded-xl mb-10 text-center max-w-md w-full">
           <div className="font-medium">
             ⚡ {t('billing.trial', { days: daysLeft })}
