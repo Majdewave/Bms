@@ -1148,6 +1148,7 @@
     "add": "Add",
     "serviceName": "Service name",
     "department": "Department",
+    "imagingType": "Imaging type",
     "departmentUnassigned": "No department",
     "noDepartments": "No active departments available",
     "actions": "Actions",
@@ -1155,6 +1156,11 @@
     "name": "Name",
     "empty": "No services found.",
     "confirmDelete": "Delete this service?",
+    "imagingOptions": {
+      "none": "No imaging",
+      "us": "US - Ultrasound",
+      "dx": "X-Ray - Digital X-Ray"
+    },
     "validation": {
       "nameRequired": "Service name is required.",
       "departmentRequired": "Department is required for a service.",

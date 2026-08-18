@@ -1123,6 +1123,7 @@
     "add": "הוסף",
     "serviceName": "שם השירות",
     "department": "מחלקה",
+      "imagingType": "סוג דימות",
     "departmentUnassigned": "ללא מחלקה",
     "noDepartments": "אין מחלקות פעילות זמינות",
     "actions": "פעולות",
@@ -1130,6 +1131,11 @@
     "name": "שם",
     "empty": "לא נמצאו שירותים",
     "confirmDelete": "למחוק את השירות?",
+      "imagingOptions": {
+        "none": "ללא דימות",
+        "us": "US - אולטרסאונד",
+        "dx": "X-Ray - רנטגן"
+      },
     "validation": {
       "nameRequired": "יש להזין שם שירות.",
       "departmentRequired": "יש לבחור מחלקה לשירות.",

@@ -4,6 +4,7 @@ export interface BusinessService {
   id: string;
   name: string;
   defaultDurationMinutes: number;
+  imagingModality?: "US" | "DX" | null;
   departmentId?: string | null;
   departmentName?: string | null;
   departmentColor?: string | null;
@@ -15,6 +16,7 @@ export interface SaveBusinessServiceRequest {
   name: string;
   defaultDurationMinutes: number;
   departmentId: string;
+  imagingModality?: "US" | "DX" | null;
 }
 
 export const servicesService = {

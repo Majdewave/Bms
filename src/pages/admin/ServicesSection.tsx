@@ -12,10 +12,13 @@ interface Props {
   onToggle?: () => void
 }
 
+type ImagingModality = 'US' | 'DX' | null
+
 type ServiceFormState = {
   name: string
   defaultDurationMinutes: number
   departmentId: string
+  imagingModality: ImagingModality
 }
 
 export default function ServicesSection({ isAdmin, departments, isOpen = true, onToggle }: Props) {
@@ -32,6 +35,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
     name: '',
     defaultDurationMinutes: 60,
     departmentId: '',
+    imagingModality: null,
   })
 
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -40,6 +44,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
     name: '',
     defaultDurationMinutes: 60,
     departmentId: '',
+    imagingModality: null,
   })
 
   const selectedDepartmentById = useMemo(
@@ -97,11 +102,13 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
         name: newService.name.trim(),
         defaultDurationMinutes: newService.defaultDurationMinutes,
         departmentId: newService.departmentId,
+        imagingModality: newService.imagingModality,
       })
       setNewService({
         name: '',
         defaultDurationMinutes: 60,
         departmentId: activeDepartments.length === 1 ? activeDepartments[0].id : '',
+        imagingModality: null,
       })
       await loadServices()
     } catch (err) {
@@ -135,6 +142,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
       name: service.name || '',
       defaultDurationMinutes: service.defaultDurationMinutes || 60,
       departmentId: service.departmentId || fallbackDepartmentId,
+      imagingModality: service.imagingModality ?? null,
     })
   }
 
@@ -152,6 +160,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
         name: editData.name.trim(),
         defaultDurationMinutes: editData.defaultDurationMinutes,
         departmentId: editData.departmentId,
+        imagingModality: editData.imagingModality,
       })
       setEditingId(null)
       await loadServices()
@@ -160,6 +169,17 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
       alert(t('services.validation.saveFailed'))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const getImagingModalityLabel = (value: ImagingModality | string | undefined) => {
+    switch (value) {
+      case 'US':
+        return t('services.imagingOptions.us')
+      case 'DX':
+        return t('services.imagingOptions.dx')
+      default:
+        return t('services.imagingOptions.none')
     }
   }
 
@@ -253,7 +273,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
         <div className="p-6 border-b border-slate-200">
           {isAdmin && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <input
                   type="text"
                   placeholder={t('services.serviceName')}
@@ -277,6 +297,21 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                   }
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg"
                 />
+
+                <select
+                  value={newService.imagingModality ?? ''}
+                  onChange={(event) =>
+                    setNewService((current) => ({
+                      ...current,
+                      imagingModality: event.target.value === '' ? null : (event.target.value as ImagingModality),
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                >
+                  <option value="">{t('services.imagingOptions.none')}</option>
+                  <option value="US">{t('services.imagingOptions.us')}</option>
+                  <option value="DX">{t('services.imagingOptions.dx')}</option>
+                </select>
 
                 <button
                   type="button"
@@ -346,6 +381,10 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                               <span className="text-slate-500">{t('services.name')}:</span>{' '}
                               <span className="font-medium text-slate-900">{service.name}</span>
                             </div>
+                            <div className="text-sm text-slate-700 whitespace-nowrap overflow-hidden text-ellipsis">
+                              <span className="text-slate-500">{t('services.imagingType')}:</span>{' '}
+                              <span className="font-medium text-slate-900">{getImagingModalityLabel(service.imagingModality)}</span>
+                            </div>
                             {renderDepartmentBadge(service)}
                           </div>
                         )}
@@ -353,24 +392,48 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
 
                       <div className="shrink-0">
                         {editingId === service.id ? (
-                          <input
-                            type="number"
-                            min={1}
-                            value={editData.defaultDurationMinutes}
-                            onChange={(event) =>
-                              setEditData((current) => ({
-                                ...current,
-                                defaultDurationMinutes: Number(event.target.value) || 60,
-                              }))
-                            }
-                            className="px-2 py-1 border rounded w-24"
-                          />
+                          <div className="space-y-2">
+                            <input
+                              type="number"
+                              min={1}
+                              value={editData.defaultDurationMinutes}
+                              onChange={(event) =>
+                                setEditData((current) => ({
+                                  ...current,
+                                  defaultDurationMinutes: Number(event.target.value) || 60,
+                                }))
+                              }
+                              className="px-2 py-1 border rounded w-24"
+                            />
+                            <select
+                              value={editData.imagingModality ?? ''}
+                              onChange={(event) =>
+                                setEditData((current) => ({
+                                  ...current,
+                                  imagingModality: event.target.value === '' ? null : (event.target.value as ImagingModality),
+                                }))
+                              }
+                              className="px-2 py-1 border rounded w-36 bg-white text-sm"
+                            >
+                              <option value="">{t('services.imagingOptions.none')}</option>
+                              <option value="US">{t('services.imagingOptions.us')}</option>
+                              <option value="DX">{t('services.imagingOptions.dx')}</option>
+                            </select>
+                          </div>
                         ) : (
-                          <div className="text-sm text-slate-700 flex items-center gap-2">
-                            <span className="text-slate-500">{t('services.duration')}:</span>
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-700">
-                              {service.defaultDurationMinutes}
-                            </span>
+                          <div className="space-y-2">
+                            <div className="text-sm text-slate-700 flex items-center gap-2">
+                              <span className="text-slate-500">{t('services.duration')}:</span>
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-700">
+                                {service.defaultDurationMinutes}
+                              </span>
+                            </div>
+                            <div className="text-sm text-slate-700 flex items-center gap-2">
+                              <span className="text-slate-500">{t('services.imagingType')}:</span>
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-700">
+                                {getImagingModalityLabel(service.imagingModality)}
+                              </span>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -435,6 +498,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                         <>
                           <th className="text-right px-4 py-2">{t('services.name')}</th>
                           <th className="text-right px-4 py-2">{t('services.department')}</th>
+                          <th className="text-right px-4 py-2">{t('services.imagingType')}</th>
                           <th className="text-right px-4 py-2">{t('services.duration')}</th>
                           {isAdmin && <th className="text-right px-4 py-2">{t('services.actions')}</th>}
                         </>
@@ -442,6 +506,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                         <>
                           {isAdmin && <th className="text-left px-4 py-2">{t('services.actions')}</th>}
                           <th className="text-left px-4 py-2">{t('services.duration')}</th>
+                          <th className="text-left px-4 py-2">{t('services.imagingType')}</th>
                           <th className="text-left px-4 py-2">{t('services.department')}</th>
                           <th className="text-left px-4 py-2">{t('services.name')}</th>
                         </>
@@ -477,6 +542,26 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                                     }))
                                   }, true)
                                 : renderDepartmentBadge(service)}
+                            </td>
+                            <td className="px-4 py-2 text-right">
+                              {editingId === service.id ? (
+                                <select
+                                  value={editData.imagingModality ?? ''}
+                                  onChange={(event) =>
+                                    setEditData((current) => ({
+                                      ...current,
+                                      imagingModality: event.target.value === '' ? null : (event.target.value as ImagingModality),
+                                    }))
+                                  }
+                                  className="px-2 py-1 border rounded w-40 bg-white"
+                                >
+                                  <option value="">{t('services.imagingOptions.none')}</option>
+                                  <option value="US">{t('services.imagingOptions.us')}</option>
+                                  <option value="DX">{t('services.imagingOptions.dx')}</option>
+                                </select>
+                              ) : (
+                                getImagingModalityLabel(service.imagingModality)
+                              )}
                             </td>
                             <td className="px-4 py-2 text-right">
                               {editingId === service.id ? (
@@ -593,6 +678,26 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                                 )}
                               </td>
                             )}
+                            <td className="px-4 py-2 text-left">
+                              {editingId === service.id ? (
+                                <select
+                                  value={editData.imagingModality ?? ''}
+                                  onChange={(event) =>
+                                    setEditData((current) => ({
+                                      ...current,
+                                      imagingModality: event.target.value === '' ? null : (event.target.value as ImagingModality),
+                                    }))
+                                  }
+                                  className="px-2 py-1 border rounded w-40 bg-white"
+                                >
+                                  <option value="">{t('services.imagingOptions.none')}</option>
+                                  <option value="US">{t('services.imagingOptions.us')}</option>
+                                  <option value="DX">{t('services.imagingOptions.dx')}</option>
+                                </select>
+                              ) : (
+                                getImagingModalityLabel(service.imagingModality)
+                              )}
+                            </td>
                             <td className="px-4 py-2 text-left">
                               {editingId === service.id ? (
                                 <input

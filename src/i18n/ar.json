@@ -1134,6 +1134,7 @@
     "add": "إضافة",
     "serviceName": "اسم الخدمة",
     "department": "القسم",
+    "imagingType": "نوع التصوير",
     "departmentUnassigned": "بدون قسم",
     "noDepartments": "لا توجد أقسام نشطة متاحة",
     "actions": "الإجراءات",
@@ -1141,6 +1142,11 @@
     "name": "الاسم",
     "empty": "لم يتم العثور على خدمات",
     "confirmDelete": "هل تريد حذف هذه الخدمة؟",
+    "imagingOptions": {
+      "none": "بدون تصوير",
+      "us": "US - ألتراساوند",
+      "dx": "X-Ray - أشعة سينية"
+    },
     "validation": {
       "nameRequired": "اسم الخدمة مطلوب.",
       "departmentRequired": "يجب اختيار قسم للخدمة.",
