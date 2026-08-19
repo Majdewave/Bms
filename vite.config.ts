@@ -9,4 +9,15 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  worker: {
+    format: 'es',
+  },
+  build: {
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        format: 'es',
+      },
+    },
+  },
 })

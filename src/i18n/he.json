@@ -140,6 +140,28 @@
     "clientHub": "מרכז לקוחות",
     "operations": "פעולות"
   },
+  "imaging": {
+    "title": "דימות",
+    "loading": "טוען בדיקות דימות...",
+    "noStudies": "לא נמצאו בדיקות דימות.",
+    "accession": "מספר פניה",
+    "modality": "סוג הדימות",
+    "storage": "אחסון",
+    "series": "סדרה",
+    "instance": "מופע",
+    "previous": "הקודם",
+    "next": "הבא",
+    "openSecureFile": "פתיחת קובץ מאובטח",
+    "loadingImage": "טוען תמונה...",
+    "unableToLoadImage": "לא ניתן לטעון את התמונה",
+    "imageUnavailable": "התמונה אינה זמינה לצפייה בענן",
+    "imageXOfY": "תמונה {{current}} מתוך {{total}}",
+    "zoom": "זום",
+    "pan": "הזזה",
+    "reset": "איפוס",
+    "zoomIn": "הגדלה",
+    "zoomOut": "הקטנה"
+  },
   "billing": {
     "error": "אירעה שגיאה, נסה שוב",
     "trial": "ניסיון · {{days}} ימים נותרו",

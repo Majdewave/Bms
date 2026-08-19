@@ -140,6 +140,28 @@
     "clientHub": "Client Hub",
     "operations": "Operations"
   },
+  "imaging": {
+    "title": "Imaging",
+    "loading": "Loading imaging studies...",
+    "noStudies": "No imaging studies found.",
+    "accession": "Accession",
+    "modality": "Modality",
+    "storage": "Storage",
+    "series": "Series",
+    "instance": "Instance",
+    "previous": "Previous",
+    "next": "Next",
+    "openSecureFile": "Open secure file",
+    "loadingImage": "Loading image...",
+    "unableToLoadImage": "Unable to load image",
+    "imageUnavailable": "Image unavailable for cloud viewing",
+    "imageXOfY": "Image {{current}} of {{total}}",
+    "zoom": "Zoom",
+    "pan": "Pan",
+    "reset": "Reset",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
+  },
     "billing": {
     "loading": "Loading...",
     "loadError": "Failed to load billing information",

@@ -9,6 +9,11 @@
     "lint": "eslint src --ext ts,tsx"
   },
   "dependencies": {
+    "@cornerstonejs/codec-libjpeg-turbo": "^0.0.4",
+    "@cornerstonejs/codec-openjpeg": "^1.3.2",
+    "@cornerstonejs/core": "^5.8.2",
+    "@cornerstonejs/dicom-image-loader": "^5.8.2",
+    "@cornerstonejs/tools": "^5.8.2",
     "@microsoft/signalr": "^10.0.0",
     "axios": "^1.16.0",
     "i18next": "^25.8.3",

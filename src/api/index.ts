@@ -13,7 +13,7 @@ import * as staffApi from './staff'
 import * as clientPhotosApi from './clientPhotosService'
 import * as departmentApi from './departmentService'
 import * as whatsappApi from './whatsapp'
-
+import * as imagingApi from './imaging'
 
 // Export service objects
 export const authService = authApi
@@ -28,8 +28,7 @@ export const staffService = staffApi
 export const clientPhotosService = clientPhotosApi
 export const departmentService = departmentApi
 export const whatsappService = whatsappApi
-
-
+export const imagingService = imagingApi
 
 // Export types
 export type { LoginRequest, LoginResponse, AuthUser } from './auth'
@@ -72,6 +71,12 @@ export type {
   UpdateDepartmentRequest,
 } from './departmentService'
 export type { WhatsAppStatus } from './whatsapp'
+export type {
+  ImagingStudySummary,
+  ImagingStudyHierarchy,
+  ImagingSeriesDetail,
+  ImagingInstanceDetail,
+} from './imaging'
 
 
 

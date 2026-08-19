@@ -140,6 +140,28 @@
     "clientHub": "مركز العملاء",
     "operations": "العمليات"
   },
+  "imaging": {
+    "title": "التصوير",
+    "loading": "جارٍ تحميل دراسات التصوير...",
+    "noStudies": "لم يتم العثور على دراسات تصوير.",
+    "accession": "رقم الوصول",
+    "modality": "نوع التصوير",
+    "storage": "التخزين",
+    "series": "السلسلة",
+    "instance": "العينة",
+    "previous": "السابق",
+    "next": "التالي",
+    "openSecureFile": "فتح الملف الآمن",
+    "loadingImage": "جارٍ تحميل الصورة...",
+    "unableToLoadImage": "تعذر تحميل الصورة",
+    "imageUnavailable": "الصورة غير متاحة للعرض السحابي",
+    "imageXOfY": "الصورة {{current}} من {{total}}",
+    "zoom": "تكبير",
+    "pan": "تحريك",
+    "reset": "إعادة تعيين",
+    "zoomIn": "تكبير",
+    "zoomOut": "تصغير"
+  },
 "billing": {
     "trial": {
       "title": "بقي {{days}} يومًا على انتهاء الفترة التجريبية",
