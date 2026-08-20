@@ -14,12 +14,13 @@ export interface ImagingStudySummary {
 
 export interface ImagingInstanceDetail {
   id: string
-  SOPInstanceUID: string
-  SOPClassUID: string
-  InstanceNumber?: number | null
-  FileSizeBytes?: number | null
-  StorageStatus: string
-  ReceivedAt: string
+  sopInstanceUID: string
+  sopClassUID: string
+  instanceNumber?: number | null
+  fileSizeBytes?: number | null
+  storageStatus: string
+  modality?: string | null
+  receivedAt: string
 }
 
 export interface ImagingSeriesDetail {
@@ -33,16 +34,16 @@ export interface ImagingSeriesDetail {
 }
 
 export interface ImagingStudyHierarchy {
-  Id: string
-  ImagingOrderId?: string | null
-  AccessionNumber: string
-  StudyInstanceUID: string
-  Modality: string
-  Status: string
-  ReceivedAt: string
-  StorageStatus: string
-  CreatedAt: string
-  Series: ImagingSeriesDetail[]
+  id: string
+  imagingOrderId?: string | null
+  accessionNumber: string
+  studyInstanceUID: string
+  modality: string
+  status: string
+  receivedAt: string
+  storageStatus: string
+  createdAt: string
+  series: ImagingSeriesDetail[]
 }
 
 export const getClientImagingStudies = async (clientId: string): Promise<ImagingStudySummary[]> => {

@@ -1,17 +1,74 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Enums, RenderingEngine, StackViewport, init as initCore } from '@cornerstonejs/core'
-import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader'
 import { imagingService } from '@/api'
 import type { ImagingInstanceDetail } from '@/api/imaging'
 
-interface DicomViewerProps {
-  instance: ImagingInstanceDetail | null
-  instanceIndex?: number
-  totalInstances?: number
+let cornerstoneCoreModule: any = null
+let cornerstoneLoaderModule: any = null
+let cornerstoneReady = false
+
+const ensureCornerstoneReady = async () => {
+  if (cornerstoneReady) {
+    console.log('[DicomViewer] 02 using cached cornerstone modules')
+    return {
+      core: cornerstoneCoreModule,
+      loader: cornerstoneLoaderModule,
+    }
+  }
+
+  try {
+    console.log('[DicomViewer] 02 importing cornerstone core')
+    const coreModule = await import('@cornerstonejs/core')
+    console.log('[DicomViewer] 03 cornerstone core imported', {
+      hasInit: typeof coreModule.init,
+      hasRenderingEngine: typeof coreModule.RenderingEngine,
+      hasEnums: !!coreModule.Enums,
+      keys: Object.keys(coreModule).slice(0, 20),
+    })
+
+    console.log('[DicomViewer] 04 calling core.init')
+    if (typeof coreModule.init === 'function') {
+      await coreModule.init()
+    }
+    console.log('[DicomViewer] 05 core.init completed')
+
+    console.log('[DicomViewer] 06 importing dicom-image-loader')
+    const loaderModule = await import('@cornerstonejs/dicom-image-loader')
+    const loaderExport = loaderModule && typeof loaderModule.default !== 'undefined' ? loaderModule.default : loaderModule
+    console.log('[DicomViewer] 07 dicom-image-loader imported', {
+      hasDefault: !!loaderModule.default,
+      keys: Object.keys(loaderModule).slice(0, 20),
+      loaderType: typeof loaderExport,
+      hasInit: typeof loaderExport?.init,
+      hasWadouri: !!loaderExport?.wadouri,
+      hasWadors: !!loaderExport?.wadors,
+    })
+
+    console.log('[DicomViewer] 08 calling dicom loader init')
+    if (typeof loaderExport.init === 'function') {
+      await loaderExport.init({ maxWebWorkers: 1 })
+    }
+    console.log('[DicomViewer] 09 dicom loader init completed')
+
+    cornerstoneCoreModule = coreModule
+    cornerstoneLoaderModule = loaderExport
+    cornerstoneReady = true
+
+    return {
+      core: coreModule,
+      loader: loaderExport,
+    }
+  } catch (error) {
+    console.error('[DicomViewer] FAILED AT STAGE: cornerstone import/init', error)
+    throw error
+  }
 }
 
-let cornerstoneReady = false
+interface DicomViewerProps {
+  instances: ImagingInstanceDetail[]
+  currentIndex?: number
+  onCurrentIndexChange?: (nextIndex: number) => void
+}
 
 const getFileManagerIndexFromImageId = (imageId: string): number | null => {
   const match = imageId.match(/:(\d+)$/)
@@ -23,104 +80,136 @@ const getFileManagerIndexFromImageId = (imageId: string): number | null => {
   return Number.isFinite(index) ? index : null
 }
 
-const ensureCornerstoneReady = () => {
-  if (cornerstoneReady) {
-    return
-  }
-
-  initCore()
-  cornerstoneDICOMImageLoader.init({ maxWebWorkers: 1 })
-  cornerstoneReady = true
-}
-
-const DicomViewer = ({ instance, instanceIndex = 1, totalInstances = 1 }: DicomViewerProps) => {
+const DicomViewer = ({ instances, currentIndex = 0, onCurrentIndexChange }: DicomViewerProps) => {
   const { t } = useTranslation()
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const renderingEngineRef = useRef<RenderingEngine | null>(null)
-  const loadedImageIdRef = useRef<string | null>(null)
+  const renderingEngineRef = useRef<any>(null)
+  const viewportRef = useRef<any>(null)
+  const activeFileManagerIndexRef = useRef<number | null>(null)
+  const viewportReadyRef = useRef<Promise<any> | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error' | 'unavailable'>('loading')
   const [errorMessage, setErrorMessage] = useState('')
+  const instance = instances[currentIndex] ?? instances[0] ?? null
+  const instanceIndex = currentIndex + 1
+  const totalInstances = instances.length || 1
+
+  const removeActiveFileManagerEntry = () => {
+    if (activeFileManagerIndexRef.current === null || !cornerstoneLoaderModule) {
+      return
+    }
+
+    cornerstoneLoaderModule.wadouri.fileManager.remove(activeFileManagerIndexRef.current)
+    activeFileManagerIndexRef.current = null
+  }
+
+  const ensureViewportReady = async () => {
+    if (viewportRef.current && renderingEngineRef.current) {
+      return viewportRef.current
+    }
+
+    if (!viewportReadyRef.current) {
+      viewportReadyRef.current = (async () => {
+        const { core } = await ensureCornerstoneReady()
+
+        if (!containerRef.current) {
+          throw new Error('DICOM viewport container is unavailable')
+        }
+
+        console.log('[DicomViewer] creating RenderingEngine')
+        const renderingEngine = new core.RenderingEngine('dicom-viewer')
+        renderingEngine.enableElement({
+          element: containerRef.current,
+          viewportId: 'dicom-viewport',
+          type: core.Enums.ViewportType.STACK,
+        })
+
+        const viewport = renderingEngine.getViewport('dicom-viewport')
+        renderingEngineRef.current = renderingEngine
+        viewportRef.current = viewport
+        console.log('[DicomViewer] viewport created')
+        return viewport
+      })()
+    }
+
+    return viewportReadyRef.current
+  }
+
+  useEffect(() => {
+    return () => {
+      removeActiveFileManagerEntry()
+      renderingEngineRef.current?.destroy()
+      renderingEngineRef.current = null
+      viewportRef.current = null
+      viewportReadyRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
 
-    const cleanupEngine = () => {
-      if (loadedImageIdRef.current) {
-        const fileIndex = getFileManagerIndexFromImageId(loadedImageIdRef.current)
-
-        if (fileIndex !== null) {
-          cornerstoneDICOMImageLoader.wadouri.fileManager.remove(fileIndex)
-        }
-
-        loadedImageIdRef.current = null
-      }
-
-      if (renderingEngineRef.current) {
-        renderingEngineRef.current.destroy()
-        renderingEngineRef.current = null
-      }
-    }
-
     const loadInstance = async () => {
+      console.log('[DicomViewer] 01 viewer started', { instanceId: instance?.id, storageStatus: instance?.storageStatus })
+
       if (!instance) {
+        console.log('[DicomViewer] unavailable: no instance')
         setStatus('unavailable')
         setErrorMessage('')
-        cleanupEngine()
         return
       }
 
-      if (instance.StorageStatus !== 'LocalAndS3') {
+      if (instance.storageStatus !== 'LocalAndS3') {
+        console.log('[DicomViewer] unavailable: storageStatus not LocalAndS3', instance.storageStatus)
         setStatus('unavailable')
         setErrorMessage('')
-        cleanupEngine()
         return
       }
 
       try {
         setStatus('loading')
         setErrorMessage('')
-        ensureCornerstoneReady()
-        cleanupEngine()
-
-        const blob = await imagingService.getInstanceFileBlob(instance.id)
+        const { loader } = await ensureCornerstoneReady()
+        const viewport = await ensureViewportReady()
 
         if (cancelled) {
           return
         }
 
-        const imageId = cornerstoneDICOMImageLoader.wadouri.fileManager.add(blob)
-        loadedImageIdRef.current = imageId
+        console.log('[DicomViewer] loading instance', {
+          index: instanceIndex,
+          total: totalInstances,
+          instanceId: instance.id,
+          sopInstanceUID: instance.sopInstanceUID,
+          storageStatus: instance.storageStatus,
+        })
+        removeActiveFileManagerEntry()
+        const blob = await imagingService.getInstanceFileBlob(instance.id)
+        console.log('[DicomViewer] blob received', {
+          index: instanceIndex,
+          size: blob.size,
+          type: blob.type,
+        })
 
-        if (!containerRef.current) {
-          setStatus('error')
-          setErrorMessage(t('imaging.unableToLoadImage'))
-          cleanupEngine()
+        if (cancelled) {
           return
         }
 
-        const renderingEngine = new RenderingEngine(`dicom-viewer-${instance.id}`)
-        renderingEngineRef.current = renderingEngine
-
-        renderingEngine.enableElement({
-          element: containerRef.current,
-          viewportId: 'dicom-viewport',
-          type: Enums.ViewportType.STACK,
-        })
-
-        const viewport = renderingEngine.getViewport('dicom-viewport') as StackViewport
+        const imageId = loader.wadouri.fileManager.add(blob)
+        const fileIndex = getFileManagerIndexFromImageId(imageId)
+        activeFileManagerIndexRef.current = fileIndex
+        console.log('[DicomViewer] imageId', imageId)
+        console.log('[DicomViewer] setStack started')
         await viewport.setStack([imageId])
-        viewport.setProperties({
-          voiRange: undefined,
-          interpolationType: 'nearest',
-        })
-        viewport.resetCamera()
-        renderingEngine.render()
+        console.log('[DicomViewer] setStack completed')
+        viewport.resetCamera({ resetPan: true, resetZoom: true, resetToCenter: true })
+        console.log('[DicomViewer] camera reset')
+        renderingEngineRef.current?.render()
+        console.log('[DicomViewer] render completed')
 
         if (!cancelled) {
           setStatus('ready')
         }
       } catch (error) {
-        console.error('Unable to load DICOM image', error)
+        console.error('[DicomViewer] FAILED AT STAGE: runtime initialization/render', error)
         if (!cancelled) {
           setStatus('error')
           setErrorMessage(t('imaging.unableToLoadImage'))
@@ -132,39 +221,59 @@ const DicomViewer = ({ instance, instanceIndex = 1, totalInstances = 1 }: DicomV
 
     return () => {
       cancelled = true
-      cleanupEngine()
     }
-  }, [instance, t])
+  }, [instance, instanceIndex, t, totalInstances])
+
+  const handlePrevious = () => {
+    if (!onCurrentIndexChange || currentIndex <= 0) {
+      return
+    }
+
+    console.log('[DicomViewer] previous image', currentIndex - 1)
+    onCurrentIndexChange(currentIndex - 1)
+  }
+
+  const handleNext = () => {
+    if (!onCurrentIndexChange || currentIndex >= instances.length - 1) {
+      return
+    }
+
+    console.log('[DicomViewer] next image', currentIndex + 1)
+    onCurrentIndexChange(currentIndex + 1)
+  }
 
   const handleZoomIn = () => {
-    const viewport = renderingEngineRef.current?.getViewport('dicom-viewport') as StackViewport | undefined
+    const viewport = viewportRef.current
     if (!viewport) {
       return
     }
 
-    const nextZoom = (viewport.getZoom() || 1) * 1.25
+    const nextZoom = Math.min((viewport.getZoom() || 1) * 1.2, 20)
+    console.log('[DicomViewer] zoom in', { from: viewport.getZoom(), to: nextZoom })
     viewport.setZoom(nextZoom)
     renderingEngineRef.current?.render()
   }
 
   const handleZoomOut = () => {
-    const viewport = renderingEngineRef.current?.getViewport('dicom-viewport') as StackViewport | undefined
+    const viewport = viewportRef.current
     if (!viewport) {
       return
     }
 
-    const nextZoom = (viewport.getZoom() || 1) / 1.25
+    const nextZoom = Math.max((viewport.getZoom() || 1) / 1.2, 0.05)
+    console.log('[DicomViewer] zoom out', { from: viewport.getZoom(), to: nextZoom })
     viewport.setZoom(nextZoom)
     renderingEngineRef.current?.render()
   }
 
   const handlePanReset = () => {
-    const viewport = renderingEngineRef.current?.getViewport('dicom-viewport') as StackViewport | undefined
+    const viewport = viewportRef.current
     if (!viewport) {
       return
     }
 
-    viewport.resetCamera()
+    console.log('[DicomViewer] reset view')
+    viewport.resetCamera({ resetPan: true, resetZoom: true, resetToCenter: true })
     renderingEngineRef.current?.render()
   }
 
@@ -183,8 +292,24 @@ const DicomViewer = ({ instance, instanceIndex = 1, totalInstances = 1 }: DicomV
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <div className="text-sm text-slate-600">
-          {t('imaging.imageXOfY', { current: instanceIndex, total: totalInstances })}
+        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+          <button
+            type="button"
+            onClick={handlePrevious}
+            disabled={!onCurrentIndexChange || currentIndex <= 0}
+            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t('imaging.previous')}
+          </button>
+          <span>{t('imaging.imageXOfY', { current: instanceIndex, total: totalInstances })}</span>
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={!onCurrentIndexChange || currentIndex >= instances.length - 1}
+            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t('imaging.next')}
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -214,7 +339,7 @@ const DicomViewer = ({ instance, instanceIndex = 1, totalInstances = 1 }: DicomV
 
       <div
         ref={containerRef}
-        className="relative min-h-[420px] overflow-hidden rounded-xl border border-slate-200 bg-black"
+        className="relative h-[420px] overflow-hidden rounded-xl border border-slate-200 bg-black sm:h-[520px] lg:h-[600px]"
         style={{
           width: '100%',
           maxHeight: '70vh',

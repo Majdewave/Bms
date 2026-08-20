@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { Suspense, lazy, useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { ChevronDown, Download, Edit, Eye, FileCheck, FileText, Image as ImageIcon, MessageSquare, Pill, Printer, Trash2, User } from "lucide-react"
@@ -11,8 +11,11 @@ import { useDepartmentFeatures } from "@/contexts/DepartmentFeatureContext"
 import * as apiClient from "@/api/apiClient"
 import DrugAutocomplete from '@/components/DrugAutocomplete'
 import ClientBeforeAfterPhotos from '@/components/ClientBeforeAfterPhotos'
-import DicomViewer from '@/components/imaging/DicomViewer'
+import DicomViewerErrorBoundary from '@/components/imaging/DicomViewerErrorBoundary'
 import { consentsApi, type SignedConsent } from '@/api/consents'
+import { getImagingModalityLabel } from '@/utils/imaging'
+
+const DicomViewer = lazy(() => import('@/components/imaging/DicomViewer'))
 
 interface Client {
   id: string
@@ -226,6 +229,7 @@ export default function ClientProfile() {
   const [selectedStudy, setSelectedStudy] = useState<ImagingStudyHierarchy | null>(null)
   const [selectedSeriesIndex, setSelectedSeriesIndex] = useState(0)
   const [selectedInstanceIndex, setSelectedInstanceIndex] = useState(0)
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [imagingLoading, setImagingLoading] = useState(false)
   const [invoicesLoading, setInvoicesLoading] = useState(false)
   const [prescriptionForm, setPrescriptionForm] = useState({
@@ -941,37 +945,23 @@ const saveClient = async () => {
     }
   }
 
-  const handleOpenImagingFile = async (instanceId: string, fileName: string) => {
-    try {
-      const blob = await imagingService.getInstanceFileBlob(instanceId)
-      const objectUrl = window.URL.createObjectURL(blob)
-      const newTab = window.open(objectUrl, '_blank')
+  const currentSeries = selectedStudy?.series?.[selectedSeriesIndex] ?? null
+  const viewableInstances = currentSeries?.instances?.filter((instance) => instance.storageStatus === 'LocalAndS3') ?? []
 
-      if (!newTab) {
-        const anchor = document.createElement('a')
-        anchor.href = objectUrl
-        anchor.download = fileName
-        anchor.click()
-      }
-
-      window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 10000)
-    } catch (error) {
-      console.error('Failed to load imaging file:', error)
-    }
+  const handleSeriesSelect = (index: number) => {
+    setSelectedSeriesIndex(index)
+    setSelectedInstanceIndex(0)
+    setIsViewerOpen(false)
   }
 
-  const currentSeries = selectedStudy?.Series?.[selectedSeriesIndex] ?? null
-  const currentInstance = currentSeries?.instances?.[selectedInstanceIndex] ?? null
-  const instanceCount = currentSeries?.instances?.length ?? 0
-
-  const goToPreviousInstance = () => {
-    if (!currentSeries || instanceCount === 0) return
-    setSelectedInstanceIndex((prev) => (prev > 0 ? prev - 1 : instanceCount - 1))
+  const handleOpenViewer = () => {
+    console.log('[Imaging] user requested viewer')
+    setSelectedInstanceIndex(0)
+    setIsViewerOpen(true)
   }
 
-  const goToNextInstance = () => {
-    if (!currentSeries || instanceCount === 0) return
-    setSelectedInstanceIndex((prev) => (prev < instanceCount - 1 ? prev + 1 : 0))
+  const handleCloseViewer = () => {
+    setIsViewerOpen(false)
   }
 
   const openConsent = async (consentId: string) => {
@@ -1361,13 +1351,13 @@ const saveClient = async () => {
                       type="button"
                       onClick={() => void handleImagingStudyClick(study.id)}
                       className={`rounded-xl border px-3 py-2 text-left transition ${
-                        selectedStudy?.Id === study.id
+                        selectedStudy?.id === study.id
                           ? 'border-violet-500 bg-violet-50 text-violet-900'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                       }`}
                     >
                       <div className="text-sm font-semibold">{study.accessionNumber}</div>
-                      <div className="text-xs text-slate-500">{study.modality}</div>
+                      <div className="text-xs text-slate-500">{getImagingModalityLabel(study.modality, t)}</div>
                       <div className="text-xs text-slate-500">{new Date(study.receivedAt).toLocaleDateString(i18n.language)}</div>
                     </button>
                   ))}
@@ -1378,19 +1368,57 @@ const saveClient = async () => {
                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                       <div>
                         <div className="text-sm text-slate-500">{t('imaging.accession')}</div>
-                        <div className="font-semibold text-slate-800">{selectedStudy.AccessionNumber}</div>
+                        <div className="font-semibold text-slate-800">{selectedStudy.accessionNumber}</div>
                       </div>
                       <div>
                         <div className="text-sm text-slate-500">{t('imaging.modality')}</div>
-                        <div className="font-semibold text-slate-800">{selectedStudy.Modality}</div>
+                        <div className="font-semibold text-slate-800">{getImagingModalityLabel(selectedStudy.modality, t)}</div>
                       </div>
                       <div>
                         <div className="text-sm text-slate-500">{t('imaging.storage')}</div>
-                        <div className="font-semibold text-slate-800">{selectedStudy.StorageStatus}</div>
+                        <div className="font-semibold text-slate-800">{selectedStudy.storageStatus}</div>
                       </div>
                     </div>
 
-                    {currentSeries && currentInstance && (
+                    {selectedStudy.series.length > 1 && (
+                      <div className="space-y-3">
+                        <div className="text-sm font-semibold text-slate-700">{t('imaging.selectSeries')}</div>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {selectedStudy.series.map((series, index) => {
+                            const isSelected = index === selectedSeriesIndex
+
+                            return (
+                              <button
+                                key={series.id}
+                                type="button"
+                                aria-pressed={isSelected}
+                                onClick={() => handleSeriesSelect(index)}
+                                className={`rounded-xl border p-4 text-left transition ${
+                                  isSelected
+                                    ? 'border-violet-500 bg-violet-50 ring-2 ring-violet-200'
+                                    : 'border-slate-200 bg-white hover:border-violet-300 hover:bg-violet-50/40'
+                                }`}
+                              >
+                                <div className="text-sm font-semibold text-slate-800">
+                                  {t('imaging.seriesX', { number: series.seriesNumber ?? index + 1 })}
+                                </div>
+                                <div className="mt-1 text-sm text-slate-700">
+                                  {series.seriesDescription || `${t('imaging.series')} ${index + 1}`}
+                                </div>
+                                <div className="mt-2 text-xs text-slate-500">
+                                  {getImagingModalityLabel(series.modality, t)}
+                                </div>
+                                <div className="mt-1 text-xs text-slate-500">
+                                  {series.instances.length} {t('imaging.images')}
+                                </div>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {currentSeries && (
                       <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -1400,41 +1428,59 @@ const saveClient = async () => {
                             </div>
                           </div>
                           <div className="text-right text-sm text-slate-500">
-                            {selectedSeriesIndex + 1} / {selectedStudy.Series.length}
+                            {selectedSeriesIndex + 1} / {selectedStudy.series.length}
                           </div>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2">
-                          <button
-                            type="button"
-                            onClick={goToPreviousInstance}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-                          >
-                            {t('imaging.previous')}
-                          </button>
-                          <div className="text-sm text-slate-600">
-                            {t('imaging.instance')} {selectedInstanceIndex + 1} / {instanceCount}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={goToNextInstance}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-                          >
-                            {t('imaging.next')}
-                          </button>
                         </div>
 
                         <div className="rounded-xl bg-slate-100 p-4 text-sm text-slate-700">
-                          <div><strong>SOP:</strong> {currentInstance.SOPInstanceUID}</div>
-                          <div><strong>{t('imaging.modality')}:</strong> {currentSeries.modality}</div>
-                          <div><strong>{t('imaging.storage')}:</strong> {currentInstance.StorageStatus}</div>
+                          <div><strong>{t('imaging.series')}:</strong> {currentSeries.seriesNumber ?? selectedSeriesIndex + 1}</div>
+                          <div><strong>{t('imaging.modality')}:</strong> {getImagingModalityLabel(currentSeries.modality, t)}</div>
+                          <div><strong>{t('imaging.instances')}:</strong> {currentSeries.instances.length}</div>
+                          <div><strong>{t('imaging.viewable')}:</strong> {viewableInstances.length}</div>
                         </div>
 
-                        <DicomViewer
-                          instance={currentInstance}
-                          instanceIndex={selectedInstanceIndex + 1}
-                          totalInstances={instanceCount}
-                        />
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <button
+                            type="button"
+                            onClick={handleOpenViewer}
+                            disabled={viewableInstances.length === 0}
+                            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                          >
+                            {viewableInstances.length === 0
+                              ? t('imaging.notAvailableForViewing')
+                              : viewableInstances.length === 1
+                                ? t('imaging.viewImage')
+                                : t('imaging.viewImages')}
+                          </button>
+
+                          {isViewerOpen && (
+                            <button
+                              type="button"
+                              onClick={handleCloseViewer}
+                              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                            >
+                              {t('common.close')}
+                            </button>
+                          )}
+                        </div>
+
+                        {isViewerOpen && viewableInstances.length > 0 && (
+                          <Suspense fallback={<div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">{t('imaging.loadingImage')}</div>}>
+                            <DicomViewerErrorBoundary>
+                              <DicomViewer
+                                instances={viewableInstances}
+                                currentIndex={selectedInstanceIndex}
+                                onCurrentIndexChange={setSelectedInstanceIndex}
+                              />
+                            </DicomViewerErrorBoundary>
+                          </Suspense>
+                        )}
+
+                        {isViewerOpen && viewableInstances.length === 0 && (
+                          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                            {t('imaging.notAvailableForViewing')}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
