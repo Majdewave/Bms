@@ -960,6 +960,11 @@ const saveClient = async () => {
     setIsViewerOpen(true)
   }
 
+  const handleViewerSeriesChange = (index: number) => {
+    setSelectedSeriesIndex(index)
+    setSelectedInstanceIndex(0)
+  }
+
   const handleCloseViewer = () => {
     setIsViewerOpen(false)
   }
@@ -1471,6 +1476,10 @@ const saveClient = async () => {
                                 instances={viewableInstances}
                                 currentIndex={selectedInstanceIndex}
                                 onCurrentIndexChange={setSelectedInstanceIndex}
+                                study={selectedStudy}
+                                series={selectedStudy.series}
+                                selectedSeriesIndex={selectedSeriesIndex}
+                                onSeriesChange={handleViewerSeriesChange}
                               />
                             </DicomViewerErrorBoundary>
                           </Suspense>
