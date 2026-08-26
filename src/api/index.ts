@@ -76,6 +76,10 @@ export type {
   ImagingStudyHierarchy,
   ImagingSeriesDetail,
   ImagingInstanceDetail,
+  ImagingAnnotation,
+  CreateImagingAnnotationRequest,
+  UpdateImagingAnnotationRequest,
+  CanonicalAnnotationGeometry,
 } from './imaging'
 
 

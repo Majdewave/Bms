@@ -1424,48 +1424,56 @@ const saveClient = async () => {
                     )}
 
                     {currentSeries && (
-                      <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-xs uppercase tracking-wide text-slate-500">{t('imaging.series')}</div>
-                            <div className="font-semibold text-slate-800">
-                              {currentSeries.seriesDescription || `${t('imaging.series')} ${selectedSeriesIndex + 1}`}
+                      <div className="space-y-4">
+                        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <div className="text-xs uppercase tracking-wide text-slate-500">{t('imaging.series')}</div>
+                              <div className="font-semibold text-slate-800">
+                                {currentSeries.seriesDescription || `${t('imaging.series')} ${selectedSeriesIndex + 1}`}
+                              </div>
+                            </div>
+                            <div className="text-right text-sm text-slate-500">
+                              {selectedSeriesIndex + 1} / {selectedStudy.series.length}
                             </div>
                           </div>
-                          <div className="text-right text-sm text-slate-500">
-                            {selectedSeriesIndex + 1} / {selectedStudy.series.length}
+
+                          <div className="rounded-xl bg-slate-100 p-4 text-sm text-slate-700">
+                            <div><strong>{t('imaging.series')}:</strong> {currentSeries.seriesNumber ?? selectedSeriesIndex + 1}</div>
+                            <div><strong>{t('imaging.modality')}:</strong> {getImagingModalityLabel(currentSeries.modality, t)}</div>
+                            <div><strong>{t('imaging.instances')}:</strong> {currentSeries.instances.length}</div>
+                            <div><strong>{t('imaging.viewable')}:</strong> {viewableInstances.length}</div>
                           </div>
-                        </div>
 
-                        <div className="rounded-xl bg-slate-100 p-4 text-sm text-slate-700">
-                          <div><strong>{t('imaging.series')}:</strong> {currentSeries.seriesNumber ?? selectedSeriesIndex + 1}</div>
-                          <div><strong>{t('imaging.modality')}:</strong> {getImagingModalityLabel(currentSeries.modality, t)}</div>
-                          <div><strong>{t('imaging.instances')}:</strong> {currentSeries.instances.length}</div>
-                          <div><strong>{t('imaging.viewable')}:</strong> {viewableInstances.length}</div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <button
-                            type="button"
-                            onClick={handleOpenViewer}
-                            disabled={viewableInstances.length === 0}
-                            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                          >
-                            {viewableInstances.length === 0
-                              ? t('imaging.notAvailableForViewing')
-                              : viewableInstances.length === 1
-                                ? t('imaging.viewImage')
-                                : t('imaging.viewImages')}
-                          </button>
-
-                          {isViewerOpen && (
+                          <div className="flex flex-wrap items-center justify-between gap-3">
                             <button
                               type="button"
-                              onClick={handleCloseViewer}
-                              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                              onClick={handleOpenViewer}
+                              disabled={viewableInstances.length === 0}
+                              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                             >
-                              {t('common.close')}
+                              {viewableInstances.length === 0
+                                ? t('imaging.notAvailableForViewing')
+                                : viewableInstances.length === 1
+                                  ? t('imaging.viewImage')
+                                  : t('imaging.viewImages')}
                             </button>
+
+                            {isViewerOpen && (
+                              <button
+                                type="button"
+                                onClick={handleCloseViewer}
+                                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                              >
+                                {t('common.close')}
+                              </button>
+                            )}
+                          </div>
+
+                          {isViewerOpen && viewableInstances.length === 0 && (
+                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                              {t('imaging.notAvailableForViewing')}
+                            </div>
                           )}
                         </div>
 
@@ -1483,12 +1491,6 @@ const saveClient = async () => {
                               />
                             </DicomViewerErrorBoundary>
                           </Suspense>
-                        )}
-
-                        {isViewerOpen && viewableInstances.length === 0 && (
-                          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                            {t('imaging.notAvailableForViewing')}
-                          </div>
                         )}
                       </div>
                     )}

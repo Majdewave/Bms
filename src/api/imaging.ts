@@ -23,6 +23,43 @@ export interface ImagingInstanceDetail {
   receivedAt: string
 }
 
+export interface CanonicalAnnotationGeometry {
+  data: Record<string, unknown>
+  metadata: {
+    FrameOfReferenceUID?: string
+    viewPlaneNormal?: number[]
+    viewUp?: number[]
+  }
+}
+
+export interface ImagingAnnotation {
+  id: string
+  imagingInstanceId: string
+  frameNumber: number
+  annotationUid: string
+  toolName: string
+  geometry: CanonicalAnnotationGeometry | string
+  label?: string | null
+  createdByUserId: string
+  createdAt: string
+  updatedByUserId?: string | null
+  updatedAt?: string | null
+}
+
+export interface CreateImagingAnnotationRequest {
+  imagingInstanceId: string
+  frameNumber: number
+  annotationUid: string
+  toolName: string
+  geometry: CanonicalAnnotationGeometry
+  label?: string | null
+}
+
+export interface UpdateImagingAnnotationRequest {
+  geometry: CanonicalAnnotationGeometry
+  label?: string | null
+}
+
 export interface ImagingSeriesDetail {
   id: string
   seriesInstanceUID: string
@@ -70,4 +107,22 @@ export const getInstanceFileBlob = async (instanceId: string): Promise<Blob> => 
   }
 
   return response.blob()
+}
+
+export const getImagingAnnotations = async (imagingInstanceId: string, frameNumber: number): Promise<ImagingAnnotation[]> => {
+  return apiClient.get<ImagingAnnotation[]>(
+    `/api/imaging/instances/${imagingInstanceId}/annotations?frameNumber=${frameNumber}`
+  )
+}
+
+export const createImagingAnnotation = async (request: CreateImagingAnnotationRequest): Promise<ImagingAnnotation> => {
+  return apiClient.post<ImagingAnnotation>('/api/imaging/annotations', request)
+}
+
+export const updateImagingAnnotation = async (annotationId: string, request: UpdateImagingAnnotationRequest): Promise<ImagingAnnotation> => {
+  return apiClient.put<ImagingAnnotation>(`/api/imaging/annotations/${annotationId}`, request)
+}
+
+export const deleteImagingAnnotation = async (annotationId: string): Promise<void> => {
+  await apiClient.delNoContent(`/api/imaging/annotations/${annotationId}`)
 }

@@ -14,6 +14,7 @@ const BASE_URL = getApiBaseUrl()
 
 type RequestOptions = RequestInit & {
   isFormData?: boolean
+  expectNoContent?: boolean
 }
 
 const isAuthRelatedEndpoint = (url: string): boolean => {
@@ -175,6 +176,10 @@ async function request<T>(
     throw new ApiError(errorMessage, response.status, errorData)
   }
 
+  if (options.expectNoContent && response.status !== 204) {
+    throw new ApiError(`Expected 204 response, received ${response.status}`, response.status)
+  }
+
   if (response.status === 204 || response.headers.get('content-length') === '0') {
     return undefined as T
   }
@@ -267,6 +272,13 @@ export async function put<T>(url: string, body?: any, isFormData?: boolean): Pro
 export async function del<T>(url: string): Promise<T> {
   return request<T>(url, {
     method: 'DELETE',
+  })
+}
+
+export async function delNoContent(url: string): Promise<void> {
+  await request<void>(url, {
+    method: 'DELETE',
+    expectNoContent: true,
   })
 }
 
