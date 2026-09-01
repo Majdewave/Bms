@@ -1,9 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { appointmentsService, type Appointment, type AppointmentClient } from '@/api'
 import { consentsApi, type SignedConsent } from '@/api/consents'
 import { servicesService, type BusinessService } from '@/api/servicesService'
 import { staffService, type StaffMember } from '@/api/staff'
+import {
+  deleteImagingOrderReferralDocument,
+  getImagingOrderReferral,
+  getImagingOrderReferralDocument,
+  updateImagingOrderReferral,
+  uploadImagingOrderReferralDocument,
+  type ImagingOrderReferral,
+} from '@/api/imaging'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTranslation } from 'react-i18next'
 import SignConsentModal from './SignConsentModal'
@@ -14,6 +22,7 @@ type EditableAppointment = {
   clientId?: string
   serviceId?: string | null
   staffId?: string | null
+  imagingOrderId?: string | null
   departmentName?: string | null
   departmentColor?: string | null
   startTime: string
@@ -45,8 +54,17 @@ export default function CreateAppointmentModal({
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
   const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
   const [saving, setSaving] = useState(false)
+  const [referringDoctorName, setReferringDoctorName] = useState('')
+  const [referralFile, setReferralFile] = useState<File | null>(null)
+  const [referralUploadError, setReferralUploadError] = useState<string | null>(null)
+  const [createdAppointment, setCreatedAppointment] = useState<Appointment | null>(null)
+  const [existingReferral, setExistingReferral] = useState<ImagingOrderReferral | null>(null)
+  const [loadedReferringDoctorName, setLoadedReferringDoctorName] = useState('')
+  const [loadingReferral, setLoadingReferral] = useState(false)
+  const [appointmentEditSaved, setAppointmentEditSaved] = useState(false)
   const [showConsentModal, setShowConsentModal] = useState(false)
   const [pendingEditServiceId, setPendingEditServiceId] = useState<string | null>(null)
+  const hasNotifiedSuccess = useRef(false)
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [clientQuery, setClientQuery] = useState('')
@@ -71,6 +89,9 @@ export default function CreateAppointmentModal({
     : services
 
   const isStaffContextReadyForEdit = !formData.staffId || staffMembers.some((staff) => staff.id === formData.staffId)
+  const selectedService = services.find(s => s.id === formData.serviceId)
+  const isUsAppointment = selectedService?.imagingModality === 'US'
+  const editImagingOrderId = mode === 'edit' ? appointment?.imagingOrderId : null
 
   useEffect(() => {
     loadServices()
@@ -221,6 +242,37 @@ export default function CreateAppointmentModal({
     loadSignedConsents()
   }, [mode, formData.clientId])
 
+  useEffect(() => {
+    if (!editImagingOrderId || !isUsAppointment) {
+      setExistingReferral(null)
+      setLoadedReferringDoctorName('')
+      return
+    }
+
+    let cancelled = false
+    const loadReferral = async () => {
+      setLoadingReferral(true)
+      try {
+        const referral = await getImagingOrderReferral(editImagingOrderId)
+        if (cancelled) return
+        setExistingReferral(referral)
+        const doctorName = referral.referringDoctorName ?? ''
+        setReferringDoctorName(doctorName)
+        setLoadedReferringDoctorName(doctorName)
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load referral:', error)
+          setReferralUploadError('לא ניתן היה לטעון את פרטי ההפניה.')
+        }
+      } finally {
+        if (!cancelled) setLoadingReferral(false)
+      }
+    }
+
+    void loadReferral()
+    return () => { cancelled = true }
+  }, [editImagingOrderId, isUsAppointment])
+
   const loadClients = async (searchTerm?: string) => {
     const data = await appointmentsService.getClientsForAppointment(searchTerm)
     setClients(Array.isArray(data) ? data : [])
@@ -278,8 +330,125 @@ if (!formData.date || !formData.time) {
   return Object.keys(newErrors).length === 0
 }
 
+  const validateReferralFile = (file: File) => {
+    const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png']
+    const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
+
+    if (!allowedExtensions.includes(extension)) {
+      return 'ניתן להעלות קובץ PDF, JPG או PNG בלבד.'
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      return 'גודל קובץ ההפניה חייב להיות עד 5MB.'
+    }
+
+    return null
+  }
+
+  const completeSuccess = (savedAppointment: Appointment) => {
+    if (!hasNotifiedSuccess.current) {
+      hasNotifiedSuccess.current = true
+      onSuccess?.(savedAppointment)
+    }
+    onClose()
+  }
+
+  const handleClose = () => {
+    if (createdAppointment && !hasNotifiedSuccess.current) {
+      hasNotifiedSuccess.current = true
+      onSuccess?.(createdAppointment)
+    }
+    if (appointmentEditSaved && appointment && !hasNotifiedSuccess.current) {
+      hasNotifiedSuccess.current = true
+      onSuccess?.(appointment as Appointment)
+    }
+    onClose()
+  }
+
+  const retryReferralUpload = async () => {
+    if (!createdAppointment?.imagingOrderId || !referralFile) return
+
+    try {
+      setSaving(true)
+      setReferralUploadError(null)
+      await uploadImagingOrderReferralDocument(createdAppointment.imagingOrderId, referralFile)
+      completeSuccess(createdAppointment)
+    } catch (error) {
+      console.error('Referral upload failed:', error)
+      setReferralUploadError('התור נשמר בהצלחה, אך העלאת ההפניה נכשלה.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const saveEditReferralChanges = async (imagingOrderId: string) => {
+    const doctorName = referringDoctorName.trim()
+    let referral = existingReferral
+
+    if (doctorName !== loadedReferringDoctorName) {
+      referral = await updateImagingOrderReferral(imagingOrderId, doctorName || null)
+      setExistingReferral(referral)
+      setLoadedReferringDoctorName(doctorName)
+    }
+
+    if (referralFile) {
+      await uploadImagingOrderReferralDocument(imagingOrderId, referralFile)
+      referral = await getImagingOrderReferral(imagingOrderId)
+      setExistingReferral(referral)
+      setReferralFile(null)
+    }
+  }
+
+  const retryEditReferralChanges = async () => {
+    if (!editImagingOrderId || !appointmentEditSaved) return
+
+    try {
+      setSaving(true)
+      setReferralUploadError(null)
+      await saveEditReferralChanges(editImagingOrderId)
+      completeSuccess(appointment as Appointment)
+    } catch (error) {
+      console.error('Referral update failed:', error)
+      setReferralUploadError('התור נשמר בהצלחה, אך עדכון ההפניה נכשל.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleViewExistingReferral = async () => {
+    if (!editImagingOrderId) return
+    try {
+      setSaving(true)
+      const blob = await getImagingOrderReferralDocument(editImagingOrderId)
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank')
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+    } catch (error) {
+      console.error('Failed to view referral:', error)
+      setReferralUploadError('לא ניתן היה להציג את ההפניה.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteReferral = async () => {
+    if (!editImagingOrderId || !existingReferral?.document || !confirm('למחוק את ההפניה?')) return
+    try {
+      setSaving(true)
+      setReferralUploadError(null)
+      await deleteImagingOrderReferralDocument(editImagingOrderId)
+      setExistingReferral((previous) => previous ? { ...previous, document: null } : previous)
+    } catch (error) {
+      console.error('Referral deletion failed:', error)
+      setReferralUploadError('מחיקת ההפניה נכשלה.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (createdAppointment) return
     if (!validateForm()) {
        return
 }
@@ -298,14 +467,48 @@ if (!formData.date || !formData.time) {
         startTime: `${formData.date}T${formData.time}:00`,
         endTime: endLocal.toLocaleString('sv-SE').replace(' ', 'T'),
         status: formData.status,
-        notes: formData.description || undefined
+        notes: formData.description || undefined,
+        ...(mode === 'create' && isUsAppointment && referringDoctorName.trim()
+          ? { referringDoctorName: referringDoctorName.trim() }
+          : {})
       }
 
       if (mode === 'edit' && appointment) {
         await appointmentsService.updateAppointment(appointment.id, payload)
+        setAppointmentEditSaved(true)
+        if (isUsAppointment && editImagingOrderId) {
+          try {
+            await saveEditReferralChanges(editImagingOrderId)
+          } catch (error) {
+            console.error('Referral update failed:', error)
+            setReferralUploadError('התור נשמר בהצלחה, אך עדכון ההפניה נכשל.')
+            return
+          }
+        }
+        completeSuccess(appointment as Appointment)
+        return
       } else {
         const createdAppointment = await appointmentsService.createAppointment(payload)
-        onSuccess?.(createdAppointment)
+        if (!isUsAppointment || !referralFile) {
+          completeSuccess(createdAppointment)
+          return
+        }
+
+        setCreatedAppointment(createdAppointment)
+        if (!createdAppointment.imagingOrderId) {
+          setReferralUploadError('התור נשמר, אך לא ניתן היה לקשר את ההפניה לבדיקת האולטרסאונד.')
+          return
+        }
+
+        try {
+          await uploadImagingOrderReferralDocument(createdAppointment.imagingOrderId, referralFile)
+          completeSuccess(createdAppointment)
+          return
+        } catch (error) {
+          console.error('Referral upload failed:', error)
+          setReferralUploadError('התור נשמר בהצלחה, אך העלאת ההפניה נכשלה.')
+          return
+        }
       }
 
       onClose()
@@ -319,7 +522,6 @@ if (!formData.date || !formData.time) {
   }
 
   const selectedClient = clients.find(c => c.id === formData.clientId)
-  const selectedService = services.find(s => s.id === formData.serviceId)
   const selectedDepartmentName = selectedService?.departmentName || appointment?.departmentName || ''
   const selectedDepartmentColor = selectedService?.departmentColor || appointment?.departmentColor || ''
   const hasConsent = !!appointment?.id && signedConsents.some(c => c.appointmentId === appointment.id)
@@ -334,7 +536,7 @@ if (!formData.date || !formData.time) {
               ? t('appointments.editTitle')
               : t('appointments.createTitle')}
           </h2>
-          <button onClick={onClose}>
+          <button onClick={handleClose} disabled={saving}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -462,6 +664,79 @@ if (!formData.date || !formData.time) {
               </div>
             )}
 
+            {isUsAppointment && (
+              <div className="space-y-3 border-t border-slate-200 pt-4" dir="rtl">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">רופא מפנה</label>
+                  <input
+                    type="text"
+                    value={referringDoctorName}
+                    onChange={(event) => setReferringDoctorName(event.target.value)}
+                    disabled={Boolean(createdAppointment)}
+                    className="w-full rounded-lg px-3 py-2 border border-slate-300 text-right disabled:bg-slate-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-1">הפניה</label>
+                  {loadingReferral ? (
+                    <p className="text-sm text-slate-500">{t('common.loading')}</p>
+                  ) : existingReferral?.document ? (
+                    <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+                      <span className="text-slate-700">{existingReferral.document.originalFileName}</span>
+                      <button
+                        type="button"
+                        onClick={() => void handleViewExistingReferral()}
+                        disabled={saving}
+                        className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                      >
+                        צפייה בהפניה
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteReferral()}
+                        disabled={saving}
+                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-red-700 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        מחיקת הפניה
+                      </button>
+                    </div>
+                  ) : null}
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    disabled={Boolean(createdAppointment)}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null
+                      if (!file) return
+
+                      const validationMessage = validateReferralFile(file)
+                      if (validationMessage) {
+                        setReferralFile(null)
+                        setErrors((previous) => ({ ...previous, referralFile: validationMessage }))
+                        event.target.value = ''
+                        return
+                      }
+
+                      setReferralFile(file)
+                      setErrors((previous) => {
+                        const { referralFile, ...remainingErrors } = previous
+                        return remainingErrors
+                      })
+                    }}
+                    className="w-full rounded-lg px-3 py-2 border border-slate-300 text-right disabled:bg-slate-100"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">PDF / JPG / PNG עד 5MB</p>
+                  {mode === 'edit' && existingReferral?.document && (
+                    <p className="mt-1 text-xs text-slate-500">בחירת קובץ חדש תחליף את ההפניה הקיימת.</p>
+                  )}
+                  {referralFile && <p className="mt-1 text-sm text-slate-700">{referralFile.name}</p>}
+                  {errors.referralFile && <p className="mt-1 text-sm text-red-500">{errors.referralFile}</p>}
+                  {referralUploadError && <p className="mt-2 text-sm text-red-600">{referralUploadError}</p>}
+                </div>
+              </div>
+            )}
+
             <label className="block text-sm font-semibold">
               {t('appointments.form.date')}
               <span className="text-red-500 ml-1">*</span>
@@ -580,18 +855,37 @@ if (!formData.date || !formData.time) {
             <button
               type="button"
               className="px-4 py-2 rounded-lg border"
-              onClick={onClose}
+              onClick={handleClose}
+              disabled={saving}
             >
               {t('common.cancel')}
             </button>
 
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-              disabled={saving}
-            >
-              {saving ? t('common.saving') : t('common.save')}
-            </button>
+            {(createdAppointment && referralUploadError && createdAppointment.imagingOrderId) ||
+            (mode === 'edit' && appointmentEditSaved && referralUploadError && editImagingOrderId) ? (
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                onClick={() => {
+                  if (createdAppointment?.imagingOrderId) {
+                    void retryReferralUpload()
+                  } else {
+                    void retryEditReferralChanges()
+                  }
+                }}
+                disabled={saving}
+              >
+                {saving ? t('common.saving') : 'נסה להעלות שוב'}
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                disabled={saving || Boolean(createdAppointment)}
+              >
+                {saving ? t('common.saving') : t('common.save')}
+              </button>
+            )}
 
           </div>
 

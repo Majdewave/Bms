@@ -21,6 +21,7 @@ export interface Appointment {
   createdAt: string
   createdByUserId: string
   isDocumented: boolean
+  imagingOrderId?: string | null
 }
 
 // Keep mock data for backwards compatibility (will be removed from components)
@@ -124,6 +125,7 @@ export const createAppointment = async (appointment: {
   startTime: string
   endTime: string
   notes?: string
+  referringDoctorName?: string | null
 }): Promise<Appointment> => {
   return post<Appointment>('/api/appointments', appointment)
 }

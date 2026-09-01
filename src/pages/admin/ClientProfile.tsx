@@ -5,7 +5,7 @@ import { ChevronDown, Download, Edit, Eye, FileCheck, FileText, Image as ImageIc
 import { visitSummariesService, type VisitSummary } from '@/api/visitSummaries'
 import { clientsService, imagingService, invoicesService } from '@/api'
 import type { Invoice } from '@/api/invoices'
-import type { ImagingStudyHierarchy, ImagingStudySummary } from '@/api/imaging'
+import { getClientImagingCases, getImagingOrderReferralDocument, type ClientImagingCase, type ImagingStudyHierarchy, type ImagingStudySummary } from '@/api/imaging'
 import { useAuth } from "@/contexts/AuthContext"
 import { useDepartmentFeatures } from "@/contexts/DepartmentFeatureContext"
 import * as apiClient from "@/api/apiClient"
@@ -226,11 +226,14 @@ export default function ClientProfile() {
   const [visitSummaries, setVisitSummaries] = useState<VisitSummary[]>([])
   const [clientInvoices, setClientInvoices] = useState<Invoice[]>([])
   const [imagingStudies, setImagingStudies] = useState<ImagingStudySummary[]>([])
+  const [imagingCases, setImagingCases] = useState<ClientImagingCase[]>([])
+  const [selectedImagingCase, setSelectedImagingCase] = useState<ClientImagingCase | null>(null)
   const [selectedStudy, setSelectedStudy] = useState<ImagingStudyHierarchy | null>(null)
   const [selectedSeriesIndex, setSelectedSeriesIndex] = useState(0)
   const [selectedInstanceIndex, setSelectedInstanceIndex] = useState(0)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [imagingLoading, setImagingLoading] = useState(false)
+  const [viewingReferral, setViewingReferral] = useState(false)
   const [invoicesLoading, setInvoicesLoading] = useState(false)
   const [prescriptionForm, setPrescriptionForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -463,25 +466,52 @@ useEffect(() => {
 
       setImagingLoading(true)
       try {
-        const studies = await imagingService.getClientImagingStudies(client.id)
+        const [orders, studies] = await Promise.all([
+          getClientImagingCases(client.id),
+          imagingService.getClientImagingStudies(client.id),
+        ])
         const sortedStudies = Array.isArray(studies) ? studies : []
+        const orderCases = Array.isArray(orders) ? orders : []
+        const legacyCases: ClientImagingCase[] = sortedStudies
+          .filter((study) => !study.imagingOrderId)
+          .map((study) => ({
+            id: `legacy-${study.id}`,
+            clientId: client.id,
+            appointmentId: '',
+            accessionNumber: study.accessionNumber,
+            modality: study.modality,
+            status: study.status,
+            scheduledStartTime: study.receivedAt,
+            createdAt: study.createdAt,
+            study,
+          }))
+        const cases = [...orderCases, ...legacyCases]
         setImagingStudies(sortedStudies)
+        setImagingCases(cases)
 
-        if (sortedStudies.length === 0) {
+        if (cases.length === 0) {
           setSelectedStudy(null)
+          setSelectedImagingCase(null)
           setSelectedSeriesIndex(0)
           setSelectedInstanceIndex(0)
           return
         }
 
-        const firstStudy = sortedStudies[0]
-        const hierarchy = await imagingService.getStudyHierarchy(firstStudy.id)
-        setSelectedStudy(hierarchy)
+        const firstCase = cases[0]
+        setSelectedImagingCase(firstCase)
+        if (firstCase.study) {
+          const hierarchy = await imagingService.getStudyHierarchy(firstCase.study.id)
+          setSelectedStudy(hierarchy)
+        } else {
+          setSelectedStudy(null)
+        }
         setSelectedSeriesIndex(0)
         setSelectedInstanceIndex(0)
       } catch (error) {
         console.error('Failed to load imaging studies:', error)
         setImagingStudies([])
+        setImagingCases([])
+        setSelectedImagingCase(null)
         setSelectedStudy(null)
       } finally {
         setImagingLoading(false)
@@ -945,6 +975,19 @@ const saveClient = async () => {
     }
   }
 
+  const handleImagingCaseClick = async (imagingCase: ClientImagingCase) => {
+    setSelectedImagingCase(imagingCase)
+    setSelectedSeriesIndex(0)
+    setSelectedInstanceIndex(0)
+    setIsViewerOpen(false)
+
+    if (imagingCase.study) {
+      await handleImagingStudyClick(imagingCase.study.id)
+    } else {
+      setSelectedStudy(null)
+    }
+  }
+
   const currentSeries = selectedStudy?.series?.[selectedSeriesIndex] ?? null
   const viewableInstances = currentSeries?.instances?.filter((instance) => instance.storageStatus === 'LocalAndS3') ?? []
 
@@ -967,6 +1010,21 @@ const saveClient = async () => {
 
   const handleCloseViewer = () => {
     setIsViewerOpen(false)
+  }
+
+  const handleViewReferral = async (imagingOrderId: string) => {
+    try {
+      setViewingReferral(true)
+      const blob = await getImagingOrderReferralDocument(imagingOrderId)
+      const url = window.URL.createObjectURL(blob)
+      window.open(url, '_blank')
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 10000)
+    } catch (error) {
+      console.error('Failed to view imaging referral:', error)
+      alert('לא ניתן היה להציג את ההפניה.')
+    } finally {
+      setViewingReferral(false)
+    }
   }
 
   const openConsent = async (consentId: string) => {
@@ -1330,8 +1388,8 @@ const saveClient = async () => {
             <h3 className={`text-lg font-semibold text-slate-800 ${isRTL ? 'text-right' : 'text-left'}`}>
               {t('imaging.title')}
             </h3>
-            <span className={getCounterClass(imagingStudies.length)}>
-              {imagingStudies.length}
+            <span className={getCounterClass(imagingCases.length)}>
+              {imagingCases.length}
             </span>
           </div>
           <ChevronDown
@@ -1345,46 +1403,72 @@ const saveClient = async () => {
           <div className="px-3 md:px-6 pb-4 md:pb-6 space-y-4">
             {imagingLoading ? (
               <div className="py-6 text-slate-500">{t('imaging.loading')}</div>
-            ) : imagingStudies.length === 0 ? (
+            ) : imagingCases.length === 0 ? (
               <div className="py-6 text-slate-500">{t('imaging.noStudies')}</div>
             ) : (
               <div className="space-y-4">
                 <div className="flex flex-col gap-2 md:flex-row md:flex-wrap">
-                  {imagingStudies.map((study) => (
+                  {imagingCases.map((imagingCase) => (
                     <button
-                      key={study.id}
+                      key={imagingCase.id}
                       type="button"
-                      onClick={() => void handleImagingStudyClick(study.id)}
+                      onClick={() => void handleImagingCaseClick(imagingCase)}
                       className={`rounded-xl border px-3 py-2 text-left transition ${
-                        selectedStudy?.id === study.id
+                        selectedImagingCase?.id === imagingCase.id
                           ? 'border-violet-500 bg-violet-50 text-violet-900'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                       }`}
                     >
-                      <div className="text-sm font-semibold">{study.accessionNumber}</div>
-                      <div className="text-xs text-slate-500">{getImagingModalityLabel(study.modality, t)}</div>
-                      <div className="text-xs text-slate-500">{new Date(study.receivedAt).toLocaleDateString(i18n.language)}</div>
+                      <div className="text-sm font-semibold">{imagingCase.accessionNumber}</div>
+                      <div className="text-xs text-slate-500">{getImagingModalityLabel(imagingCase.modality, t)}</div>
+                      <div className="text-xs text-slate-500">{new Date(imagingCase.scheduledStartTime).toLocaleDateString(i18n.language)}</div>
                     </button>
                   ))}
                 </div>
 
-                {selectedStudy && (
+                {selectedImagingCase && (
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                       <div>
                         <div className="text-sm text-slate-500">{t('imaging.accession')}</div>
-                        <div className="font-semibold text-slate-800">{selectedStudy.accessionNumber}</div>
+                        <div className="font-semibold text-slate-800">{selectedImagingCase.accessionNumber}</div>
                       </div>
                       <div>
                         <div className="text-sm text-slate-500">{t('imaging.modality')}</div>
-                        <div className="font-semibold text-slate-800">{getImagingModalityLabel(selectedStudy.modality, t)}</div>
+                        <div className="font-semibold text-slate-800">{getImagingModalityLabel(selectedImagingCase.modality, t)}</div>
                       </div>
                       <div>
-                        <div className="text-sm text-slate-500">{t('imaging.storage')}</div>
-                        <div className="font-semibold text-slate-800">{selectedStudy.storageStatus}</div>
+                        <div className="text-sm text-slate-500">בדיקת הדמיה</div>
+                        <div className="font-semibold text-slate-800">{selectedImagingCase.study ? selectedImagingCase.study.status : 'ממתין לביצוע'}</div>
                       </div>
                     </div>
 
+                    {selectedImagingCase.modality === 'US' && (selectedImagingCase.referringDoctorName || selectedImagingCase.referral) && (
+                      <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3" dir="rtl">
+                        {selectedImagingCase.referringDoctorName && (
+                          <div>
+                            <div className="text-sm text-slate-500">רופא מפנה</div>
+                            <div className="font-semibold text-slate-800">{selectedImagingCase.referringDoctorName}</div>
+                          </div>
+                        )}
+                        {selectedImagingCase.referral && (
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="text-sm text-slate-500">הפניה</div>
+                            <button
+                              type="button"
+                              onClick={() => void handleViewReferral(selectedImagingCase.id)}
+                              disabled={viewingReferral}
+                              className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {viewingReferral ? t('common.loading') : 'צפייה בהפניה'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {selectedStudy && (
+                      <>
                     {selectedStudy.series.length > 1 && (
                       <div className="space-y-3">
                         <div className="text-sm font-semibold text-slate-700">{t('imaging.selectSeries')}</div>
@@ -1493,6 +1577,8 @@ const saveClient = async () => {
                           </Suspense>
                         )}
                       </div>
+                    )}
+                      </>
                     )}
                   </div>
                 )}

@@ -12,6 +12,36 @@ export interface ImagingStudySummary {
   createdAt: string
 }
 
+export interface ImagingOrderReferralDocument {
+  id: string
+  documentType: string
+  originalFileName: string
+  contentType: string
+  fileSize: number
+  createdAt: string
+}
+
+export interface ImagingOrderReferral {
+  imagingOrderId: string
+  referringDoctorName?: string | null
+  document?: ImagingOrderReferralDocument | null
+}
+
+export interface ClientImagingCase {
+  id: string
+  clientId: string
+  appointmentId: string
+  serviceId?: string | null
+  accessionNumber: string
+  modality: string
+  status: string
+  referringDoctorName?: string | null
+  scheduledStartTime: string
+  createdAt: string
+  referral?: ImagingOrderReferralDocument | null
+  study?: ImagingStudySummary | null
+}
+
 export interface ImagingInstanceDetail {
   id: string
   sopInstanceUID: string
@@ -87,8 +117,46 @@ export const getClientImagingStudies = async (clientId: string): Promise<Imaging
   return apiClient.get<ImagingStudySummary[]>(`/api/clients/${clientId}/imaging/studies`)
 }
 
+export const getClientImagingCases = async (clientId: string): Promise<ClientImagingCase[]> => {
+  return apiClient.get<ClientImagingCase[]>(`/api/clients/${clientId}/imaging/cases`)
+}
+
 export const getStudyHierarchy = async (studyId: string): Promise<ImagingStudyHierarchy> => {
   return apiClient.get<ImagingStudyHierarchy>(`/api/imaging/studies/${studyId}`)
+}
+
+export const uploadImagingOrderReferralDocument = async (
+  imagingOrderId: string,
+  file: File,
+): Promise<ImagingOrderReferralDocument> => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  return apiClient.post<ImagingOrderReferralDocument>(
+    `/api/imaging/orders/${imagingOrderId}/referral/document`,
+    formData,
+  )
+}
+
+export const getImagingOrderReferral = async (imagingOrderId: string): Promise<ImagingOrderReferral> => {
+  return apiClient.get<ImagingOrderReferral>(`/api/imaging/orders/${imagingOrderId}/referral`)
+}
+
+export const updateImagingOrderReferral = async (
+  imagingOrderId: string,
+  referringDoctorName: string | null,
+): Promise<ImagingOrderReferral> => {
+  return apiClient.put<ImagingOrderReferral>(`/api/imaging/orders/${imagingOrderId}/referral`, {
+    referringDoctorName,
+  })
+}
+
+export const getImagingOrderReferralDocument = async (imagingOrderId: string): Promise<Blob> => {
+  return apiClient.getBlob(`/api/imaging/orders/${imagingOrderId}/referral/document`)
+}
+
+export const deleteImagingOrderReferralDocument = async (imagingOrderId: string): Promise<void> => {
+  await apiClient.delNoContent(`/api/imaging/orders/${imagingOrderId}/referral/document`)
 }
 
 export const getInstanceFileBlob = async (instanceId: string): Promise<Blob> => {

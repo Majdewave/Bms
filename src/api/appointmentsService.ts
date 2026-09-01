@@ -32,6 +32,7 @@ export interface Appointment {
   queueNumber?: number | null
   isDocumented: boolean
   hasSignedConsent?: boolean
+  imagingOrderId?: string | null
 }
 
 export const appointmentsService = {
@@ -63,6 +64,7 @@ export const appointmentsService = {
     notes?: string | null
     serviceId?: string | null
     staffId?: string | null
+    referringDoctorName?: string | null
   }): Promise<Appointment> {
     return await post<Appointment>('/api/appointments', payload)
   },
