@@ -27,7 +27,7 @@ export default function AdminStaff() {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const isRTL = i18n.dir() === 'rtl'
-  const { hasPermission } = useAuth()
+  const { hasPermission, user } = useAuth()
 
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,6 +37,7 @@ export default function AdminStaff() {
   const [savingStaff, setSavingStaff] = useState(false)
   const [sendingLink, setSendingLink] = useState<string | null>(null)
   const [role, setRole] = useState('Staff')
+  const isInterpreter = role === 'Interpreter'
   const [departments, setDepartments] = useState<Department[]>([])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
   const [departmentError, setDepartmentError] = useState('')
@@ -80,8 +81,22 @@ export default function AdminStaff() {
   }, [hasPermission, navigate])
 
   useEffect(() => {
-    if (role.toLowerCase() === 'admin') {
+    if (role === 'Admin') {
       setFormData((prev) => ({ ...prev, Permissions: [] }))
+    }
+
+    if (role === 'Interpreter') {
+      setDepartmentError('')
+      setFormData((prev) => ({
+        ...prev,
+        Permissions: [],
+        DepartmentIds: [],
+        VisibleMenuItems: [],
+        UseStamp: false,
+        StampUrl: '',
+      }))
+      setStampFile(null)
+      setStampPreview('')
     }
   }, [role])
 
@@ -125,7 +140,7 @@ export default function AdminStaff() {
       !formData.FullName.trim() ||
       !formData.Email.trim() ||
       !formData.RoleLabel.trim() ||
-      (!editingStaff && !formData.Password.trim())
+      (!editingStaff && !isInterpreter && !formData.Password.trim())
     ) {
       console.warn('Validation failed: Missing required fields');
       console.log('Form Data:', formData);
@@ -135,25 +150,32 @@ export default function AdminStaff() {
     }
 
     const selectedDepartmentIds = formData.DepartmentIds || []
-    if (role.toLowerCase() !== 'admin' && selectedDepartmentIds.length === 0) {
+    if (role === 'Staff' && selectedDepartmentIds.length === 0) {
       setDepartmentError(t('admin.staff.validation.departmentRequired'))
       return
     }
 
     setSavingStaff(true)
     try {
-      const normalizedRole = role.toLowerCase() === 'admin' ? 'Admin' : 'Staff'
+      const normalizedRole = role
+      const isInterpreterRole = normalizedRole === 'Interpreter'
+      const permissions = isInterpreterRole || normalizedRole === 'Admin' ? [] : formData.Permissions
+      const departmentIds = isInterpreterRole ? [] : selectedDepartmentIds
+      const visibleMenuItems = isInterpreterRole ? [] : formData.VisibleMenuItems
 
       if (editingStaff) {
         // UPDATE FLOW
         let updatePayload = {
           ...formData,
           role: normalizedRole,
-          Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
-          DepartmentIds: normalizedRole === 'Admin' ? selectedDepartmentIds : selectedDepartmentIds,
+          Permissions: permissions,
+          DepartmentIds: departmentIds,
+          VisibleMenuItems: visibleMenuItems,
+          UseStamp: isInterpreterRole ? false : formData.UseStamp,
+          StampUrl: isInterpreterRole ? '' : formData.StampUrl,
         }
         // If uploading a new stamp, never send UseStamp: true with empty StampUrl
-        if (stampFile) {
+        if (stampFile && !isInterpreterRole) {
           updatePayload = {
             ...updatePayload,
             UseStamp: false,
@@ -180,19 +202,21 @@ export default function AdminStaff() {
 
       // CREATE FLOW
       // Always create staff first, with UseStamp: false and no StampUrl
-      const createPayload = {
-        ...formData,
-        UseStamp: false,
-        StampUrl: '',
-        role: normalizedRole,
-        Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
-        DepartmentIds: selectedDepartmentIds,
-      }
+    const createPayload = {
+      ...formData,
+      Password: isInterpreterRole ? undefined : formData.Password,
+      UseStamp: false,
+      StampUrl: '',
+      role: normalizedRole,
+      Permissions: permissions,
+      DepartmentIds: departmentIds,
+      VisibleMenuItems: visibleMenuItems,
+    }
       const created = await staffService.createStaffMember(createPayload)
       let staffId = created?.id
       let stampUrl = ''
 
-      if (stampFile && staffId) {
+      if (stampFile && staffId && !isInterpreterRole) {
         setUploadingStamp(true)
         try {
           const uploadResult = await staffService.uploadStamp(staffId, stampFile)
@@ -213,8 +237,9 @@ export default function AdminStaff() {
             UseStamp: true,
             StampUrl: stampUrl,
             role: normalizedRole,
-            Permissions: normalizedRole === 'Admin' ? [] : formData.Permissions,
-            DepartmentIds: selectedDepartmentIds,
+            Permissions: permissions,
+            DepartmentIds: departmentIds,
+            VisibleMenuItems: visibleMenuItems,
           })
         } catch (error) {
           console.error('Failed to update staff with stamp:', error)
@@ -232,6 +257,8 @@ export default function AdminStaff() {
   }
 
   const handleToggleStatus = async (staffMember: StaffMember) => {
+    if (staffMember.isOwner) return
+
     try {
       await staffService.toggleStaffStatus(staffMember)
       await loadStaff()
@@ -241,12 +268,13 @@ export default function AdminStaff() {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (staffMember: StaffMember) => {
+    if (staffMember.isOwner) return
     if (!confirm(t('admin.staff.confirmDelete'))) return
 
     try {
-      await staffService.deleteStaffMember(id)
-      setStaff(staff.filter(s => s.id !== id))
+      await staffService.deleteStaffMember(staffMember.id)
+      setStaff(staff.filter(s => s.id !== staffMember.id))
     } catch (error) {
       console.error('Failed to delete staff:', error)
       alert(t('admin.staff.errors.deleteFailed'))
@@ -268,7 +296,7 @@ export default function AdminStaff() {
 
   const openEditModal = (staffMember: StaffMember) => {
     setEditingStaff(staffMember)
-    setRole(staffMember.role || 'Staff')
+    setRole(staffMember.isOwner ? 'Admin' : staffMember.role || 'Staff')
     setDepartmentError('')
     setFormData({
       FullName: staffMember.fullName || staffMember.name || '',
@@ -461,7 +489,11 @@ export default function AdminStaff() {
                             </Badge>
                           </div>
                         </div>
-                        {staffMember.role?.toLowerCase() === 'admin' ? (
+                        {staffMember.isOwner ? (
+                          <span className="px-2 py-1 text-sm font-semibold bg-amber-100 text-amber-800 rounded-full shrink-0">
+                            {t('admin.staff.owner')}
+                          </span>
+                        ) : staffMember.role?.toLowerCase() === 'admin' ? (
                           <span className="px-2 py-1 text-sm font-semibold bg-purple-100 text-purple-700 rounded-full shrink-0">
                             אדמין
                           </span>
@@ -510,19 +542,21 @@ export default function AdminStaff() {
                         </button>
                         <button
                           onClick={() => handleToggleStatus(staffMember)}
-                          className={`p-2 rounded-lg transition-colors ${
+                          disabled={staffMember.isOwner}
+                          className={`p-2 rounded-lg transition-colors ${staffMember.isOwner ? 'cursor-not-allowed text-slate-300' :
                             staffMember.isActive
                               ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
-                              : 'text-slate-400 hover:text-green-600 hover:bg-green-50'
+                              : 'text-slate-400 hover:text-green-600 hover:bg-green-50'}
                           }`}
-                          title={t(`admin.staff.actions.${staffMember.isActive ? 'block' : 'unblock'}`)}
+                          title={staffMember.isOwner ? t('admin.staff.ownerProtected') : t(`admin.staff.actions.${staffMember.isActive ? 'block' : 'unblock'}`)}
                         >
                           <Ban className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(staffMember.id)}
-                          className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
-                          title={t('admin.staff.actions.delete')}
+                          onClick={() => handleDelete(staffMember)}
+                          disabled={staffMember.isOwner}
+                          className={`p-2 rounded-lg transition ${staffMember.isOwner ? 'cursor-not-allowed text-slate-300' : 'text-gray-500 hover:bg-red-50 hover:text-red-600'}`}
+                          title={staffMember.isOwner ? t('admin.staff.ownerProtected') : t('admin.staff.actions.delete')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -588,7 +622,11 @@ export default function AdminStaff() {
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-medium text-slate-900">{staffMember.fullName}</p>
-                            {staffMember.role?.toLowerCase() === 'admin' ? (
+                            {staffMember.isOwner ? (
+                              <span className="px-2 py-1 text-xs font-semibold bg-amber-100 text-amber-800 rounded-full">
+                                {t('admin.staff.owner')}
+                              </span>
+                            ) : staffMember.role?.toLowerCase() === 'admin' ? (
                               <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">
                                 אדמין
                               </span>
@@ -626,19 +664,21 @@ export default function AdminStaff() {
                           </button>
                           <button
                             onClick={() => handleToggleStatus(staffMember)}
-                            className={`p-2 rounded-lg transition-colors ${
+                            disabled={staffMember.isOwner}
+                            className={`p-2 rounded-lg transition-colors ${staffMember.isOwner ? 'cursor-not-allowed text-slate-300' :
                               staffMember.isActive
                                 ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
-                                : 'text-slate-400 hover:text-green-600 hover:bg-green-50'
+                                : 'text-slate-400 hover:text-green-600 hover:bg-green-50'}
                             }`}
-                            title={t(`admin.staff.actions.${staffMember.isActive ? 'block' : 'unblock'}`)}
+                            title={staffMember.isOwner ? t('admin.staff.ownerProtected') : t(`admin.staff.actions.${staffMember.isActive ? 'block' : 'unblock'}`)}
                           >
                             <Ban className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(staffMember.id)}
-                            className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition"
-                            title={t('admin.staff.actions.delete')}
+                            onClick={() => handleDelete(staffMember)}
+                            disabled={staffMember.isOwner}
+                            className={`p-2 rounded-lg transition ${staffMember.isOwner ? 'cursor-not-allowed text-slate-300' : 'text-gray-500 hover:bg-red-50 hover:text-red-600'}`}
+                            title={staffMember.isOwner ? t('admin.staff.ownerProtected') : t('admin.staff.actions.delete')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -703,6 +743,7 @@ export default function AdminStaff() {
                     placeholder={t('admin.staff.form.emailPlaceholder')}
                   />
                 </div>
+                {!isInterpreter && (!editingStaff?.isOwner || user?.id === editingStaff.userId) && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     {t('admin.staff.form.password')} *
@@ -715,6 +756,7 @@ export default function AdminStaff() {
                     placeholder={t('admin.staff.form.passwordPlaceholder')}
                   />
                 </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -731,20 +773,25 @@ export default function AdminStaff() {
                 </div>
 
                 <div>
-                  <label className="block mb-2 font-medium">סוג משתמש</label>
+                  <label className="block mb-2 font-medium">{t('admin.staff.form.userType')}</label>
                   <select
-                    value={role.toLowerCase() === 'admin' ? 'Admin' : 'Staff'}
+                    value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="w-full border rounded p-2"
+                    disabled={editingStaff?.isOwner}
+                    className="w-full border rounded p-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
                   >
-                    <option value="Staff">צוות</option>
-                    <option value="Admin">אדמין</option>
+                    <option value="Staff">{t('admin.staff.form.userTypes.staff')}</option>
+                    <option value="Admin">{t('admin.staff.form.userTypes.admin')}</option>
+                    <option value="Interpreter">{t('admin.staff.form.userTypes.interpreter')}</option>
                   </select>
+                  {editingStaff?.isOwner && (
+                    <p className="text-xs text-slate-500 mt-1">{t('admin.staff.ownerProtected')}</p>
+                  )}
                 </div>
               </div>
 
               {/* Permissions */}
-              {role.toLowerCase() !== 'admin' && (
+              {role === 'Staff' && (
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
                   {t('admin.staff.form.permissions')}
@@ -779,6 +826,7 @@ export default function AdminStaff() {
               )}
 
               {/* Departments */}
+              {!isInterpreter && (
               <div className="space-y-4">
                 <div className="flex flex-col gap-1">
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
@@ -842,8 +890,10 @@ export default function AdminStaff() {
                   <p className="text-sm text-red-600">{departmentError}</p>
                 )}
               </div>
+              )}
 
               {/* Menu Visibility */}
+              {!isInterpreter && (
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
                   {t('admin.staff.form.menuVisibility')}
@@ -869,8 +919,10 @@ export default function AdminStaff() {
                   ))}
                 </div>
               </div>
+              )}
 
               {/* Stamp Settings */}
+              {!isInterpreter && (
               <div className="space-y-4 border-t border-slate-200 pt-6">
                 <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
                   Stamp Settings
@@ -918,6 +970,7 @@ export default function AdminStaff() {
                   </div>
                 )}
               </div>
+              )}
             </div>
 
             {/* Footer */}

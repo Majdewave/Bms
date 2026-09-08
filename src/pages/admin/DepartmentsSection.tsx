@@ -21,6 +21,7 @@ import {
   type DepartmentFeatureItem,
   type UpdateDepartmentRequest,
 } from '@/api/departmentService'
+import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
 
 type Props = {
   canManageDepartments: boolean
@@ -69,6 +70,7 @@ function sortDepartments(items: Department[]) {
 export default function DepartmentsSection({ canManageDepartments, isOpen = true, onToggle, onDepartmentsLoaded }: Props) {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'he' || i18n.language === 'ar'
+  const { reload: reloadDepartmentFeatures } = useDepartmentFeatures()
 
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
@@ -357,8 +359,15 @@ export default function DepartmentsSection({ canManageDepartments, isOpen = true
         return t('features.visitSummaries')
       case 'beforeAfterPhotosEnabled':
         return t('features.beforeAfterPhotos')
-      case 'teamChatEnabled':
+     case 'teamChatEnabled':
         return t('features.teamChat', 'צ\'אט צוות')
+      case 'whatsAppEnabled':
+        return t('features.whatsApp', 'WhatsApp')
+      case 'notDocumentedEnabled':
+        return t('features.notDocumented', 'לא מתועד')
+      case 'medicalImagingEnabled':
+        return t('features.medicalImaging', 'דימות רפואי')
+
       default:
         return featureKey
     }
@@ -426,6 +435,7 @@ export default function DepartmentsSection({ canManageDepartments, isOpen = true
       })
 
       setDepartmentFeatures(Array.isArray(updated) ? updated : [])
+      await reloadDepartmentFeatures()
       closeFeaturesDialog()
     } catch (error) {
       console.error('Failed to save department features', error)

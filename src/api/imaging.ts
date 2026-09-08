@@ -159,6 +159,20 @@ export const deleteImagingOrderReferralDocument = async (imagingOrderId: string)
   await apiClient.delNoContent(`/api/imaging/orders/${imagingOrderId}/referral/document`)
 }
 
+export const deleteImagingOrder = async (
+  imagingOrderId: string,
+): Promise<void> => {
+  await apiClient.delNoContent(`/api/imaging/orders/${imagingOrderId}`)
+}
+
+export const deleteInterpretationRequest = async (
+  imagingOrderId: string,
+): Promise<void> => {
+  await apiClient.delNoContent(
+    `/api/imaging/orders/${imagingOrderId}/interpretation-request`,
+  )
+}
+
 export const getInstanceFileBlob = async (instanceId: string): Promise<Blob> => {
   const response = await fetch(`${(import.meta as any).env.VITE_API_URL || 'http://localhost:5146'}/api/imaging/instances/${instanceId}/file`, {
     method: 'GET',

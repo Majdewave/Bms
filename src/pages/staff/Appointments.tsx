@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature, ChevronDown, ChevronUp, Printer, Monitor } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { AppointmentTicket, CreateAppointmentModal, SignConsentModal } from '@/components'
@@ -11,6 +11,7 @@ import { scheduleAppointmentTicketPrint } from '@/utils/appointmentTicketPrint'
 import { useTenant } from '@/contexts/TenantContext'
 import { useFeatures } from '@/contexts/FeatureContext'
 import { queueDisplayApi } from '@/api/queueDisplay'
+import { getDepartmentFeatureEnabled } from '@/api/departmentFeatureCheck'
 
 type AppointmentRow = Appointment
 
@@ -28,10 +29,14 @@ export default function AdminAppointments() {
   const [departmentFilter, setDepartmentFilter] = useState('all')
   const [showHistory, setShowHistory] = useState(true)
   const [ticketToPrint, setTicketToPrint] = useState<{ appointment: AppointmentRow; queueNumber: number } | null>(null)
-  const [openingQueueDisplay, setOpeningQueueDisplay] = useState(false)
   const [draggedActiveId, setDraggedActiveId] = useState<string | null>(null)
   const [reorderingQueue, setReorderingQueue] = useState(false)
   const [reorderError, setReorderError] = useState<string | null>(null)
+
+  const [notDocumentedByDepartment, setNotDocumentedByDepartment] = useState<Record<string, boolean>>({})
+  const notDocumentedByDepartmentRef = useRef<Record<string, boolean>>({})
+  const isNotDocumentedEnabledForAppointment = (appointment: AppointmentRow) =>
+    notDocumentedByDepartment[appointment.departmentId || ''] ?? false
 
   const normalizeStatus = (status?: string | null) => (status ?? '').toLowerCase()
   const isWaitingStatus = (status?: string | null) => normalizeStatus(status) === 'waiting'
@@ -195,6 +200,7 @@ const markNotDocumented = async (appointment: Appointment) => {
 }
 
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [openingQueueDisplay, setOpeningQueueDisplay] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRow | null>(null)
   const [consentAppointment, setConsentAppointment] = useState<AppointmentRow | null>(null)
 
@@ -253,6 +259,39 @@ const markNotDocumented = async (appointment: Appointment) => {
       setLoading(false)
     }
   }
+
+  // Resolve notDocumentedEnabled per distinct department present in the loaded appointments (fetched once per department, not per row).
+  useEffect(() => {
+    const distinctDepartmentKeys = Array.from(
+      new Set(appointments.map((appointment) => appointment.departmentId || ''))
+    )
+    const missingKeys = distinctDepartmentKeys.filter(
+      (key) => !(key in notDocumentedByDepartmentRef.current)
+    )
+    if (missingKeys.length === 0) return
+
+    let cancelled = false
+    void Promise.all(
+      missingKeys.map(async (key) => {
+        const enabled = await getDepartmentFeatureEnabled('notDocumentedEnabled', key || null)
+        return [key, enabled] as const
+      })
+    ).then((results) => {
+      if (cancelled) return
+      setNotDocumentedByDepartment((prev) => {
+        const next = { ...prev }
+        for (const [key, enabled] of results) {
+          next[key] = enabled
+          notDocumentedByDepartmentRef.current[key] = enabled
+        }
+        return next
+      })
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [appointments])
 
   const handleDeleteAppointment = async (id: string) => {
     if (!confirm(t('appointments.confirmDelete'))) return
@@ -471,7 +510,7 @@ const historyAppointments = filteredAppointments
                 } ${isActiveQueueItem ? 'cursor-move' : ''}`}
               >
                 <div className="flex items-center justify-between gap-2 text-slate-500 text-sm font-medium">
-                  <span>#{queueNumber}</span>
+                  <span>{queueNumber}</span>
                   <button
                     type="button"
                     onClick={() => handlePrintAppointment(appointment, queueNumber)}
@@ -566,9 +605,14 @@ const historyAppointments = filteredAppointments
                   {appointment.status !== 'NoShow' && appointment.status !== 'Completed' && (
                     <ActionButton type="noshow" onClick={() => updateStatus(appointment.id, 'NoShow')} />
                   )}
-                  {appointment.status === 'Completed' && appointment.isDocumented !== false && (
-                    <ActionButton type="notDocumented" onClick={() => markNotDocumented(appointment)} />
-                  )}
+                  {isNotDocumentedEnabledForAppointment(appointment) &&
+                    appointment.status === 'Completed' &&
+                    appointment.isDocumented !== false && (
+                      <ActionButton
+                        type="notDocumented"
+                        onClick={() => markNotDocumented(appointment)}
+                      />
+                    )}
                   {appointment.isDocumented === false && (
                     <button onClick={() => markDocumented(appointment)} className="px-2 py-1 rounded bg-green-100 text-green-700 text-sm">סמן כמתועד</button>
                   )}
@@ -760,12 +804,14 @@ const historyAppointments = filteredAppointments
                           onClick={() => updateStatus(appointment.id, 'NoShow')}
                         />
                       )}
-                      {appointment.status === 'Completed' && appointment.isDocumented !== false && (
-                        <ActionButton
-                          type="notDocumented"
-                          onClick={() => markNotDocumented(appointment)}
-                        />
-                      )}
+                      {isNotDocumentedEnabledForAppointment(appointment) &&
+                        appointment.status === 'Completed' &&
+                        appointment.isDocumented !== false && (
+                          <ActionButton
+                            type="notDocumented"
+                            onClick={() => markNotDocumented(appointment)}
+                          />
+                        )}
                       {appointment.isDocumented === false && (
                       <button
                         onClick={() => markDocumented(appointment)}

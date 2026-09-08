@@ -11,6 +11,9 @@ export interface DepartmentFeatures {
   visitSummariesEnabled: boolean
   beforeAfterPhotosEnabled: boolean
   teamChatEnabled: boolean
+  whatsAppEnabled: boolean
+  notDocumentedEnabled: boolean
+  medicalImagingEnabled: boolean
 }
 
 interface DepartmentFeatureContextType {
@@ -37,7 +40,10 @@ const areDepartmentFeaturesEqual = (
     a.consentFormsEnabled === b.consentFormsEnabled &&
     a.visitSummariesEnabled === b.visitSummariesEnabled &&
     a.beforeAfterPhotosEnabled === b.beforeAfterPhotosEnabled &&
-    a.teamChatEnabled === b.teamChatEnabled
+    a.teamChatEnabled === b.teamChatEnabled &&
+    a.whatsAppEnabled === b.whatsAppEnabled &&
+    a.notDocumentedEnabled === b.notDocumentedEnabled &&
+    a.medicalImagingEnabled === b.medicalImagingEnabled
   )
 }
 

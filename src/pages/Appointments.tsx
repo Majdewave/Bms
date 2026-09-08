@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature, ChevronDown, ChevronUp, Printer } from 'lucide-react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { User, Plus, Search, Filter, Trash2, Edit, ArrowRight, CheckCircle, FileSignature, ChevronDown, ChevronUp, Printer, Monitor } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { AppointmentTicket, CreateAppointmentModal, SignConsentModal } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
@@ -9,6 +9,9 @@ import ActionButton from '@/components/ActionButton'
 import { useTranslation } from 'react-i18next'
 import { scheduleAppointmentTicketPrint } from '@/utils/appointmentTicketPrint'
 import { useTenant } from '@/contexts/TenantContext'
+import { useFeatures } from '@/contexts/FeatureContext'
+import { queueDisplayApi } from '@/api/queueDisplay'
+import { getDepartmentFeatureEnabled } from '@/api/departmentFeatureCheck'
 
 type AppointmentRow = Appointment
 
@@ -17,6 +20,7 @@ export default function AdminAppointments() {
   const { t } = useTranslation()
   const { hasPermission } = useAuth()
   const { tenant } = useTenant()
+  const { features } = useFeatures()
 
   const [appointments, setAppointments] = useState<AppointmentRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -28,6 +32,11 @@ export default function AdminAppointments() {
   const [draggedActiveId, setDraggedActiveId] = useState<string | null>(null)
   const [reorderingQueue, setReorderingQueue] = useState(false)
   const [reorderError, setReorderError] = useState<string | null>(null)
+
+  const [notDocumentedByDepartment, setNotDocumentedByDepartment] = useState<Record<string, boolean>>({})
+  const notDocumentedByDepartmentRef = useRef<Record<string, boolean>>({})
+  const isNotDocumentedEnabledForAppointment = (appointment: AppointmentRow) =>
+    notDocumentedByDepartment[appointment.departmentId || ''] ?? false
 
   const normalizeStatus = (status?: string | null) => (status ?? '').toLowerCase()
   const isWaitingStatus = (status?: string | null) => normalizeStatus(status) === 'waiting'
@@ -191,6 +200,7 @@ const markNotDocumented = async (appointment: Appointment) => {
 }
 
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [openingQueueDisplay, setOpeningQueueDisplay] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRow | null>(null)
   const [consentAppointment, setConsentAppointment] = useState<AppointmentRow | null>(null)
 
@@ -249,6 +259,39 @@ const markNotDocumented = async (appointment: Appointment) => {
       setLoading(false)
     }
   }
+
+  // Resolve notDocumentedEnabled per distinct department present in the loaded appointments (fetched once per department, not per row).
+  useEffect(() => {
+    const distinctDepartmentKeys = Array.from(
+      new Set(appointments.map((appointment) => appointment.departmentId || ''))
+    )
+    const missingKeys = distinctDepartmentKeys.filter(
+      (key) => !(key in notDocumentedByDepartmentRef.current)
+    )
+    if (missingKeys.length === 0) return
+
+    let cancelled = false
+    void Promise.all(
+      missingKeys.map(async (key) => {
+        const enabled = await getDepartmentFeatureEnabled('notDocumentedEnabled', key || null)
+        return [key, enabled] as const
+      })
+    ).then((results) => {
+      if (cancelled) return
+      setNotDocumentedByDepartment((prev) => {
+        const next = { ...prev }
+        for (const [key, enabled] of results) {
+          next[key] = enabled
+          notDocumentedByDepartmentRef.current[key] = enabled
+        }
+        return next
+      })
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [appointments])
 
   const handleDeleteAppointment = async (id: string) => {
     if (!confirm(t('appointments.confirmDelete'))) return
@@ -349,25 +392,46 @@ const historyAppointments = filteredAppointments
     }
   }
 
-  const renderDepartmentBadge = (appointment: AppointmentRow) => {
-    if (!appointment.departmentName) {
+  const renderDepartmentBadge = (appointment: AppointmentRow, compact = false) => {
+    if (!appointment.departmentId || !appointment.departmentName) {
       return null
     }
 
+    const color = appointment.departmentColor || '#6b7280'
+    const badgeClass = compact
+      ? 'inline-flex items-center px-1.5 py-0.5 rounded-full border text-[10px] font-medium leading-none max-w-full'
+      : 'inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium leading-none max-w-full'
+
     return (
       <span
-        className="inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-semibold bg-white"
-        style={appointment.departmentColor
-          ? { color: appointment.departmentColor, borderColor: appointment.departmentColor }
-          : undefined}
+        className={badgeClass}
+        title={appointment.departmentName}
+        style={{ color, borderColor: color, backgroundColor: 'rgba(255, 255, 255, 0.92)' }}
       >
-        {appointment.departmentName}
+        <span className="truncate">{appointment.departmentName}</span>
       </span>
     )
   }
 
   const handlePrintAppointment = (appointment: AppointmentRow, queueNumber: number) => {
     setTicketToPrint({ appointment, queueNumber })
+  }
+
+  const openQueueDisplay = async () => {
+    if (!features?.queueDisplayEnabled || openingQueueDisplay) {
+      return
+    }
+
+    setOpeningQueueDisplay(true)
+    try {
+      const link = await queueDisplayApi.getAccessLink()
+      const url = `${window.location.origin}/queue-display/${link.publicToken}`
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (error) {
+      console.error('Failed to open queue display', error)
+    } finally {
+      setOpeningQueueDisplay(false)
+    }
   }
 
 
@@ -446,7 +510,7 @@ const historyAppointments = filteredAppointments
                 } ${isActiveQueueItem ? 'cursor-move' : ''}`}
               >
                 <div className="flex items-center justify-between gap-2 text-slate-500 text-sm font-medium">
-                  <span>#{queueNumber}</span>
+                  <span>{queueNumber}</span>
                   <button
                     type="button"
                     onClick={() => handlePrintAppointment(appointment, queueNumber)}
@@ -489,7 +553,7 @@ const historyAppointments = filteredAppointments
                   <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-sm font-semibold">
                     {appointment.serviceName}
                   </span>
-                  {renderDepartmentBadge(appointment)}
+                  {renderDepartmentBadge(appointment, true)}
                 </div>
 
                 {appointment.staffName && (
@@ -541,9 +605,14 @@ const historyAppointments = filteredAppointments
                   {appointment.status !== 'NoShow' && appointment.status !== 'Completed' && (
                     <ActionButton type="noshow" onClick={() => updateStatus(appointment.id, 'NoShow')} />
                   )}
-                  {appointment.status === 'Completed' && appointment.isDocumented !== false && (
-                    <ActionButton type="notDocumented" onClick={() => markNotDocumented(appointment)} />
-                  )}
+                  {isNotDocumentedEnabledForAppointment(appointment) &&
+                    appointment.status === 'Completed' &&
+                    appointment.isDocumented !== false && (
+                      <ActionButton
+                        type="notDocumented"
+                        onClick={() => markNotDocumented(appointment)}
+                      />
+                    )}
                   {appointment.isDocumented === false && (
                     <button onClick={() => markDocumented(appointment)} className="px-2 py-1 rounded bg-green-100 text-green-700 text-sm">סמן כמתועד</button>
                   )}
@@ -735,12 +804,14 @@ const historyAppointments = filteredAppointments
                           onClick={() => updateStatus(appointment.id, 'NoShow')}
                         />
                       )}
-                      {appointment.status === 'Completed' && appointment.isDocumented !== false && (
-                        <ActionButton
-                          type="notDocumented"
-                          onClick={() => markNotDocumented(appointment)}
-                        />
-                      )}
+                      {isNotDocumentedEnabledForAppointment(appointment) &&
+                        appointment.status === 'Completed' &&
+                        appointment.isDocumented !== false && (
+                          <ActionButton
+                            type="notDocumented"
+                            onClick={() => markNotDocumented(appointment)}
+                          />
+                        )}
                       {appointment.isDocumented === false && (
                       <button
                         onClick={() => markDocumented(appointment)}
@@ -816,13 +887,27 @@ const historyAppointments = filteredAppointments
           </div>
 
           <div className="w-full md:w-auto">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="btn-primary btn-md gap-2 w-full justify-center md:w-auto"
-            >
-              <Plus className="w-4 h-4" />
-              {t('appointments.new')}
-            </button>
+            <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:justify-end">
+              {features?.queueDisplayEnabled && (
+                <button
+                  type="button"
+                  onClick={openQueueDisplay}
+                  disabled={openingQueueDisplay}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Monitor className="h-4 w-4" />
+                  {openingQueueDisplay ? t('common.loading') : t('queueDisplay.openDisplay')}
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="btn-primary btn-md gap-2 w-full justify-center md:w-auto"
+              >
+                <Plus className="w-4 h-4" />
+                {t('appointments.new')}
+              </button>
+            </div>
           </div>
         </div>
       </div>

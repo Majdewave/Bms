@@ -31,6 +31,7 @@ import type { Department } from '@/api/departmentService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { useFeatures, type Features } from '@/contexts/FeatureContext'
+import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
 import * as apiClient from '@/api/apiClient'
 import { get, put, post, del } from '@/api/apiClient'
 import {
@@ -113,6 +114,7 @@ export default function BusinessSettings() {
   const { user, hasPermission } = useAuth()
   const { setTenant } = useTenant()
   const { reload: reloadFeatures } = useFeatures()
+  const { reload: reloadDepartmentFeatures } = useDepartmentFeatures()
   const isAdmin = user?.role === 'admin'
   const canManageDepartments = hasPermission('manage_business_settings')
   const isRTL = i18n.language === 'he' || i18n.language === 'ar'
@@ -546,6 +548,7 @@ export default function BusinessSettings() {
     try {
       await apiClient.put('/api/features', updated)
       reloadFeatures()
+      await reloadDepartmentFeatures()
       showToastNotification(t('queueDisplay.featureSaved'))
       if (!enabled) {
         setQueueSettings(null)

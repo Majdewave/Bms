@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Sliders, CheckCircle, X, BarChart2, Receipt, Pill, Database, Image as ImageIcon, FileText, MessageCircle, Tv } from 'lucide-react'
+import { Sliders, CheckCircle, X, BarChart2, Receipt, Pill, Database, Image as ImageIcon, FileText, MessageCircle,Smartphone, FileQuestion, ScanLine, Tv } from 'lucide-react'
 import * as apiClient from '@/api/apiClient'
 import type { Features } from '@/contexts/FeatureContext'
 import { useFeatures } from '@/contexts/FeatureContext'
+import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
 
 interface ToggleRowProps {
   label: string
@@ -47,6 +48,7 @@ export default function AdminFeatures() {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'he' || i18n.language === 'ar'
   const { reload } = useFeatures()
+  const { reload: reloadDepartmentFeatures } = useDepartmentFeatures()
 
   const [settings, setSettings] = useState<Features | null>(null) 
   const [saving, setSaving] = useState(false)
@@ -85,6 +87,9 @@ export default function AdminFeatures() {
       visitSummariesEnabled: key === 'visitSummariesEnabled' ? value : settings.visitSummariesEnabled,
       teamChatEnabled: key === 'teamChatEnabled' ? value : settings.teamChatEnabled,
       queueDisplayEnabled: key === 'queueDisplayEnabled' ? value : settings.queueDisplayEnabled,
+      whatsAppEnabled: key === 'whatsAppEnabled' ? value : settings.whatsAppEnabled,
+      notDocumentedEnabled: key === 'notDocumentedEnabled' ? value : settings.notDocumentedEnabled,
+      medicalImagingEnabled: key === 'medicalImagingEnabled' ? value : settings.medicalImagingEnabled,
     }
 
     setSettings(updated)
@@ -93,6 +98,7 @@ export default function AdminFeatures() {
     try {
       await apiClient.put('/api/features', updated)
       reload()
+      await reloadDepartmentFeatures()
 
       notify(isRTL ? 'ההגדרות נשמרו בהצלחה' : 'Settings saved successfully')
     } catch {
@@ -222,6 +228,32 @@ export default function AdminFeatures() {
           onChange={(val) => handleToggle('queueDisplayEnabled', val)}
           disabled={saving}
           icon={<Tv className="w-5 h-5 text-cyan-500" />}
+        />
+        <ToggleRow
+          label="WhatsApp"
+          description="הפעלת אפשרויות WhatsApp במערכת."
+          checked={settings.whatsAppEnabled}
+          onChange={(val) => handleToggle('whatsAppEnabled', val)}
+          disabled={saving}
+          icon={<Smartphone className="w-5 h-5 text-green-500" />}
+        />
+
+        <ToggleRow
+          label="לא מתועד"
+          description='הצגת אפשרות "לא מתועד" במערכת.'
+          checked={settings.notDocumentedEnabled}
+          onChange={(val) => handleToggle('notDocumentedEnabled', val)}
+          disabled={saving}
+          icon={<FileQuestion className="w-5 h-5 text-amber-500" />}
+        />
+
+        <ToggleRow
+          label="דימות רפואי"
+          description="הפעלת מודול הדימות הרפואי במערכת."
+          checked={settings.medicalImagingEnabled}
+          onChange={(val) => handleToggle('medicalImagingEnabled', val)}
+          disabled={saving}
+          icon={<ScanLine className="w-5 h-5 text-violet-500" />}
         />
       </div>
     </div>

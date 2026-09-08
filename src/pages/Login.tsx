@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LogIn, Mail, Lock, AlertCircle, CheckCircle, Eye, EyeOff, Phone } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -200,10 +200,11 @@ const payload = JSON.parse(atob(token.split('.')[1]));
 const role =
   payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]?.toLowerCase();
 
-// 🔥 ניווט לפי role
+// ðŸ”¥ × ×™×•×•×˜ ×œ×¤×™ role
 if (role === 'admin') navigate('/admin/dashboard', { replace: true });
 else if (role === 'staff') navigate('/staff/dashboard', { replace: true });
 else if (role === 'client') navigate('/client/dashboard', { replace: true });
+else if (role === 'interpreter') navigate('/interpreter/requests', { replace: true });
 else navigate('/', { replace: true });
     setSuccessMessage("Login successful");
 
@@ -464,7 +465,7 @@ else navigate('/', { replace: true });
                   value={formData.password}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  placeholder="••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   className={`w-full pl-10 pr-12 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                     errors.password && touched.password
                       ? 'border-red-300 bg-red-50 focus:ring-red-500 focus:ring-offset-red-50'
@@ -508,7 +509,7 @@ else navigate('/', { replace: true });
     if (!formData.email) {
       setErrors(prev => ({
         ...prev,
-        submit: "יש להזין אימייל קודם"
+        submit: "×™×© ×œ×”×–×™×Ÿ ××™×ž×™×™×œ ×§×•×“×"
       }));
       return;
     }
@@ -518,14 +519,14 @@ else navigate('/', { replace: true });
         email: formData.email
       });
 
-      // מעבר למסך reset (או עמוד הודעה)
-      setSuccessMessage("נשלח מייל לאיפוס סיסמה");
+      // ×ž×¢×‘×¨ ×œ×ž×¡×š reset (××• ×¢×ž×•×“ ×”×•×“×¢×”)
+      setSuccessMessage("× ×©×œ×— ×ž×™×™×œ ×œ××™×¤×•×¡ ×¡×™×¡×ž×”");
       setCooldown(60); // Postback
       setTimeout(() => setCooldown(0), 60000);
     } catch (e) {
       setErrors(prev => ({
         ...prev,
-        submit: "שגיאה בשליחת מייל"
+        submit: "×©×’×™××” ×‘×©×œ×™×—×ª ×ž×™×™×œ"
       }));
     }
   }}
@@ -591,7 +592,7 @@ else navigate('/', { replace: true });
                   href="/register"
                     className="font-medium no-underline text-sky-700 md:text-blue-600"
                 >
-              הצטרפות
+              ×”×¦×˜×¨×¤×•×ª
           </a>
           </p>
           <p className="text-center text-slate-500 text-xs mt-2 mobile-footer-text">
@@ -602,3 +603,5 @@ else navigate('/', { replace: true });
     </div>
   )
 }
+
+

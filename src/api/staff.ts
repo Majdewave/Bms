@@ -13,6 +13,7 @@ export type VisibleMenuItem = 'clients' | 'appointments'
 
 export interface StaffMember {
   id: string
+  userId: string
   fullName: string
   email: string
   role?: string
@@ -24,12 +25,13 @@ export interface StaffMember {
   lastLogin?: string | null
   useStamp?: boolean
   stampUrl?: string
+  isOwner?: boolean
 }
 
 export interface CreateStaffRequest {
   FullName: string
   Email: string
-  Password: string
+  Password?: string
   role?: string
   RoleLabel: string
   Permissions: string[]

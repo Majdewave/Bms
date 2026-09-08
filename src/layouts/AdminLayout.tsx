@@ -58,7 +58,7 @@ const allMenuItems: MenuItem[] = [
   { icon: UserPlus, label: 'Staff Management', path: '/admin/staff', roles: ['admin'] },
   { icon: Pill, label: 'Drugs', path: '/admin/drugs', roles: ['admin'], feature: 'drugsEnabled' },
   { icon: Settings, label: 'Business Settings', path: '/admin/settings', roles: ['admin'] },
-  { icon: MessageCircle, label: 'WhatsApp', path: '/admin/settings/whatsapp', roles: ['admin'], permission: 'manage_whatsapp' },
+  { icon: MessageCircle, label: 'WhatsApp', path: '/admin/settings/whatsapp', roles: ['admin'], permission: 'manage_whatsapp', feature: 'whatsAppEnabled' }, 
   { icon: CreditCard, label: 'Billing', path: '/admin/billing', roles: ['admin'] },
   { icon: Sliders, label: 'Feature Toggles', path: '/admin/features', roles: ['admin'] },
  
@@ -96,6 +96,7 @@ export default function AdminLayout() {
         if (item.feature && !features?.[item.feature]) return false
         if (item.permission && !hasPermission(item.permission)) return false
         if ((item.path === '/admin/quotes' || item.path === '/staff/quotes') && !departmentFeatures?.quotesEnabled) return false
+        if (item.path === '/admin/settings/whatsapp' && !departmentFeatures?.whatsAppEnabled) return false
         if (item.path === '/admin/drugs' && !departmentFeatures?.drugsEnabled) return false
         return true
       })
@@ -112,7 +113,7 @@ export default function AdminLayout() {
 
       return false
     })
-  }, [user, hasPermission, features, departmentFeatures?.drugsEnabled, departmentFeatures?.quotesEnabled])
+  }, [user, hasPermission, features, departmentFeatures?.drugsEnabled, departmentFeatures?.quotesEnabled, departmentFeatures?.whatsAppEnabled])
 
   const isTeamChatEnabled = departmentFeatures?.teamChatEnabled === true
 

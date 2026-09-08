@@ -1,5 +1,6 @@
-import Upgrade from './pages/Upgrade';
+﻿import Upgrade from './pages/Upgrade';
 import ResetPassword from './pages/ResetPassword';
+import AcceptInvite from './pages/AcceptInvite';
 import Success from "./pages/Success";
 import AdminDrugs from '@/pages/admin/AdminDrugs'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
@@ -7,6 +8,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { RoleBasedRoute } from '@/components/RoleBasedRoute'
 import { PermissionBasedRoute } from '@/components/PermissionBasedRoute'
+import { FeatureBasedRoute } from '@/components/FeatureBasedRoute'
 
 import Login from '@/pages/Login'
 import QueueDisplayPage from '@/pages/QueueDisplay'
@@ -17,6 +19,10 @@ import BillingPage from '@/pages/BillingPage'
 import AdminLayout from '@/layouts/AdminLayout'
 import AdminBillingPage from '@/pages/admin/BillingPage'
 import ClientLayout from '@/layouts/ClientLayout'
+import InterpreterLayout from '@/layouts/InterpreterLayout'
+import InterpreterRequests from '@/pages/interpreter/Requests'
+import InterpreterCase from '@/pages/interpreter/Case'
+import InterpreterProfile from '@/pages/interpreter/Profile'
 
 /* ================= ADMIN PAGES ================= */
 
@@ -87,10 +93,10 @@ const QuotesEntryRedirect = () => {
 
 const ErrorFallback = () => (
   <div style={{ padding: 32, textAlign: 'center', color: '#b91c1c' }}>
-    <h2>שגיאה בטעינת הדף</h2>
-    <p>ייתכן שהדף לא קיים או שישנה בעיה זמנית.</p>
+    <h2>×©×’×™××” ×‘×˜×¢×™× ×ª ×”×“×£</h2>
+    <p>×™×™×ª×›×Ÿ ×©×”×“×£ ×œ× ×§×™×™× ××• ×©×™×©× ×” ×‘×¢×™×” ×–×ž× ×™×ª.</p>
     <button onClick={() => window.location.reload()} style={{ marginTop: 16, padding: '8px 24px', background: '#f87171', color: 'white', border: 'none', borderRadius: 4 }}>
-      רענן דף
+      ×¨×¢× ×Ÿ ×“×£
     </button>
   </div>
 )
@@ -167,6 +173,11 @@ export const router = createBrowserRouter([
   {
     path: '/reset-password',
     element: <ResetPassword />,
+  },
+  
+  {
+  path: '/account/accept-invite',
+  element: <AcceptInvite />,
   },
 
   {
@@ -324,9 +335,14 @@ export const router = createBrowserRouter([
       {
         path: 'settings/whatsapp',
         element: (
-          <PermissionBasedRoute requiredPermission="manage_whatsapp">
-            <AdminWhatsApp />
-          </PermissionBasedRoute>
+          <FeatureBasedRoute
+            feature="whatsAppEnabled"
+            departmentFeature="whatsAppEnabled"
+          >
+            <PermissionBasedRoute requiredPermission="manage_whatsapp">
+              <AdminWhatsApp />
+            </PermissionBasedRoute>
+          </FeatureBasedRoute>
         ),
       },
 
@@ -451,6 +467,36 @@ export const router = createBrowserRouter([
     ],
   },
 
+  /* ================= INTERPRETER ================= */
+
+  {
+    path: '/interpreter',
+    element: (
+      <ProtectedRoute>
+        <RoleBasedRoute allowedRoles={['interpreter']}>
+          <InterpreterLayout />
+        </RoleBasedRoute>
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <Navigate to="requests" replace /> },
+
+      {
+        path: 'requests',
+        element: <InterpreterRequests />,
+      },
+
+      {
+        path: 'requests/:requestId',
+        element: <InterpreterCase />,
+      },
+      {
+        path: 'profile',
+        element: <InterpreterProfile />,
+      },
+    ],
+  },
+
   /* ================= CLIENT ================= */
 
   {
@@ -513,3 +559,4 @@ export const router = createBrowserRouter([
   // fallback error element for all routes
   errorElement: <ErrorFallback />,
 })
+

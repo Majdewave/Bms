@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
-import { ArrowUpRight, ChevronLeft, ChevronRight, Circle, Contrast, CornerUpRight, Crosshair, Eraser, FlipHorizontal2, FlipVertical2, Hand, LayoutGrid, Maximize, Minimize, Minus, MoveHorizontal, Plus, Redo2, RefreshCw, RectangleHorizontal, Ruler, RotateCcw, RotateCw, SunMedium, Trash2, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
+import { ArrowUpRight, ChevronLeft, ChevronRight, Circle, Contrast, CornerUpRight, Crosshair, Eraser, FileImage, FlipHorizontal2, FlipVertical2, Hand, LayoutGrid, Loader2, Maximize, Minimize, Minus, MoveHorizontal, Plus, Redo2, RefreshCw, RectangleHorizontal, Ruler, RotateCcw, RotateCw, SunMedium, Trash2, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import { imagingService } from '@/api'
 import type {
   CanonicalAnnotationGeometry,
@@ -167,6 +167,11 @@ const ensureCornerstoneReady = () => {
 
 interface DicomViewerProps {
   instances: ImagingInstanceDetail[]
+  loadInstanceFile?: (instanceId: string) => Promise<Blob>
+  loadInstanceAnnotations?: (instanceId: string, frameNumber: number) => Promise<ImagingAnnotation[]>
+  readOnly?: boolean
+  canViewAnnotations?: boolean
+  allowLocalAnnotations?: boolean
   currentIndex?: number
   onCurrentIndexChange?: (nextIndex: number) => void
   study?: ImagingStudyHierarchy | null
@@ -184,6 +189,11 @@ const getFileManagerIndexFromImageId = (imageId: string): number | null => {
 
 const DicomViewer = ({
   instances,
+  loadInstanceFile,
+  loadInstanceAnnotations,
+  readOnly = false,
+  canViewAnnotations = false,
+  allowLocalAnnotations = false,
   currentIndex = 0,
   onCurrentIndexChange,
   study,
@@ -233,6 +243,7 @@ const DicomViewer = ({
   const historyApplyingRef = useRef(false)
   const annotationEventsCleanupRef = useRef<(() => void) | null>(null)
   const persistedAnnotationUidsRef = useRef(new Set<string>())
+  const localAnnotationUidsRef = useRef(new Set<string>())
   const annotationIdsByUidRef = useRef(new Map<string, string>())
   const deletingAnnotationUidsRef = useRef(new Set<string>())
   const updatingAnnotationUidsRef = useRef(new Set<string>())
@@ -260,6 +271,7 @@ const DicomViewer = ({
   const [annotationPanelTab, setAnnotationPanelTab] = useState<'all' | 'measurements' | 'text'>('all')
   const [annotationPanelQuery, setAnnotationPanelQuery] = useState('')
   const [annotationPanelRevision, setAnnotationPanelRevision] = useState(0)
+  const [thumbnailStates, setThumbnailStates] = useState<Record<string, 'loading' | 'ready' | 'error' | 'unavailable'>>({})
   const [viewportAssignments, setViewportAssignments] = useState<number[]>([selectedSeriesIndex, selectedSeriesIndex, selectedSeriesIndex, selectedSeriesIndex])
   const [viewportStates, setViewportStates] = useState<ViewportState[]>([
     emptyState(selectedSeriesIndex, currentIndex), emptyState(selectedSeriesIndex), emptyState(selectedSeriesIndex), emptyState(selectedSeriesIndex),
@@ -318,12 +330,80 @@ const DicomViewer = ({
     for (const target of targetInstances) {
       const cached = imageCacheRef.current.get(target.id)
       if (cached) { imageIds.push(cached.imageId); continue }
-      const imageId = loader.wadouri.fileManager.add(await imagingService.getInstanceFileBlob(target.id))
+      const blob = loadInstanceFile
+        ? await loadInstanceFile(target.id)
+        : await imagingService.getInstanceFileBlob(target.id)
+
+      const imageId = loader.wadouri.fileManager.add(blob)
       imageCacheRef.current.set(target.id, { imageId, fileIndex: getFileManagerIndexFromImageId(imageId) })
       imageIds.push(imageId)
     }
     return imageIds
   }
+
+  const loadSeriesThumbnails = async (isCancelled: () => boolean = () => false) => {
+    if (!renderingEngineRef.current || series.length === 0) return
+
+    try {
+      const { core, loader } = await ensureCornerstoneReady()
+      for (const targetSeries of series) {
+        if (isCancelled() || disposedRef.current) return
+        const element = thumbnailElementsRef.current[`thumbnail-${targetSeries.id}`]
+        const target = targetSeries.instances.find((item) => item.storageStatus === 'LocalAndS3')
+        const id = `thumbnail-${targetSeries.id}`
+
+        if (!element) continue
+        if (renderingEngineRef.current.getViewport(id)) {
+          setThumbnailStates((current) => ({ ...current, [targetSeries.id]: 'ready' }))
+          continue
+        }
+        if (!target) {
+          setThumbnailStates((current) => ({ ...current, [targetSeries.id]: 'unavailable' }))
+          continue
+        }
+
+        setThumbnailStates((current) => ({ ...current, [targetSeries.id]: 'loading' }))
+        try {
+          const [imageId] = await loadImageIds(loader, [target])
+          if (isCancelled() || disposedRef.current) return
+          renderingEngineRef.current.enableElement({ element, viewportId: id, type: core.Enums.ViewportType.STACK })
+          const viewport = renderingEngineRef.current.getViewport(id)
+          await viewport.setStack([imageId], 0)
+          viewport.resetCamera({ resetPan: true, resetZoom: true, resetToCenter: true })
+          viewport.render?.()
+          setThumbnailStates((current) => ({ ...current, [targetSeries.id]: 'ready' }))
+        } catch (error) {
+          console.warn('[DicomViewer] series thumbnail failed', { seriesId: targetSeries.id, error })
+          setThumbnailStates((current) => ({ ...current, [targetSeries.id]: 'error' }))
+        }
+      }
+      renderingEngineRef.current.render()
+    } catch (error) {
+      console.warn('[DicomViewer] series thumbnail initialization failed', error)
+      setThumbnailStates(Object.fromEntries(series.map((targetSeries) => [targetSeries.id, 'error'])))
+    }
+  }
+
+  useEffect(() => {
+    setThumbnailStates(Object.fromEntries(series.map((targetSeries) => [targetSeries.id, 'loading'])))
+  }, [series])
+
+  useEffect(() => {
+    let cancelled = false
+    void ensureEngine()
+      .then(() => loadSeriesThumbnails(() => cancelled))
+      .catch((error) => {
+        if (!cancelled) {
+          console.warn('[DicomViewer] series thumbnail startup failed', error)
+          setThumbnailStates(Object.fromEntries(series.map((targetSeries) => [targetSeries.id, 'error'])))
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [series])
+
   const removeCachedFileManagerEntries = () => {
     imageCacheRef.current.forEach(({ fileIndex }) => { if (fileIndex !== null) cornerstoneLoaderModule?.wadouri.fileManager.remove(fileIndex) })
     imageCacheRef.current.clear()
@@ -545,6 +625,7 @@ const DicomViewer = ({
           }
         }
         renderingEngineRef.current?.render()
+        await loadSeriesThumbnails(() => cancelled)
         console.log('[DicomViewer] L render completed')
       } catch (error) {
         console.warn('[DicomViewer] viewport load failed', error)
@@ -555,31 +636,6 @@ const DicomViewer = ({
     void loadViewports()
     return () => { cancelled = true; stopCine(); console.log('[DicomViewer] CLEANUP viewport load effect') }
   }, [instanceIdsKey, currentIndex, viewportAssignments, viewportInstanceKey, series, layout, viewportCount, t])
-
-  useEffect(() => {
-    if (!renderingEngineRef.current || series.length === 0) return
-    let cancelled = false
-    const loadThumbnails = async () => {
-      try {
-        const { core, loader } = await ensureCornerstoneReady()
-        for (const targetSeries of series) {
-          const element = thumbnailElementsRef.current[`thumbnail-${targetSeries.id}`]
-          const target = targetSeries.instances.find((item) => item.storageStatus === 'LocalAndS3')
-          const id = `thumbnail-${targetSeries.id}`
-          if (!element || !target || renderingEngineRef.current.getViewport(id)) continue
-          const [imageId] = await loadImageIds(loader, [target])
-          if (cancelled) return
-          renderingEngineRef.current.enableElement({ element, viewportId: id, type: core.Enums.ViewportType.STACK })
-          const viewport = renderingEngineRef.current.getViewport(id)
-          await viewport.setStack([imageId], 0)
-          viewport.resetCamera({ resetPan: true, resetZoom: true, resetToCenter: true })
-        }
-        renderingEngineRef.current.render()
-      } catch (error) { console.warn('[DicomViewer] optional series thumbnail failed', error) }
-    }
-    void loadThumbnails()
-    return () => { cancelled = true }
-  }, [series])
 
   useEffect(() => {
     if (!cinePlaying || cineViewportRef.current === null) return
@@ -606,9 +662,9 @@ const DicomViewer = ({
       if (annotationViewportScopesRef.current.get(index) === scopeKey) return
       if (context.element) clearAnnotationsForViewport(context.element)
       annotationViewportScopesRef.current.set(index, scopeKey)
-      void loadAnnotationsForViewport(index)
+      if (!readOnly || canViewAnnotations) void loadAnnotationsForViewport(index)
     })
-  }, [viewportStates, viewportAssignments, series, instances, selectedSeriesIndex])
+  }, [viewportStates, viewportAssignments, series, instances, selectedSeriesIndex, canViewAnnotations, loadInstanceAnnotations])
 
   const activateTool = (toolName: string) => {
     const toolGroup = toolGroupRef.current
@@ -663,7 +719,7 @@ const DicomViewer = ({
   }
 
   const persistCompletedAnnotation = async (annotation: any) => {
-    if (disposedRef.current) return
+    if (readOnly || disposedRef.current) return
     const annotationUid = annotation?.annotationUID
     const toolName = annotation?.metadata?.toolName
     if (!annotationUid || !toolName || !persistedToolNames.has(toolName)) return
@@ -698,7 +754,7 @@ const DicomViewer = ({
   }
 
   const updateAnnotation = async (annotation: any) => {
-    if (disposedRef.current) return
+    if (readOnly || disposedRef.current) return
     const annotationUid = annotation?.annotationUID
     const annotationId = annotationUid ? annotationIdsByUidRef.current.get(annotationUid) : undefined
     if (!annotationUid || !annotationId || deletingAnnotationUidsRef.current.has(annotationUid)) return
@@ -759,6 +815,11 @@ const DicomViewer = ({
   const handleAnnotationCompleted = (event: Event) => {
     const annotation = (event as CustomEvent<{ annotation?: any }>).detail?.annotation
     const annotationUid = annotation?.annotationUID
+    if (readOnly && allowLocalAnnotations && annotationUid) {
+      localAnnotationUidsRef.current.add(annotationUid)
+      setAnnotationPanelRevision((revision) => revision + 1)
+      return
+    }
     const savePromise = persistCompletedAnnotation(annotation)
     if (annotationUid) {
       annotationSavePromisesRef.current.set(annotationUid, savePromise)
@@ -784,7 +845,9 @@ const DicomViewer = ({
     annotationLoadKeysRef.current.add(loadKey)
     console.log('[DicomViewer][Annotations] LOAD START', { imagingInstanceId: context.imagingInstanceId, frameNumber: context.frameNumber })
     try {
-      const annotations = await imagingService.getImagingAnnotations(context.imagingInstanceId, context.frameNumber)
+      const annotations = await (loadInstanceAnnotations
+        ? loadInstanceAnnotations(context.imagingInstanceId, context.frameNumber)
+        : imagingService.getImagingAnnotations(context.imagingInstanceId, context.frameNumber))
       const annotationState = getAnnotationState()
       const localUids = new Set(annotationState?.getAllAnnotations().map((item: any) => item.annotationUID) ?? [])
       restoringAnnotationsRef.current = true
@@ -823,7 +886,7 @@ const DicomViewer = ({
               ...(stored.label !== null && stored.label !== undefined ? { label: stored.label } : {}),
             },
             highlighted: false,
-            isLocked: false,
+            isLocked: readOnly,
             isVisible: true,
             invalidated: true,
             isSelected: false,
@@ -1074,6 +1137,7 @@ const DicomViewer = ({
   }
 
   const handleDeleteAnnotation = () => {
+    if (readOnly) return
     const selection = cornerstoneToolsModule?.annotation?.selection
     const annotationState = getAnnotationState()
     const selectedUids = selection?.getAnnotationsSelected?.() ?? []
@@ -1105,6 +1169,7 @@ const DicomViewer = ({
   }
 
   const handleClearAnnotations = () => {
+    if (readOnly) return
     const annotationState = getAnnotationState()
     if (!annotationState || annotationState.getAllAnnotations().length === 0) return
 
@@ -1130,11 +1195,35 @@ const DicomViewer = ({
     })
   }
 
+  const handleDeleteLocalAnnotation = (annotationUid: string) => {
+    if (!readOnly || !allowLocalAnnotations) return
+    const annotationState = getAnnotationState()
+    if (!annotationState || !localAnnotationUidsRef.current.has(annotationUid)) return
+
+    annotationState.removeAnnotation(annotationUid)
+    localAnnotationUidsRef.current.delete(annotationUid)
+    renderingEngineRef.current?.render()
+    setAnnotationPanelRevision((revision) => revision + 1)
+  }
+
+  const handleClearLocalAnnotations = () => {
+    if (!readOnly || !allowLocalAnnotations) return
+    const annotationState = getAnnotationState()
+    if (!annotationState) return
+
+    localAnnotationUidsRef.current.forEach((annotationUid) => annotationState.removeAnnotation(annotationUid))
+    localAnnotationUidsRef.current.clear()
+    renderingEngineRef.current?.render()
+    setAnnotationPanelRevision((revision) => revision + 1)
+  }
+
   const handleUndo = () => {
+    if (readOnly) return
     void enqueueHistoryAction('undo')
   }
 
   const handleRedo = () => {
+    if (readOnly) return
     void enqueueHistoryAction('redo')
   }
 
@@ -1359,7 +1448,7 @@ const DicomViewer = ({
           </div>
         </div>
         <div className="hidden h-6 w-px bg-slate-700 sm:block" />
-        <div className="order-3 flex shrink-0 min-w-fit flex-col gap-0.5" role="group" aria-label="Annotation tools">
+        {(!readOnly || allowLocalAnnotations) && <div className="order-3 flex shrink-0 min-w-fit flex-col gap-0.5" role="group" aria-label="Annotation tools">
           <span className="px-1 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Measurements</span>
           <div className="flex items-center gap-0.5">
           {availableToolButtons.filter((tool) => tool.optional).map((tool) => {
@@ -1367,7 +1456,7 @@ const DicomViewer = ({
             return <button key={tool.name} type="button" onClick={() => activateTool(tool.name)} title={tool.label} aria-pressed={activeTool === tool.name} className={`inline-flex h-8 w-8 items-center justify-center rounded border ${activeTool === tool.name ? 'border-violet-400 bg-violet-600 text-white' : 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'}`}><Icon size={14} /></button>
           })}
           </div>
-        </div>
+        </div>}
         <div className="hidden h-6 w-px bg-slate-700 sm:block" />
         <div className="order-2 flex shrink-0 min-w-fit flex-col gap-0.5" role="group" aria-label="Transform tools">
           <span className="px-1 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Transform</span>
@@ -1376,7 +1465,7 @@ const DicomViewer = ({
           </div>
         </div>
         <div className="hidden h-6 w-px bg-slate-700 sm:block" />
-        <div className="order-4 flex shrink-0 min-w-fit flex-col gap-0.5" role="group" aria-label="History tools">
+        {!readOnly && <div className="order-4 flex shrink-0 min-w-fit flex-col gap-0.5" role="group" aria-label="History tools">
           <span className="px-1 text-[9px] font-semibold uppercase tracking-wide text-slate-500">History</span>
           <div className="flex items-center gap-0.5">
           <button type="button" onClick={handleUndo} title={t('imaging.undo')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white"><Undo2 size={14} /></button>
@@ -1384,7 +1473,7 @@ const DicomViewer = ({
           <button type="button" onClick={handleDeleteAnnotation} title={t('imaging.deleteAnnotation')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-900 bg-red-950/40 text-red-400 hover:bg-red-950/70 hover:text-red-300"><Trash2 size={14} /></button>
           <button type="button" onClick={handleClearAnnotations} title={t('imaging.clearMeasurements')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-900 bg-red-950/40 text-red-400 hover:bg-red-950/70 hover:text-red-300"><Eraser size={14} /></button>
           </div>
-        </div>
+        </div>}
         <div className="order-5 ml-auto flex shrink-0 min-w-fit flex-col items-end gap-0.5 rtl:ml-0 rtl:mr-auto">
           <span className="px-1 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Viewer</span>
           <div className="flex items-center gap-1">
@@ -1403,7 +1492,10 @@ const DicomViewer = ({
           <div className="flex items-center justify-between border-b border-slate-800 px-3 py-2"><span className="text-xs font-semibold uppercase tracking-wide text-slate-300">Series</span><span className="text-[10px] text-slate-500">{series.length}</span></div>
           <div className="flex gap-2 overflow-x-auto p-2 lg:flex-col lg:overflow-y-auto">
             {series.map((targetSeries, index) => <button key={targetSeries.id} type="button" onClick={() => { stopCine(); viewportGenerationRef.current[activeViewportIndex] += 1; setViewportAssignments((current) => current.map((value, viewportIndex) => viewportIndex === activeViewportIndex ? index : value)); if (activeViewportIndex === 0) onSeriesChange?.(index) }} aria-pressed={activeSeriesIndex === index} className={`flex min-w-[100px] shrink-0 flex-col gap-1 rounded border bg-slate-900 p-1 text-left transition lg:min-w-0 ${selectedSeriesIndex === index ? 'border-violet-500 ring-1 ring-violet-500/40' : 'border-slate-800 hover:border-violet-400'}`}>
-              <div ref={(element) => registerThumbnailElement(`thumbnail-${targetSeries.id}`, element)} className="aspect-[4/3] w-full overflow-hidden rounded bg-black" aria-label={t('imaging.seriesX', { number: targetSeries.seriesNumber ?? index + 1 })} />
+              <div ref={(element) => registerThumbnailElement(`thumbnail-${targetSeries.id}`, element)} className="relative aspect-[4/3] w-full overflow-hidden rounded bg-black" aria-label={t('imaging.seriesX', { number: targetSeries.seriesNumber ?? index + 1 })}>
+                {thumbnailStates[targetSeries.id] === 'loading' && <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-slate-950/90 p-2 text-center text-[10px] text-slate-400"><Loader2 className="h-4 w-4 animate-spin text-slate-500" />טוען תצוגה מקדימה</div>}
+                {(thumbnailStates[targetSeries.id] === 'unavailable' || thumbnailStates[targetSeries.id] === 'error' || !thumbnailStates[targetSeries.id]) && <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-slate-950/95 p-2 text-center text-[10px] text-slate-400"><FileImage className="h-5 w-5 text-slate-500" />תצוגה מקדימה לא זמינה</div>}
+              </div>
               <span className="truncate text-[10px] font-semibold text-slate-200">{targetSeries.seriesNumber ?? index + 1}. {targetSeries.seriesDescription || t('imaging.seriesX', { number: index + 1 })}</span>
               <span className="text-[10px] text-slate-400">{targetSeries.instances.length} {t('imaging.instance')}</span>
             </button>)}
@@ -1425,18 +1517,18 @@ const DicomViewer = ({
             <button type="button" onClick={handlePrevious} disabled={activeState.instanceIndex <= 0} title={t('imaging.previous')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><ChevronLeft size={15} /></button>
             <span className="min-w-20 text-center text-xs text-slate-400">{instanceIndex} / {totalInstances}</span>
             <button type="button" onClick={handleNext} disabled={activeState.instanceIndex >= activeInstances.length - 1} title={t('imaging.next')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><ChevronRight size={15} /></button>
-            {isMultiFrame && numberOfFrames > 1 && <><button type="button" onClick={handlePreviousFrame} disabled={currentFrameIndex === 0} title={t('imaging.previousFrame')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><ChevronLeft size={13} /></button><button type="button" onClick={cinePlaying ? handlePauseCine : handlePlayCine} title={cinePlaying ? t('imaging.pause') : t('imaging.play')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-violet-500 bg-violet-600 text-white">{cinePlaying ? <span className="text-xs">||</span> : <span className="text-xs">▶</span>}</button><button type="button" onClick={handleNextFrame} disabled={currentFrameIndex >= numberOfFrames - 1} title={t('imaging.nextFrame')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><ChevronRight size={13} /></button><span className="text-xs text-slate-400">{currentFrameIndex + 1} / {numberOfFrames}</span><input type="range" min="0" max={numberOfFrames - 1} value={currentFrameIndex} onChange={(event) => { stopCine(); updateState(activeViewportIndex, { currentFrameIndex: Number(event.target.value) }) }} aria-label={t('imaging.frame')} className="min-w-[120px] flex-1 accent-violet-500" /><label className="flex items-center gap-1 text-[10px] text-slate-500">FPS<select value={cineFps} onChange={(event) => setCineFps(Number(event.target.value))} className="rounded border border-slate-700 bg-slate-900 px-1 py-1 text-xs text-white">{[5, 10, 15, 20, 25, 30].map((fps) => <option key={fps} value={fps}>{fps}</option>)}</select></label></>}
+            {isMultiFrame && numberOfFrames > 1 && <><button type="button" onClick={handlePreviousFrame} disabled={currentFrameIndex === 0} title={t('imaging.previousFrame')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><ChevronLeft size={13} /></button><button type="button" onClick={cinePlaying ? handlePauseCine : handlePlayCine} title={cinePlaying ? t('imaging.pause') : t('imaging.play')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-violet-500 bg-violet-600 text-white">{cinePlaying ? <span className="text-xs">||</span> : <span className="text-xs">â–¶</span>}</button><button type="button" onClick={handleNextFrame} disabled={currentFrameIndex >= numberOfFrames - 1} title={t('imaging.nextFrame')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white disabled:opacity-40"><ChevronRight size={13} /></button><span className="text-xs text-slate-400">{currentFrameIndex + 1} / {numberOfFrames}</span><input type="range" min="0" max={numberOfFrames - 1} value={currentFrameIndex} onChange={(event) => { stopCine(); updateState(activeViewportIndex, { currentFrameIndex: Number(event.target.value) }) }} aria-label={t('imaging.frame')} className="min-w-[120px] flex-1 accent-violet-500" /><label className="flex items-center gap-1 text-[10px] text-slate-500">FPS<select value={cineFps} onChange={(event) => setCineFps(Number(event.target.value))} className="rounded border border-slate-700 bg-slate-900 px-1 py-1 text-xs text-white">{[5, 10, 15, 20, 25, 30].map((fps) => <option key={fps} value={fps}>{fps}</option>)}</select></label></>}
           </div>
         </main>
 
-        <aside className={`order-3 flex min-h-[320px] min-w-0 flex-col border-t border-slate-800 bg-black transition-all duration-200 lg:border-l lg:border-t-0 ${isAnnotationsExpanded ? 'lg:w-auto' : 'lg:w-[72px]'}`} style={{ backgroundColor: '#000000' }}>
+        {(!readOnly || canViewAnnotations) && <aside className={`order-3 flex min-h-[320px] min-w-0 flex-col border-t border-slate-800 bg-black transition-all duration-200 lg:border-l lg:border-t-0 ${isAnnotationsExpanded ? 'lg:w-auto' : 'lg:w-[72px]'}`} style={{ backgroundColor: '#000000' }}>
           {isAnnotationsExpanded ? (
             <>
-              <div className="flex items-center justify-between border-b border-slate-800 px-3 py-3"><div><h2 className="text-sm font-semibold text-slate-100">Measurements &amp; Annotations</h2><span className="text-[11px] text-slate-500">{annotationPanelAnnotations.length} visible</span></div><div className="flex items-center gap-2"><button type="button" onClick={() => setIsAnnotationsExpanded(false)} title="Collapse annotations" className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white"><ChevronRight size={14} /></button><button type="button" onClick={handleClearAnnotations} title={t('imaging.clearMeasurements')} className="inline-flex h-7 w-7 items-center justify-center rounded border border-red-900 bg-red-950/40 text-red-400 hover:bg-red-950/70 hover:text-red-300"><Trash2 size={14} /></button></div></div>
+              <div className="flex items-center justify-between border-b border-slate-800 px-3 py-3"><div><h2 className="text-sm font-semibold text-slate-100">Measurements &amp; Annotations</h2><span className="text-[11px] text-slate-500">{annotationPanelAnnotations.length} visible</span></div><div className="flex items-center gap-2"><button type="button" onClick={() => setIsAnnotationsExpanded(false)} title="Collapse annotations" className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white"><ChevronRight size={14} /></button>{!readOnly ? <button type="button" onClick={handleClearAnnotations} title={t('imaging.clearMeasurements')} className="inline-flex h-7 w-7 items-center justify-center rounded border border-red-900 bg-red-950/40 text-red-400 hover:bg-red-950/70 hover:text-red-300"><Trash2 size={14} /></button> : allowLocalAnnotations && <button type="button" onClick={handleClearLocalAnnotations} title="Clear local measurements" className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-white"><Eraser size={14} /></button>}</div></div>
               <div className="border-b border-slate-800 p-2"><input value={annotationPanelQuery} onChange={(event) => setAnnotationPanelQuery(event.target.value)} placeholder="Search annotations..." className="h-8 w-full rounded border border-slate-700 bg-slate-950 px-2 text-xs text-slate-200 placeholder:text-slate-600 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30" /><div className="mt-2 flex gap-1">{([['all', 'All'], ['measurements', 'Measurements'], ['text', 'Text']] as const).map(([tab, label]) => <button key={tab} type="button" onClick={() => setAnnotationPanelTab(tab)} className={`flex-1 rounded px-1 py-1.5 text-[10px] font-semibold ${annotationPanelTab === tab ? 'bg-violet-600/20 text-violet-300' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>{label}</button>)}</div></div>
               <div className="min-h-0 flex-1 overflow-y-auto">
                 {annotationPanelAnnotations.length === 0 && <div className="p-4 text-center text-xs text-slate-500">No annotations</div>}
-                {annotationPanelAnnotations.map((annotation: any) => { const uid = annotation.annotationUID; const selected = cornerstoneToolsModule?.annotation?.selection?.isAnnotationSelected?.(uid); const label = annotation.data?.label || annotation.metadata?.toolName || 'Annotation'; const stats = Object.values(annotation.data?.cachedStats ?? {})[0] as any; const measurement = stats?.length ?? stats?.area ?? stats?.mean; return <div key={uid} className={`border-b border-slate-800/50 border-l-2 p-3 ${selected ? 'border-l-violet-500 bg-violet-950/20' : 'border-l-transparent'}`}><button type="button" onClick={() => selectAnnotationFromPanel(uid)} className="w-full text-left"><div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-semibold text-slate-200">{label}</span><span className="shrink-0 text-[10px] text-slate-500">{annotation.metadata?.toolName}</span></div>{measurement !== undefined && <div className="mt-1 text-xs text-slate-300">{Array.isArray(measurement) ? measurement.join(' × ') : String(measurement)}</div>}<div className="mt-1 text-[10px] text-slate-500">{study?.accessionNumber || t('imaging.study')} · {t('imaging.instance')} {instanceIndex}</div></button><div className="mt-2 flex justify-end"><button type="button" onClick={() => { selectAnnotationFromPanel(uid); handleDeleteAnnotation() }} title={t('imaging.deleteAnnotation')} className="inline-flex h-6 w-6 items-center justify-center rounded text-red-400 hover:bg-red-950/40"><Trash2 size={13} /></button></div></div> })}
+                {annotationPanelAnnotations.map((annotation: any) => { const uid = annotation.annotationUID; const selected = cornerstoneToolsModule?.annotation?.selection?.isAnnotationSelected?.(uid); const isLocal = localAnnotationUidsRef.current.has(uid); const label = annotation.data?.label || annotation.metadata?.toolName || 'Annotation'; const stats = Object.values(annotation.data?.cachedStats ?? {})[0] as any; const measurement = stats?.length ?? stats?.area ?? stats?.mean; return <div key={uid} className={`border-b border-slate-800/50 border-l-2 p-3 ${selected ? 'border-l-violet-500 bg-violet-950/20' : 'border-l-transparent'}`}><button type="button" onClick={() => selectAnnotationFromPanel(uid)} className="w-full text-left"><div className="flex items-center justify-between gap-2"><span className="truncate text-xs font-semibold text-slate-200">{label}</span><span className="shrink-0 text-[10px] text-slate-500">{isLocal ? 'זמני' : annotation.metadata?.toolName}</span></div>{measurement !== undefined && <div className="mt-1 text-xs text-slate-300">{Array.isArray(measurement) ? measurement.join(' Ã— ') : String(measurement)}</div>}<div className="mt-1 text-[10px] text-slate-500">{study?.accessionNumber || t('imaging.study')} Â· {t('imaging.instance')} {instanceIndex}</div></button>{!readOnly ? <div className="mt-2 flex justify-end"><button type="button" onClick={() => { selectAnnotationFromPanel(uid); handleDeleteAnnotation() }} title={t('imaging.deleteAnnotation')} className="inline-flex h-6 w-6 items-center justify-center rounded text-red-400 hover:bg-red-950/40"><Trash2 size={13} /></button></div> : allowLocalAnnotations && isLocal ? <div className="mt-2 flex justify-end"><button type="button" onClick={() => handleDeleteLocalAnnotation(uid)} title="Delete local measurement" className="inline-flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-800 hover:text-white"><Trash2 size={13} /></button></div> : null}</div> })}
               </div>
             </>
           ) : (
@@ -1445,11 +1537,15 @@ const DicomViewer = ({
               <div className="mt-1 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Measure</div>
             </div>
           )}
-        </aside>
+        </aside>}
       </div>
-      <div className="flex min-h-9 items-center justify-between gap-3 border-t border-slate-800 bg-black px-3 text-[11px] text-slate-500" style={{ backgroundColor: '#000000' }}><span>Study: {study?.accessionNumber || '—'}</span><span className="truncate">{series[activeState.seriesIndex]?.seriesDescription || t('imaging.seriesX', { number: activeState.seriesIndex + 1 })}</span><span>Instance {instanceIndex} / {totalInstances}{isMultiFrame ? ` · Frame ${currentFrameIndex + 1} / ${numberOfFrames}` : ''}</span></div>
+      <div className="flex min-h-9 items-center justify-between gap-3 border-t border-slate-800 bg-black px-3 text-[11px] text-slate-500" style={{ backgroundColor: '#000000' }}><span>Study: {study?.accessionNumber || 'â€”'}</span><span className="truncate">{series[activeState.seriesIndex]?.seriesDescription || t('imaging.seriesX', { number: activeState.seriesIndex + 1 })}</span><span>Instance {instanceIndex} / {totalInstances}{isMultiFrame ? ` Â· Frame ${currentFrameIndex + 1} / ${numberOfFrames}` : ''}</span></div>
     </div>
   )
 }
 
 export default DicomViewer
+
+
+
+

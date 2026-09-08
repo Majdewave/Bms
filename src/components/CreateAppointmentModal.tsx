@@ -3,7 +3,7 @@ import { X } from 'lucide-react'
 import { appointmentsService, type Appointment, type AppointmentClient } from '@/api'
 import { consentsApi, type SignedConsent } from '@/api/consents'
 import { servicesService, type BusinessService } from '@/api/servicesService'
-import { staffService, type StaffMember } from '@/api/staff'
+import { appointmentStaffService, type AppointmentStaffOption } from '@/api/appointmentStaff'
 import {
   deleteImagingOrderReferralDocument,
   getImagingOrderReferral,
@@ -13,9 +13,11 @@ import {
   type ImagingOrderReferral,
 } from '@/api/imaging'
 import { useAuth } from '@/contexts/AuthContext'
+import { getDepartmentFeatureEnabled } from '@/api/departmentFeatureCheck'
 import { useTranslation } from 'react-i18next'
 import SignConsentModal from './SignConsentModal'
 import Autocomplete from './Autocomplete'
+import DocumentScannerModal from './DocumentScannerModal'
 
 type EditableAppointment = {
   id: string
@@ -48,14 +50,16 @@ export default function CreateAppointmentModal({
 
   const { t } = useTranslation()
   const { user } = useAuth()
+  const [medicalImagingEnabledForDept, setMedicalImagingEnabledForDept] = useState(false)
 
   const [clients, setClients] = useState<AppointmentClient[]>([])
   const [services, setServices] = useState<BusinessService[]>([])
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
+  const [staffMembers, setStaffMembers] = useState<AppointmentStaffOption[]>([])
   const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
   const [saving, setSaving] = useState(false)
   const [referringDoctorName, setReferringDoctorName] = useState('')
   const [referralFile, setReferralFile] = useState<File | null>(null)
+  const [showDocumentScanner, setShowDocumentScanner] = useState(false)
   const [referralUploadError, setReferralUploadError] = useState<string | null>(null)
   const [createdAppointment, setCreatedAppointment] = useState<Appointment | null>(null)
   const [existingReferral, setExistingReferral] = useState<ImagingOrderReferral | null>(null)
@@ -90,13 +94,32 @@ export default function CreateAppointmentModal({
 
   const isStaffContextReadyForEdit = !formData.staffId || staffMembers.some((staff) => staff.id === formData.staffId)
   const selectedService = services.find(s => s.id === formData.serviceId)
-  const isUsAppointment = selectedService?.imagingModality === 'US'
+  const isUsAppointment = medicalImagingEnabledForDept && selectedService?.imagingModality === 'US'
   const editImagingOrderId = mode === 'edit' ? appointment?.imagingOrderId : null
 
   useEffect(() => {
     loadServices()
     loadStaffMembers()
   }, [])
+
+  // Resolve medicalImagingEnabled for the department the appointment will actually be created/edited under.
+  useEffect(() => {
+    let cancelled = false
+    const departmentId = selectedService?.departmentId ?? null
+
+    if (!selectedService) {
+      setMedicalImagingEnabledForDept(false)
+      return
+    }
+
+    void getDepartmentFeatureEnabled('medicalImagingEnabled', departmentId).then((enabled) => {
+      if (!cancelled) setMedicalImagingEnabledForDept(enabled)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedService?.id, selectedService?.departmentId])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -299,7 +322,7 @@ export default function CreateAppointmentModal({
 
   const loadStaffMembers = async () => {
     try {
-      const staff = await staffService.getStaffMembers()
+      const staff = await appointmentStaffService.getStaffOptions()
       setStaffMembers(Array.isArray(staff) ? staff : [])
     } catch {
       setStaffMembers([])
@@ -702,6 +725,17 @@ if (!formData.date || !formData.time) {
                       </button>
                     </div>
                   ) : null}
+
+                  <div className="mb-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDocumentScanner(true)}
+                    disabled={Boolean(createdAppointment) || saving}
+                    className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    סרוק הפניה
+                  </button>
+                </div>
                   <input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
@@ -890,7 +924,31 @@ if (!formData.date || !formData.time) {
           </div>
 
         </form>
+            <DocumentScannerModal
+              open={showDocumentScanner}
+              onClose={() => setShowDocumentScanner(false)}
+              onCapture={(file) => {
+                const validationMessage = validateReferralFile(file)
 
+                if (validationMessage) {
+                  setReferralFile(null)
+                  setErrors((previous) => ({
+                    ...previous,
+                    referralFile: validationMessage,
+                  }))
+                  return
+                }
+
+                setReferralFile(file)
+
+                setErrors((previous) => {
+                  const { referralFile: _referralFile, ...remainingErrors } = previous
+                  return remainingErrors
+                })
+
+                setReferralUploadError(null)
+              }}
+            />
       </div>
 
       {showConsentModal && mode === 'edit' && appointment?.id && (

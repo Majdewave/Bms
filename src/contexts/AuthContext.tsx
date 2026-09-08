@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react'
+﻿import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react'
 import { authService } from '@/api'
 import { Permission } from '@/utils/permissions'
 
-export type UserRole = 'admin' | 'staff' | 'client'
+export type UserRole = 'admin' | 'staff' | 'client' | 'interpreter'
 
 export interface AuthUser {
   id: string
@@ -106,7 +106,7 @@ useEffect(() => {
   if (!token) {
     setAccessToken('');
     setLoading(false);
-    return; // ⛔ לא קורא /auth/me בלי token
+    return; // â›” ×œ× ×§×•×¨× /auth/me ×‘×œ×™ token
   }
 
   setAccessToken(token);
@@ -168,3 +168,4 @@ useEffect(() => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
+
