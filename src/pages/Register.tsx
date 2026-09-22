@@ -27,6 +27,7 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const navigate = useNavigate();
 
   const { logout } = useAuth();
@@ -128,8 +129,9 @@ export default function Register() {
       phone: validatePhone(phone),
       password: validatePassword(password),
       confirmPassword: validateConfirmPassword(confirmPassword, password),
+      acceptedTerms: acceptedTerms ? null : 'יש לאשר את תנאי השימוש ומדיניות הפרטיות',
     }),
-    [businessName, fullName, email, phone, password, confirmPassword, t]
+    [businessName, fullName, email, phone, password, confirmPassword, acceptedTerms, t]
   );
 
   const isFormValid = useMemo(
@@ -179,6 +181,7 @@ export default function Register() {
         language: i18n.language,
         timeZoneId: Intl.DateTimeFormat().resolvedOptions().timeZone,
         fullName,
+        acceptedTerms,
       });
 
       if (res.success) {
@@ -342,6 +345,50 @@ export default function Register() {
               </div>
               {getFieldError('confirmPassword') && <p className={`mt-1 text-sm text-red-600 ${textAlignClass}`}>{getFieldError('confirmPassword')}</p>}
               </div>
+              <div dir="rtl" className="pt-2">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => {
+                    setAcceptedTerms(e.target.checked);
+                    setTouched((prev) => ({
+                      ...prev,
+                      acceptedTerms: true,
+                    }));
+                  }}
+                  onBlur={() => handleFieldBlur('acceptedTerms')}
+                  className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+
+                <span className="text-sm text-gray-600 leading-6">
+                  קראתי ואני מסכים/ה ל{' '}
+                  <Link
+                    to="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 font-medium hover:underline"
+                  >
+                    תנאי השימוש
+                  </Link>
+                  {' '}ומאשר/ת שקראתי את{' '}
+                  <Link
+                    to="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 font-medium hover:underline"
+                  >
+                    מדיניות הפרטיות
+                  </Link>
+                </span>
+              </label>
+
+              {getFieldError('acceptedTerms') && (
+                <p className="mt-2 text-sm text-red-600 text-right">
+                  {getFieldError('acceptedTerms')}
+                </p>
+              )}
+            </div>
             </div>
             {submitError && (
               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded p-3 text-sm text-center mt-2">
@@ -355,17 +402,74 @@ export default function Register() {
             )}
             <button
               type="submit"
-              className="w-full bg-[#2563eb] hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 text-white font-semibold py-3 rounded-lg shadow transition text-lg mt-2"
+              className={`w-full font-semibold py-3 rounded-lg shadow transition text-lg mt-2 ${
+                loading || !isFormValid
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-[#2563eb] hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 text-white'
+              }`}
               style={{transition: 'box-shadow 0.2s, transform 0.2s'}}
-              disabled={loading}
+              disabled={loading || !isFormValid}
               onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 24px 0 #2563eb22'; }}
               onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = ''; }}
             >
               {loading ? t('register.creatingAccount') : t('register.startFreeTrial')}
             </button>
             <div className="text-xs text-gray-500 text-center mt-3">{t('register.noCreditCardRequired')}</div>
-            <div className="text-xs text-gray-500 text-center mt-1">
-              {config.supportPhone || config.supportEmail}
+            <div dir="rtl"
+              className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-gray-500"
+            >
+              <Link to="/privacy" className="hover:text-blue-600 hover:underline">
+                מדיניות פרטיות
+              </Link>
+
+              <span aria-hidden="true">·</span>
+
+              <Link to="/terms" className="hover:text-blue-600 hover:underline">
+                תנאי שימוש
+              </Link>
+
+              <span aria-hidden="true">·</span>
+
+              <Link to="/legal" className="hover:text-blue-600 hover:underline">
+                הודעה משפטית
+              </Link>
+            </div>
+            <div
+              dir="rtl"
+              className="text-center text-gray-500 text-xs mt-3"
+            >
+              <div>
+                נתקלת בתקלה או צריך עזרה?{' '}
+                <span className="font-semibold text-gray-600">
+                  תמיכה טכנית
+                </span>
+              </div>
+
+              <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2">
+                {config.supportPhone && (
+                  <a
+                    href={`tel:${config.supportPhone}`}
+                    dir="ltr"
+                    className="font-medium text-blue-600 hover:underline"
+                  >
+                    {config.supportPhone}
+                  </a>
+                )}
+
+                {config.supportPhone && config.supportEmail && (
+                  <span className="text-gray-400">·</span>
+                )}
+
+                {config.supportEmail && (
+                  <a
+                    href={`mailto:${config.supportEmail}`}
+                    dir="ltr"
+                    className="font-medium text-blue-600 hover:underline"
+                  >
+                    {config.supportEmail}
+                  </a>
+                )}
+              </div>
             </div>
           </form>
           <div className="mt-10 text-center text-sm text-gray-600">

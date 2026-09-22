@@ -94,7 +94,10 @@ export default function CreateAppointmentModal({
 
   const isStaffContextReadyForEdit = !formData.staffId || staffMembers.some((staff) => staff.id === formData.staffId)
   const selectedService = services.find(s => s.id === formData.serviceId)
-  const isUsAppointment = medicalImagingEnabledForDept && selectedService?.imagingModality === 'US'
+  const isImagingAppointment = medicalImagingEnabledForDept &&
+    (selectedService?.imagingModality === 'US' ||
+      selectedService?.imagingModality === 'DX' ||
+      selectedService?.imagingModality === 'CR')
   const editImagingOrderId = mode === 'edit' ? appointment?.imagingOrderId : null
 
   useEffect(() => {
@@ -266,7 +269,7 @@ export default function CreateAppointmentModal({
   }, [mode, formData.clientId])
 
   useEffect(() => {
-    if (!editImagingOrderId || !isUsAppointment) {
+    if (!editImagingOrderId || !isImagingAppointment) {
       setExistingReferral(null)
       setLoadedReferringDoctorName('')
       return
@@ -294,7 +297,7 @@ export default function CreateAppointmentModal({
 
     void loadReferral()
     return () => { cancelled = true }
-  }, [editImagingOrderId, isUsAppointment])
+  }, [editImagingOrderId, isImagingAppointment])
 
   const loadClients = async (searchTerm?: string) => {
     const data = await appointmentsService.getClientsForAppointment(searchTerm)
@@ -491,7 +494,7 @@ if (!formData.date || !formData.time) {
         endTime: endLocal.toLocaleString('sv-SE').replace(' ', 'T'),
         status: formData.status,
         notes: formData.description || undefined,
-        ...(mode === 'create' && isUsAppointment && referringDoctorName.trim()
+        ...(mode === 'create' && isImagingAppointment && referringDoctorName.trim()
           ? { referringDoctorName: referringDoctorName.trim() }
           : {})
       }
@@ -499,7 +502,7 @@ if (!formData.date || !formData.time) {
       if (mode === 'edit' && appointment) {
         await appointmentsService.updateAppointment(appointment.id, payload)
         setAppointmentEditSaved(true)
-        if (isUsAppointment && editImagingOrderId) {
+        if (isImagingAppointment && editImagingOrderId) {
           try {
             await saveEditReferralChanges(editImagingOrderId)
           } catch (error) {
@@ -512,14 +515,14 @@ if (!formData.date || !formData.time) {
         return
       } else {
         const createdAppointment = await appointmentsService.createAppointment(payload)
-        if (!isUsAppointment || !referralFile) {
+        if (!isImagingAppointment || !referralFile) {
           completeSuccess(createdAppointment)
           return
         }
 
         setCreatedAppointment(createdAppointment)
         if (!createdAppointment.imagingOrderId) {
-          setReferralUploadError('התור נשמר, אך לא ניתן היה לקשר את ההפניה לבדיקת האולטרסאונד.')
+          setReferralUploadError('התור נשמר, אך לא ניתן היה לקשר את ההפניה לבדיקת הדימות.')
           return
         }
 
@@ -687,7 +690,7 @@ if (!formData.date || !formData.time) {
               </div>
             )}
 
-            {isUsAppointment && (
+            {isImagingAppointment && (
               <div className="space-y-3 border-t border-slate-200 pt-4" dir="rtl">
                 <div>
                   <label className="block text-sm font-semibold mb-1">רופא מפנה</label>

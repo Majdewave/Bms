@@ -71,6 +71,10 @@ import PlatformUsersPage from '@/platform/pages/PlatformUsersPage'
 import PlatformSettingsPage from '@/platform/pages/PlatformSettingsPage'
 import Register from './pages/Register';
 
+import PrivacyPolicy from '@/pages/legal/PrivacyPolicy'
+import TermsOfService from '@/pages/legal/TermsOfService'
+import LegalNotice from '@/pages/legal/LegalNotice'
+
 const QuotesEntryRedirect = () => {
   const { user } = useAuth()
   const { features } = useFeatures()
@@ -118,6 +122,20 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+  path: '/privacy',
+  element: <PrivacyPolicy />,
+  },
+
+  {
+    path: '/terms',
+    element: <TermsOfService />,
+  },
+
+  {
+    path: '/legal',
+    element: <LegalNotice />,
   },
 
   {

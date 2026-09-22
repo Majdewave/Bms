@@ -119,7 +119,10 @@ const ensureCornerstoneReady = () => {
 
     console.log('[DicomViewer] 08 calling dicom loader init')
     if (typeof loaderExport.init === 'function') {
-      await loaderExport.init({ maxWebWorkers: 1 })
+      await loaderExport.init({
+        maxWebWorkers: 1,
+        useLegacyMetadataProvider: true,
+      })
     }
     console.log('[DicomViewer] 09 dicom loader init completed')
 
@@ -318,13 +321,55 @@ const DicomViewer = ({
     setCinePlaying(false)
   }
   const viewportId = (index: number) => index === 0 ? 'dicom-viewport' : `dicom-viewport-${index}`
-  const detectFrameCount = (loader: any, imageId: string) => {
-    try {
-      const parsed = loader.parseImageId(imageId)
-      const count = Number(loader.dataSetCacheManager.get(parsed.url)?.intString?.('x00280008'))
-      return Number.isInteger(count) && count > 1 ? count : 1
-    } catch { return 1 }
+
+  const detectFrameCount = async (
+  loader: any,
+  imageId: string
+): Promise<number> => {
+  try {
+    const parsed = loader.wadouri.parseImageId(imageId)
+    const uri = parsed.url
+
+    let dataSet =
+      loader.wadouri.dataSetCacheManager.get(uri)
+
+    if (!dataSet) {
+      dataSet = await loader.wadouri.dataSetCacheManager.load(
+        uri,
+        loader.wadouri.loadFileRequest,
+        imageId
+      )
+    }
+
+    const rawNumberOfFrames =
+      dataSet?.intString?.('x00280008')
+
+    const count = Number(rawNumberOfFrames)
+
+    console.log('[DicomViewer][FRAME-DETECT]', {
+      imageId,
+      uri,
+      hasDataSet: !!dataSet,
+      hasNumberOfFramesTag:
+        !!dataSet?.elements?.x00280008,
+      rawNumberOfFrames,
+      count,
+    })
+
+    return Number.isInteger(count) && count > 1
+      ? count
+      : 1
+  } catch (error) {
+    console.error(
+      '[DicomViewer][FRAME-DETECT] failed',
+      error
+    )
+
+    return 1
   }
+}
+
+
   const loadImageIds = async (loader: any, targetInstances: ImagingInstanceDetail[]) => {
     const imageIds: string[] = []
     for (const target of targetInstances) {
@@ -333,6 +378,23 @@ const DicomViewer = ({
       const blob = loadInstanceFile
         ? await loadInstanceFile(target.id)
         : await imagingService.getInstanceFileBlob(target.id)
+
+        console.log('[DicomViewer][BLOB CHECK]', {
+          instanceId: target.id,
+          size: blob.size,
+          type: blob.type,
+        })
+
+        const bytes = new Uint8Array(await blob.slice(0, 132).arrayBuffer())
+
+        console.log('[DicomViewer][BLOB CHECK]', {
+          first16: Array.from(bytes.slice(0, 16)),
+          dicm:
+            bytes.length >= 132
+              ? String.fromCharCode(...bytes.slice(128, 132))
+              : 'TOO_SHORT',
+        })
+
 
       const imageId = loader.wadouri.fileManager.add(blob)
       imageCacheRef.current.set(target.id, { imageId, fileIndex: getFileManagerIndexFromImageId(imageId) })
@@ -607,7 +669,15 @@ const DicomViewer = ({
           if (cancelled || generation !== viewportGenerationRef.current[index]) continue
           const selectedImageId = imageIds[Math.min(targetIndex, imageIds.length - 1)] ?? imageIds[0]
           if (index === 0) console.log('[DicomViewer] I primary imageId created')
-          const frameCount = detectFrameCount(loader, selectedImageId)
+          const frameCount = await detectFrameCount(loader, selectedImageId)
+        console.log('[DicomViewer][MULTIFRAME]', {
+        selectedImageId,
+        selectedInstanceId:
+          targetInstances[Math.min(targetIndex, targetInstances.length - 1)]?.id,
+        detectedFrameCount: frameCount,
+        targetIndex,
+        totalInstances: targetInstances.length,
+      })
           const frameImageIds = frameCount > 1 ? Array.from({ length: frameCount }, (_, frame) => `${selectedImageId}&frame=${frame + 1}`) : []
           const displayIds = frameImageIds.length ? frameImageIds : imageIds
           const viewport = renderingEngineRef.current?.getViewport(viewportId(index))

@@ -12,7 +12,7 @@ interface Props {
   onToggle?: () => void
 }
 
-type ImagingModality = 'US' | 'DX' | null
+type ImagingModality = 'US' | 'DX' | 'CR' | null
 
 type ServiceFormState = {
   name: string
@@ -178,6 +178,8 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
         return t('services.imagingOptions.us')
       case 'DX':
         return t('services.imagingOptions.dx')
+      case 'CR':
+        return t('services.imagingOptions.cr')
       default:
         return t('services.imagingOptions.none')
     }
@@ -311,6 +313,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                   <option value="">{t('services.imagingOptions.none')}</option>
                   <option value="US">{t('services.imagingOptions.us')}</option>
                   <option value="DX">{t('services.imagingOptions.dx')}</option>
+                  <option value="CR">{t('services.imagingOptions.cr')}</option>
                 </select>
 
                 <button
@@ -418,6 +421,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                               <option value="">{t('services.imagingOptions.none')}</option>
                               <option value="US">{t('services.imagingOptions.us')}</option>
                               <option value="DX">{t('services.imagingOptions.dx')}</option>
+                              <option value="CR">{t('services.imagingOptions.cr')}</option>
                             </select>
                           </div>
                         ) : (
@@ -558,6 +562,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                                   <option value="">{t('services.imagingOptions.none')}</option>
                                   <option value="US">{t('services.imagingOptions.us')}</option>
                                   <option value="DX">{t('services.imagingOptions.dx')}</option>
+                                  <option value="CR">{t('services.imagingOptions.cr')}</option>
                                 </select>
                               ) : (
                                 getImagingModalityLabel(service.imagingModality)
@@ -693,6 +698,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                                   <option value="">{t('services.imagingOptions.none')}</option>
                                   <option value="US">{t('services.imagingOptions.us')}</option>
                                   <option value="DX">{t('services.imagingOptions.dx')}</option>
+                                  <option value="CR">{t('services.imagingOptions.cr')}</option>
                                 </select>
                               ) : (
                                 getImagingModalityLabel(service.imagingModality)

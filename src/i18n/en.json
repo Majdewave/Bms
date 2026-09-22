@@ -144,6 +144,21 @@
     "title": "Medical Imaging",
     "loading": "Loading imaging studies...",
     "noStudies": "No imaging studies found.",
+    "filters": {
+      "label": "Imaging categories",
+      "all": "All",
+      "ultrasound": "Ultrasound",
+      "xray": "X-Ray"
+    },
+    "delete": {
+      "confirmTitle": "Delete {{examType}} exam?",
+      "confirmMessage": "Delete the {{examType}} exam from {{date}}?\nExam number: {{accessionNumber}}",
+      "confirmWarning": "This will affect only this exam, not the patient's other imaging exams.",
+      "button": "Delete exam",
+      "forbidden": "You are not authorized to delete this imaging exam.",
+      "notFound": "The imaging exam was not found.",
+      "failed": "Failed to delete the imaging exam."
+    },
     "accession": "Accession",
     "modality": "Modality",
     "storage": "Storage",
@@ -1247,7 +1262,8 @@
     "imagingOptions": {
       "none": "No imaging",
       "us": "US - Ultrasound",
-      "dx": "X-Ray - Digital X-Ray"
+      "dx": "DX - Digital Radiography",
+      "cr": "CR - Computed Radiography"
     },
     "validation": {
       "nameRequired": "Service name is required.",

@@ -585,19 +585,73 @@ else navigate('/', { replace: true });
           </form>
           </div>
 
-          {/* Footer Link - Outside Card */}
-          <p className="text-center text-slate-600 text-sm mt-6 mobile-footer-text">
-            {t('login.noAccount')}{' '}
-           <a
-                  href="/register"
-                    className="font-medium no-underline text-sky-700 md:text-blue-600"
+          {/* Register Link */}
+          <p
+            dir="rtl"
+            className="text-center text-slate-600 text-sm mt-6 mobile-footer-text"
+          >
+            אין לך חשבון?{' '}
+            <a
+              href="/register"
+              className="font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+            >
+              הצטרפות
+            </a>
+          </p>
+          <div dir="rtl"  className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-slate-500 mobile-footer-text">
+            <a href="/privacy"  className="transition-colors hover:text-indigo-600 hover:underline">
+              מדיניות פרטיות
+            </a>
+
+            <span aria-hidden="true">·</span>
+            <a href="/terms"
+              className="transition-colors hover:text-indigo-600 hover:underline">
+              תנאי שימוש
+            </a>
+
+            <span aria-hidden="true">·</span>
+            <a
+              href="/legal"
+              className="transition-colors hover:text-indigo-600 hover:underline">
+              הודעה משפטית
+            </a>
+          </div>
+
+          <div
+            dir="rtl"
+            className="text-center text-slate-500 text-xs mt-3 mobile-footer-text"
+          >
+            <div>
+              נתקלת בתקלה או צריך עזרה?{' '}
+              <span className="font-semibold text-slate-600">תמיכה טכנית</span>
+            </div>
+
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2">
+              {config.supportPhone && (
+                <a
+                  href={`tel:${config.supportPhone}`}
+                  dir="ltr"
+                  className="font-medium text-blue-600 hover:underline"
                 >
-              ×”×¦×˜×¨×¤×•×ª
-          </a>
-          </p>
-          <p className="text-center text-slate-500 text-xs mt-2 mobile-footer-text">
-            {config.supportPhone || config.supportEmail}
-          </p>
+                  {config.supportPhone}
+                </a>
+              )}
+
+              {config.supportPhone && config.supportEmail && (
+                <span className="text-slate-400">·</span>
+              )}
+
+              {config.supportEmail && (
+                <a
+                  href={`mailto:${config.supportEmail}`}
+                  dir="ltr"
+                  className="font-medium text-blue-600 hover:underline"
+                >
+                  {config.supportEmail}
+                </a>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

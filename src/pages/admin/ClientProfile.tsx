@@ -239,6 +239,7 @@ export default function ClientProfile() {
   const [imagingStudies, setImagingStudies] = useState<ImagingStudySummary[]>([])
   const [imagingCases, setImagingCases] = useState<ClientImagingCase[]>([])
   const [selectedImagingCase, setSelectedImagingCase] = useState<ClientImagingCase | null>(null)
+  const [imagingFilter, setImagingFilter] = useState<'all' | 'ultrasound' | 'xray'>('all')
   const [selectedStudy, setSelectedStudy] = useState<ImagingStudyHierarchy | null>(null)
   const [selectedSeriesIndex, setSelectedSeriesIndex] = useState(0)
   const [selectedInstanceIndex, setSelectedInstanceIndex] = useState(0)
@@ -271,6 +272,37 @@ export default function ClientProfile() {
         : [...prev, sectionId]
     )
   }
+
+  const getImagingCategory = (modality: string) =>
+    modality.toUpperCase() === 'US' ? 'ultrasound' : 'xray'
+
+  const filteredImagingCases = imagingCases.filter((imagingCase) =>
+    imagingFilter === 'all' || getImagingCategory(imagingCase.modality) === imagingFilter
+  )
+
+  const imagingCategoryLabel = (modality: string) =>
+    getImagingCategory(modality) === 'ultrasound'
+      ? t('imaging.filters.ultrasound')
+      : t('imaging.filters.xray')
+
+  useEffect(() => {
+    if (filteredImagingCases.length === 0) {
+      setSelectedImagingCase(null)
+      setSelectedStudy(null)
+      setSelectedSeriesIndex(0)
+      setSelectedInstanceIndex(0)
+      return
+    }
+
+    if (selectedImagingCase && filteredImagingCases.some((imagingCase) => imagingCase.id === selectedImagingCase.id)) {
+      return
+    }
+
+    setSelectedImagingCase(filteredImagingCases[0])
+    setSelectedStudy(null)
+    setSelectedSeriesIndex(0)
+    setSelectedInstanceIndex(0)
+  }, [imagingCases, imagingFilter])
 
   const reloadConsents = async (clientId = id) => {
     if (!clientId || clientId === 'new') return
@@ -576,7 +608,7 @@ useEffect(() => {
 
     if (
       !selectedImagingCase ||
-      selectedImagingCase.modality !== 'US' ||
+      !['US', 'DX', 'CR'].includes(selectedImagingCase.modality) ||
       selectedImagingCase.id.startsWith('legacy-')
     ) {
       return
@@ -608,7 +640,7 @@ useEffect(() => {
 
       if (
         !selectedImagingCase ||
-        selectedImagingCase.modality !== 'US' ||
+        !['US', 'DX', 'CR'].includes(selectedImagingCase.modality) ||
         selectedImagingCase.id.startsWith('legacy-') ||
         !selectedStudy
       ) {
@@ -1159,7 +1191,7 @@ const saveClient = async () => {
   const handleSendForInterpretation = async () => {
     if (
       !selectedImagingCase ||
-      selectedImagingCase.modality !== 'US' ||
+      !['US', 'DX', 'CR'].includes(selectedImagingCase.modality) ||
       selectedImagingCase.id.startsWith('legacy-') ||
       !selectedStudy ||
       !selectedInterpreterId ||
@@ -1250,15 +1282,20 @@ const saveClient = async () => {
       }
     }
 
-  const handleDeleteImagingCase = async () => {
-  if (!selectedImagingCase || selectedImagingCase.id.startsWith('legacy-')) {
+  const handleDeleteImagingCase = async (imagingCase: ClientImagingCase) => {
+  if (imagingCase.id.startsWith('legacy-')) {
     return
   }
 
+  const examType = imagingCategoryLabel(imagingCase.modality)
   const confirmed = window.confirm(
-    `למחוק את בדיקת הדימות ${selectedImagingCase.accessionNumber}?\n\n` +
-    'הפעולה תמחק את בדיקת הדימות, התמונות, ההפניה והפענוח המקושר אליה.\n' +
-    'לא ניתן לבטל פעולה זו.'
+    `${t('imaging.delete.confirmTitle', { examType })}\n\n` +
+    `${t('imaging.delete.confirmMessage', {
+      examType,
+      date: new Date(imagingCase.scheduledStartTime).toLocaleDateString(i18n.language),
+      accessionNumber: imagingCase.accessionNumber,
+    })}\n` +
+    t('imaging.delete.confirmWarning')
   )
 
   if (!confirmed) return
@@ -1266,7 +1303,7 @@ const saveClient = async () => {
   try {
     setImagingLoading(true)
 
-    const deletedOrderId = selectedImagingCase.id
+    const deletedOrderId = imagingCase.id
 
     await deleteImagingOrder(deletedOrderId)
 
@@ -1282,24 +1319,26 @@ const saveClient = async () => {
 
     setImagingStudies(remainingStudies)
 
-    setSelectedImagingCase(null)
-    setSelectedStudy(null)
-    setInterpretationRequest(null)
-    setInterpreters([])
-    setSelectedInterpreterId('')
-    setInterpretationError(null)
-    setSelectedSeriesIndex(0)
-    setSelectedInstanceIndex(0)
-    setIsViewerOpen(false)
+    if (selectedImagingCase?.id === deletedOrderId) {
+      setSelectedImagingCase(null)
+      setSelectedStudy(null)
+      setInterpretationRequest(null)
+      setInterpreters([])
+      setSelectedInterpreterId('')
+      setInterpretationError(null)
+      setSelectedSeriesIndex(0)
+      setSelectedInstanceIndex(0)
+      setIsViewerOpen(false)
+    }
   } catch (error) {
     console.error('Failed to delete imaging case:', error)
 
     if (error instanceof ApiError && error.status === 403) {
-      alert('אין הרשאה למחיקת בדיקת הדימות.')
+          alert(t('imaging.delete.forbidden'))
     } else if (error instanceof ApiError && error.status === 404) {
-      alert('בדיקת הדימות לא נמצאה.')
+          alert(t('imaging.delete.notFound'))
     } else {
-      alert('מחיקת בדיקת הדימות נכשלה.')
+      alert(t('imaging.delete.failed'))
     }
   } finally {
     setImagingLoading(false)
@@ -1777,24 +1816,65 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
               <div className="py-6 text-slate-500">{t('imaging.noStudies')}</div>
             ) : (
               <div className="space-y-4">
-                <div className="flex flex-col gap-2 md:flex-row md:flex-wrap">
-                  {imagingCases.map((imagingCase) => (
+                <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('imaging.filters.label')}>
+                  {([
+                    ['all', t('imaging.filters.all'), imagingCases.length],
+                    ['ultrasound', t('imaging.filters.ultrasound'), imagingCases.filter((imagingCase) => getImagingCategory(imagingCase.modality) === 'ultrasound').length],
+                    ['xray', t('imaging.filters.xray'), imagingCases.filter((imagingCase) => getImagingCategory(imagingCase.modality) === 'xray').length],
+                  ] as const).map(([filter, label, count]) => (
                     <button
-                      key={imagingCase.id}
+                      key={filter}
                       type="button"
-                      onClick={() => void handleImagingCaseClick(imagingCase)}
-                      className={`rounded-xl border px-3 py-2 text-left transition ${
+                      role="tab"
+                      aria-selected={imagingFilter === filter}
+                      onClick={() => setImagingFilter(filter)}
+                      className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+                        imagingFilter === filter
+                          ? 'border-violet-500 bg-violet-50 text-violet-900'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {label} ({count})
+                    </button>
+                  ))}
+                </div>
+
+                {filteredImagingCases.length === 0 ? (
+                  <div className="py-6 text-slate-500">{t('imaging.noStudies')}</div>
+                ) : (
+                <div className="flex flex-col gap-2 md:flex-row md:flex-wrap">
+                  {filteredImagingCases.map((imagingCase) => (
+                    <div
+                      key={imagingCase.id}
+                      className={`flex items-start gap-2 rounded-xl border px-3 py-2 transition ${
                         selectedImagingCase?.id === imagingCase.id
                           ? 'border-violet-500 bg-violet-50 text-violet-900'
                           : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                       }`}
                     >
-                      <div className="text-sm font-semibold">{imagingCase.accessionNumber}</div>
-                      <div className="text-xs text-slate-500">{getImagingModalityLabel(imagingCase.modality, t)}</div>
-                      <div className="text-xs text-slate-500">{new Date(imagingCase.scheduledStartTime).toLocaleDateString(i18n.language)}</div>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleImagingCaseClick(imagingCase)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <div className="text-sm font-semibold">{imagingCase.accessionNumber}</div>
+                        <div className="text-xs text-slate-500">{getImagingModalityLabel(imagingCase.modality, t)}</div>
+                        <div className="text-xs text-slate-500">{new Date(imagingCase.scheduledStartTime).toLocaleDateString(i18n.language)}</div>
+                      </button>
+                      {isAdmin && !imagingCase.id.startsWith('legacy-') && (
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteImagingCase(imagingCase)}
+                          disabled={imagingLoading}
+                          className="shrink-0 rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {t('imaging.delete.button')}
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
+                )}
 
                 {selectedImagingCase && (
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
@@ -1814,7 +1894,7 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
                       {isAdmin && !selectedImagingCase.id.startsWith('legacy-') && (
                         <button
                           type="button"
-                          onClick={() => void handleDeleteImagingCase()}
+                          onClick={() => void handleDeleteImagingCase(selectedImagingCase)}
                           disabled={imagingLoading}
                           className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
                         >
@@ -1824,7 +1904,7 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
                       )}
                     </div>
 
-                    {selectedImagingCase.modality === 'US' && (selectedImagingCase.referringDoctorName || selectedImagingCase.referral) && (
+                    {['US', 'DX', 'CR'].includes(selectedImagingCase.modality) && (selectedImagingCase.referringDoctorName || selectedImagingCase.referral) && (
                       <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3" dir="rtl">
                         {selectedImagingCase.referringDoctorName && (
                           <div>
@@ -1848,7 +1928,7 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
                       </div>
                     )}
 
-                    {selectedImagingCase.modality === 'US' &&
+                    {['US', 'DX', 'CR'].includes(selectedImagingCase.modality) &&
                       !selectedImagingCase.id.startsWith('legacy-') &&
                       selectedStudy && (
                       <div className="border-t border-slate-200 pt-4" dir="rtl">

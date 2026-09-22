@@ -28,6 +28,7 @@ import {
 } from '@/api/interpreterPortal'
 import type { ImagingInstanceDetail, ImagingSeriesDetail, ImagingStudyHierarchy } from '@/api/imaging'
 import PdfViewerModal from '@/components/PdfViewerModal'
+import { getImagingModalityLabel } from '@/utils/imaging'
 
 const DicomViewer = lazy(() => import('@/components/imaging/DicomViewer'))
 function formatDate(value: string, language: string) {
@@ -439,7 +440,7 @@ export default function InterpreterCase() {
       <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
           <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-blue-600">{t('interpreter.currentCase')}</div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-950">{t('interpreter.examTitle')} ({caseData.modality})</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950">{getImagingModalityLabel(caseData.modality, t)} ({caseData.modality})</h1>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
             <span>{caseData.clientDisplayName}</span>
             <span className="text-slate-300">|</span>
@@ -585,7 +586,7 @@ export default function InterpreterCase() {
         blob={pdfBlob}
         loading={pdfLoading}
         error={pdfError}
-        title="פענוח בדיקת אולטרסאונד"
+        title={caseData ? `${t('interpreter.reportTitle')} - ${getImagingModalityLabel(caseData.modality, t)}` : t('interpreter.reportTitle')}
         onClose={() => { setIsPdfViewerOpen(false); setPdfBlob(null); setPdfError(null) }}
       />
     </div>
