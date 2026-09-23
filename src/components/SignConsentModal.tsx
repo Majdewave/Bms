@@ -162,6 +162,40 @@ export default function SignConsentModal({
   }, [renderedHtml])
 
   useEffect(() => {
+    const canvas = canvasRef.current
+    if (!isOpen || !canvas) return
+
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect()
+      if (!rect.width || !rect.height) return
+
+      const pixelRatio = window.devicePixelRatio || 1
+      const previousCanvas = document.createElement('canvas')
+      previousCanvas.width = canvas.width
+      previousCanvas.height = canvas.height
+      previousCanvas.getContext('2d')?.drawImage(canvas, 0, 0)
+
+      canvas.width = Math.round(rect.width * pixelRatio)
+      canvas.height = Math.round(rect.height * pixelRatio)
+
+      const context = canvas.getContext('2d')
+      if (!context) return
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+      context.lineCap = 'round'
+      context.lineJoin = 'round'
+
+      if (previousCanvas.width && previousCanvas.height) {
+        context.drawImage(previousCanvas, 0, 0, previousCanvas.width, previousCanvas.height, 0, 0, rect.width, rect.height)
+      }
+    }
+
+    resizeCanvas()
+    const observer = new ResizeObserver(resizeCanvas)
+    observer.observe(canvas)
+    return () => observer.disconnect()
+  }, [isOpen, wacomSignature])
+
+  useEffect(() => {
     const onSignatureCaptured = (event: Event) => {
       const customEvent = event as CustomEvent<string>
       if (typeof customEvent.detail === 'string' && customEvent.detail.trim()) {
@@ -177,7 +211,7 @@ export default function SignConsentModal({
     }
   }, [])
 
-  const getPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getPoint = (e: { clientX: number; clientY: number }) => {
     const canvas = canvasRef.current
     if (!canvas) return null
     const rect = canvas.getBoundingClientRect()
@@ -187,7 +221,7 @@ export default function SignConsentModal({
     }
   }
 
-  const startDraw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
     if (!canvas) return
     const point = getPoint(e)
@@ -195,12 +229,13 @@ export default function SignConsentModal({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    canvas.setPointerCapture(e.pointerId)
     drawingRef.current = true
     ctx.beginPath()
     ctx.moveTo(point.x, point.y)
   }
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!drawingRef.current) return
     const canvas = canvasRef.current
     if (!canvas) return
@@ -216,8 +251,11 @@ export default function SignConsentModal({
     ctx.stroke()
   }
 
-  const endDraw = () => {
+  const endDraw = (e?: React.PointerEvent<HTMLCanvasElement>) => {
     drawingRef.current = false
+    if (e?.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
   }
 
   const clearSignature = () => {
@@ -341,20 +379,20 @@ export default function SignConsentModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 sm:p-6" dir={dir}>
-      <div className="w-full max-w-4xl max-h-[88vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-2 sm:p-6" dir={dir}>
+      <div className="flex max-h-[calc(100dvh-1rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[88vh]">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:px-6">
+          <div className="min-w-0 flex-1">
             <h3 className="text-lg font-semibold text-slate-900">{t('consent.title')}</h3>
-            <p className="text-sm text-slate-500">{clientName} • {serviceName || '-'}</p>
+            <p className="break-words text-sm text-slate-500">{clientName} • {serviceName || '-'}</p>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-700">
+          <button onClick={onClose} className="shrink-0 text-slate-500 hover:text-slate-700">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 p-5 grid grid-cols-1 lg:grid-cols-2 gap-5 overflow-y-auto">
-          <div className="border border-slate-200 rounded-xl bg-slate-50 p-4 min-h-[320px]">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-y-auto p-3 sm:p-5 lg:grid-cols-2">
+          <div className="min-h-[260px] min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 sm:min-h-[320px] sm:p-4">
             {loading ? (
               <div className="text-slate-500 text-sm">{t('common.loading')}</div>
             ) : !template ? (
@@ -395,28 +433,28 @@ export default function SignConsentModal({
                     className="w-full h-full min-h-[300px] p-4 border rounded-lg text-sm font-mono"
                   />
                 ) : (
-                  <div className="prose prose-sm max-w-none text-slate-700" dangerouslySetInnerHTML={{ __html: editableContent }} />
+                  <div className="prose prose-sm max-w-none break-words text-slate-700" dangerouslySetInnerHTML={{ __html: editableContent }} />
                 )}
               </>
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="min-w-0 space-y-3">
             <canvas ref={signatureCanvasRef} width={700} height={260} className="hidden" />
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <h4 className="font-medium text-slate-800">{t('consent.clientSignature')}</h4>
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
                 <button
                   type="button"
                   onClick={handleWacomSign}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-blue-300 text-blue-700 hover:bg-blue-50"
+                  className="inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-md border border-blue-300 px-3 py-1.5 text-xs text-blue-700 hover:bg-blue-50 sm:flex-none"
                 >
                   Sign with Wacom
                 </button>
                 <button
                   type="button"
                   onClick={clearSignature}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-slate-300 text-slate-600 hover:bg-slate-50"
+                  className="inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 sm:flex-none"
                 >
                   <Eraser className="w-3 h-3" />
                   {t('consent.clear')}
@@ -432,11 +470,12 @@ export default function SignConsentModal({
                 ref={canvasRef}
                 width={700}
                 height={260}
-                onMouseDown={startDraw}
-                onMouseMove={draw}
-                onMouseUp={endDraw}
-                onMouseLeave={endDraw}
-                className="w-full h-[190px] border border-dashed border-slate-300 rounded-xl bg-white touch-none"
+                onPointerDown={startDraw}
+                onPointerMove={draw}
+                onPointerUp={endDraw}
+                onPointerCancel={endDraw}
+                onPointerLeave={endDraw}
+                className="h-[180px] w-full touch-none rounded-xl border border-dashed border-slate-300 bg-white sm:h-[190px]"
               />
             )}
             <p className="text-xs text-slate-500">{t('consent.signInstruction')}</p>
@@ -444,10 +483,10 @@ export default function SignConsentModal({
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-4 sm:px-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700"
+            className="min-h-10 flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 sm:flex-none"
             disabled={signing}
           >
             {t('consent.cancelButton')}
@@ -455,7 +494,7 @@ export default function SignConsentModal({
           <button
             onClick={handleSign}
             disabled={loading || !template || signing}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+            className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-60 sm:flex-none"
           >
             <FileCheck2 className="w-4 h-4" />
             {signing ? t('consent.signing') : t('consent.signButton')}
