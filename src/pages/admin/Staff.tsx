@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTenant } from '@/contexts/TenantContext'
 import { staffService } from '@/api/staff'
 import { departmentService, type Department } from '@/api/departmentService'
 import type { StaffMember, StaffPermission, VisibleMenuItem } from '@/api'
@@ -28,6 +29,10 @@ export default function AdminStaff() {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.dir() === 'rtl'
   const { hasPermission, user } = useAuth()
+  const { productType } = useTenant()
+  const isBusiness = productType === 'business'
+  const canManageStaff = hasPermission('manage_staff') && (!isBusiness || user?.role === 'admin')
+  const canViewBusinessTeam = isBusiness && user?.role === 'staff'
 
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [loading, setLoading] = useState(true)
@@ -62,23 +67,25 @@ export default function AdminStaff() {
   const [stampPreview, setStampPreview] = useState<string>('')
   const [uploadingStamp, setUploadingStamp] = useState(false)
 
-  const permissionOptions: Array<{ permission: StaffPermission; icon: typeof User }> = [
+  const allPermissionOptions: Array<{ permission: StaffPermission; icon: typeof User }> = [
     { permission: 'manage_clients', icon: User },
     { permission: 'manage_appointments', icon: Calendar },
     { permission: 'manage_invoices', icon: FileText },
     { permission: 'manage_quotes', icon: FileText },
+    { permission: 'manage_projects', icon: Folder },
     { permission: 'manage_notes', icon: Pencil },
     { permission: 'manage_files', icon: Folder },
   ]
+  const permissionOptions = allPermissionOptions.filter(({ permission }) => !isBusiness || permission !== 'manage_appointments')
 
   
   useEffect(() => {
-    if (!hasPermission('manage_staff')) {
+    if (!canManageStaff && !canViewBusinessTeam) {
       navigate('/unauthorized')
       return
     }
     loadStaff()
-  }, [hasPermission, navigate])
+  }, [canManageStaff, canViewBusinessTeam, navigate])
 
   useEffect(() => {
     if (role === 'Admin') {
@@ -150,7 +157,7 @@ export default function AdminStaff() {
     }
 
     const selectedDepartmentIds = formData.DepartmentIds || []
-    if (role === 'Staff' && selectedDepartmentIds.length === 0) {
+    if (role === 'Staff' && selectedDepartmentIds.length === 0 && !isBusiness) {
       setDepartmentError(t('admin.staff.validation.departmentRequired'))
       return
     }
@@ -408,10 +415,10 @@ export default function AdminStaff() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-slate-900">{t('admin.staff.title')}</h1>
-            <p className="text-base text-slate-600 mt-2">{t('admin.staff.subtitle')}</p>
+            <p className="text-base text-slate-600 mt-2">{canViewBusinessTeam ? t('businessShell.team.readOnly') : t('admin.staff.subtitle')}</p>
           </div>
 
-          <div className="w-full md:w-auto">
+          {canManageStaff && <div className="w-full md:w-auto">
             <button
               onClick={() => setShowModal(true)}
               className="btn-primary btn-md gap-2 w-full justify-center md:w-auto"
@@ -419,7 +426,7 @@ export default function AdminStaff() {
               <Plus className="w-4 h-4" />
               {t('admin.staff.addNew')}
             </button>
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -483,10 +490,12 @@ export default function AdminStaff() {
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
                               {staffMember.roleLabel}
                             </span>
-                            <span className="text-sm text-slate-500">{t('admin.staff.table.status')}:</span>
-                            <Badge variant={staffMember.isActive ? 'success' : 'slate'}>
-                              {staffMember.isActive ? t('admin.staff.status.active') : t('admin.staff.status.inactive')}
-                            </Badge>
+                            {!canViewBusinessTeam && <>
+                              <span className="text-sm text-slate-500">{t('admin.staff.table.status')}:</span>
+                              <Badge variant={staffMember.isActive ? 'success' : 'slate'}>
+                                {staffMember.isActive ? t('admin.staff.status.active') : t('admin.staff.status.inactive')}
+                              </Badge>
+                            </>}
                           </div>
                         </div>
                         {staffMember.isOwner ? (
@@ -497,50 +506,50 @@ export default function AdminStaff() {
                           <span className="px-2 py-1 text-sm font-semibold bg-purple-100 text-purple-700 rounded-full shrink-0">
                             אדמין
                           </span>
-                        ) : (
+                        ) : !canViewBusinessTeam ? (
                           <span className="text-sm text-slate-500 shrink-0">
-                            {staffMember.permissions.length} {t('admin.staff.permissionsLabel')}
+                            {(staffMember.permissions?.length ?? 0)} {t('admin.staff.permissionsLabel')}
                           </span>
-                        )}
+                        ) : null}
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm text-slate-700 break-all">
+                      {!canViewBusinessTeam && <div className="flex items-center gap-2 text-sm text-slate-700 break-all">
                         <Mail className="w-4 h-4 text-slate-400 shrink-0" />
                         <span className="text-sm"><span className="text-slate-500">{t('admin.staff.table.email')}:</span> {staffMember.email}</span>
-                      </div>
+                      </div>}
 
-                      <div className="text-sm text-slate-700">
+                      {!canViewBusinessTeam && <div className="text-sm text-slate-700">
                         <span className="text-slate-500">{t('admin.staff.table.phone', 'Phone')}:</span> {(staffMember as any).phone || '—'}
-                      </div>
+                      </div>}
 
-                      <div className="text-sm text-slate-700">
+                      {!canViewBusinessTeam && <div className="text-sm text-slate-700">
                         <span className="text-slate-500">{t('admin.staff.table.lastLogin')}:</span> {(staffMember.lastLoginAt || staffMember.lastLogin) ? formatDate(staffMember.lastLoginAt || staffMember.lastLogin || '') : '—'}
-                      </div>
+                      </div>}
 
-                      <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
+                      {!canViewBusinessTeam && <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
                         <span className="text-slate-500">{t('admin.staff.form.stamp', 'Stamp')}:</span>
                         {staffMember.useStamp ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Enabled</span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Disabled</span>
                         )}
-                      </div>
+                      </div>}
 
-                      {staffMember.useStamp && staffMember.stampUrl && (
+                      {!canViewBusinessTeam && staffMember.useStamp && staffMember.stampUrl && (
                         <div className="border border-slate-200 rounded-lg bg-white p-3 w-fit">
                           <img src={staffMember.stampUrl} alt="Staff stamp" className="max-h-14 object-contain" />
                         </div>
                       )}
 
                       <div className="flex items-center justify-end gap-2 pt-1">
-                        <button
+                        {canManageStaff && <button
                           onClick={() => openEditModal(staffMember)}
                           className="p-2 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
                           title={t('admin.staff.actions.edit')}
                         >
                           <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
+                        </button>}
+                        {canManageStaff && <button
                           onClick={() => handleToggleStatus(staffMember)}
                           disabled={staffMember.isOwner}
                           className={`p-2 rounded-lg transition-colors ${staffMember.isOwner ? 'cursor-not-allowed text-slate-300' :
@@ -551,15 +560,15 @@ export default function AdminStaff() {
                           title={staffMember.isOwner ? t('admin.staff.ownerProtected') : t(`admin.staff.actions.${staffMember.isActive ? 'block' : 'unblock'}`)}
                         >
                           <Ban className="w-4 h-4" />
-                        </button>
-                        <button
+                        </button>}
+                        {canManageStaff && <button
                           onClick={() => handleDelete(staffMember)}
                           disabled={staffMember.isOwner}
                           className={`p-2 rounded-lg transition ${staffMember.isOwner ? 'cursor-not-allowed text-slate-300' : 'text-gray-500 hover:bg-red-50 hover:text-red-600'}`}
                           title={staffMember.isOwner ? t('admin.staff.ownerProtected') : t('admin.staff.actions.delete')}
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </button>}
                       </div>
                     </div>
                   </div>
@@ -571,7 +580,12 @@ export default function AdminStaff() {
               <table dir={isRTL ? 'rtl' : 'ltr'} className="w-full">
                 <thead>
                   <tr className="border-b border-slate-200">
-                    {isRTL ? (
+                    {canViewBusinessTeam ? (
+                      <>
+                        <th className={`px-6 py-3 text-xs font-semibold text-slate-600 uppercase ${isRTL ? 'text-right' : 'text-left'}`}>{t('admin.staff.table.name')}</th>
+                        <th className={`px-6 py-3 text-xs font-semibold text-slate-600 uppercase ${isRTL ? 'text-right' : 'text-left'}`}>{t('admin.staff.table.role')}</th>
+                      </>
+                    ) : isRTL ? (
                       <>
                         <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
                           {t('admin.staff.table.name')}
@@ -630,30 +644,28 @@ export default function AdminStaff() {
                               <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">
                                 אדמין
                               </span>
-                            ) : (
+                            ) : !canViewBusinessTeam ? (
                               <span className="text-sm text-slate-500">
-                                {staffMember.permissions.length} {t('admin.staff.permissionsLabel')}
+                                {(staffMember.permissions?.length ?? 0)} {t('admin.staff.permissionsLabel')}
                               </span>
-                            )}
+                            ) : null}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-slate-700">
-                        {staffMember.email}
-                      </td>
+                      {!canViewBusinessTeam && <td className="px-6 py-4 text-slate-700">{staffMember.email}</td>}
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                           {staffMember.roleLabel}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      {!canViewBusinessTeam && <td className="px-6 py-4">
                         <Badge variant={staffMember.isActive ? 'success' : 'slate'}>
                           {staffMember.isActive ? t('admin.staff.status.active') : t('admin.staff.status.inactive')}
                         </Badge>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
+                      </td>}
+                      {!canViewBusinessTeam && <td className="px-6 py-4 text-sm text-slate-600">
                         {(staffMember.lastLoginAt || staffMember.lastLogin) ? formatDate(staffMember.lastLoginAt || staffMember.lastLogin || '') : '—'}
-                      </td>
-                      <td className={`px-6 py-4 ${isRTL ? 'text-left' : 'text-right'}`}>
+                      </td>}
+                      {canManageStaff && <td className={`px-6 py-4 ${isRTL ? 'text-left' : 'text-right'}`}>
                         <div className={`flex items-center gap-2 ${isRTL ? 'justify-start' : 'justify-end'}`}>
                           <button
                             onClick={() => openEditModal(staffMember)}
@@ -683,7 +695,7 @@ export default function AdminStaff() {
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                      </td>
+                      </td>}
                     </tr>
                   ))}
                 </tbody>
@@ -694,7 +706,7 @@ export default function AdminStaff() {
       </div>
 
       {/* Add/Edit Modal */}
-      {showModal && (
+      {canManageStaff && showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             {/* Header */}
@@ -782,7 +794,7 @@ export default function AdminStaff() {
                   >
                     <option value="Staff">{t('admin.staff.form.userTypes.staff')}</option>
                     <option value="Admin">{t('admin.staff.form.userTypes.admin')}</option>
-                    <option value="Interpreter">{t('admin.staff.form.userTypes.interpreter')}</option>
+                    {!isBusiness && <option value="Interpreter">{t('admin.staff.form.userTypes.interpreter')}</option>}
                   </select>
                   {editingStaff?.isOwner && (
                     <p className="text-xs text-slate-500 mt-1">{t('admin.staff.ownerProtected')}</p>
@@ -826,7 +838,7 @@ export default function AdminStaff() {
               )}
 
               {/* Departments */}
-              {!isInterpreter && (
+              {!isInterpreter && !isBusiness && (
               <div className="space-y-4">
                 <div className="flex flex-col gap-1">
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
@@ -901,7 +913,7 @@ export default function AdminStaff() {
                 <p className="text-sm text-slate-600">{t('admin.staff.form.menuVisibilityHint')}</p>
 
                 <div className="space-y-3">
-                  {(['clients', 'appointments'] as VisibleMenuItem[]).map((item) => (
+                  {(['clients', ...(!isBusiness ? ['appointments' as const] : [])] as VisibleMenuItem[]).map((item) => (
                     <label
                       key={item}
                       className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer"

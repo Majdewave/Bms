@@ -5,6 +5,7 @@ export interface BusinessSettings {
   name: string
   legalBusinessName?: string | null
   businessRegistrationNumber?: string | null
+  address?: string | null
   subdomain: string
   logoUrl: string | null
   plan: string
@@ -47,6 +48,7 @@ export const updateBusinessSettings = async (
     name: string
     legalBusinessName?: string | null
     businessRegistrationNumber?: string | null
+    address?: string | null
     logoUrl?: string | null
     businessStampUrl?: string | null
     phone?: string

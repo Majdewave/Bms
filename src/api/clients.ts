@@ -134,8 +134,8 @@ export const updateClient = async (
     internalNote?: string
     isActive: boolean
   }>
-): Promise<Client> => {
-  return put<Client>(`/api/clients/${id}`, client)
+): Promise<void> => {
+  return put<void>(`/api/clients/${id}`, client)
 }
 
 export const deleteClient = async (id: string): Promise<void> => {
@@ -157,7 +157,6 @@ export const checkDuplicateClientIdNumber = async (
 // Note: These legacy methods are deprecated, use notes.ts API instead
 export interface ClientNote {
   id: string
-  content: string
   createdBy: string
   createdById: string
   createdAt: string

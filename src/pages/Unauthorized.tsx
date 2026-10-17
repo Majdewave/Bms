@@ -2,13 +2,17 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTranslation } from 'react-i18next'
 import { AlertCircle, ArrowLeft } from 'lucide-react'
+import { useTenant } from '@/contexts/TenantContext'
 
 export default function Unauthorized() {
   const { user } = useAuth()
+  const { productType, productResolved } = useTenant()
   const { t } = useTranslation()
 
   const getDashboardPath = () => {
     if (!user?.role) return '/'
+    if (productType === 'business') return '/business/dashboard'
+    if (user.role === 'admin') return '/admin/dashboard'
     return `/${user.role}/dashboard`
   }
 
@@ -23,6 +27,10 @@ export default function Unauthorized() {
       default:
         return user?.role
     }
+  }
+
+  if (user && !productResolved) {
+    return <div className="flex min-h-screen items-center justify-center text-slate-500">{t('common.loading')}</div>
   }
 
   return (

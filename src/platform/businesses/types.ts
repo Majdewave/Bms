@@ -18,6 +18,7 @@ export interface BusinessRecord {
   email: string
   phone: string
   businessType: string | null
+  productType: 'Clinic' | 'Business' | null
   status: BusinessStatus
   approvalStatus: BusinessStatus
   plan: BusinessPlan

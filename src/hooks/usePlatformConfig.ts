@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
 import { fetchPublicPlatformSettings, type PlatformSettings } from '@/platform/settings/services/platformSettingsService'
 
+const fallbackLegacyTrialDays = 21
+
 const fallbackConfig: PlatformSettings = {
   id: '',
   supportEmail: 'support@clienta.digitalpenpro.com',
   supportPhone: null,
   websiteUrl: 'https://clienta.digitalpenpro.com',
-  defaultTrialDays: 21,
+  defaultTrialDays: fallbackLegacyTrialDays,
+  clinicTrialDays: fallbackLegacyTrialDays,
+  businessTrialDays: fallbackLegacyTrialDays,
   trialReminderDays: 3,
   allowRegistrations: true,
   requireManualApproval: true,

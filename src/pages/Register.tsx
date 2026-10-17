@@ -15,6 +15,7 @@ export default function Register() {
   const { config } = usePlatformConfig()
   const isRTL = i18n.dir() === 'rtl';
   const [businessName, setBusinessName] = useState("");
+  const [productType, setProductType] = useState<"clinic" | "business" | "">("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -63,6 +64,8 @@ export default function Register() {
           return t('register.errors.passwordTooShort');
         case "PASSWORDS_DO_NOT_MATCH":
           return t('register.errors.passwordsDoNotMatch');
+        case "PRODUCT_TYPE_REQUIRED":
+          return t('register.errors.productTypeRequired');
         case "USER_ALREADY_EXISTS":
           return t('register.errors.emailExists');
         case "DATABASE_ERROR":
@@ -129,9 +132,10 @@ export default function Register() {
       phone: validatePhone(phone),
       password: validatePassword(password),
       confirmPassword: validateConfirmPassword(confirmPassword, password),
-      acceptedTerms: acceptedTerms ? null : 'יש לאשר את תנאי השימוש ומדיניות הפרטיות',
+      productType: productType ? null : t('register.errors.productTypeRequired'),
+      acceptedTerms: acceptedTerms ? null : t('register.errors.termsRequired'),
     }),
-    [businessName, fullName, email, phone, password, confirmPassword, acceptedTerms, t]
+    [businessName, productType, fullName, email, phone, password, confirmPassword, acceptedTerms, t]
   );
 
   const isFormValid = useMemo(
@@ -150,9 +154,14 @@ export default function Register() {
   const textAlignClass = isRTL ? 'text-right' : 'text-left';
   const iconButtonSideClass = isRTL ? 'left-3' : 'right-3';
   const passwordInputPaddingClass = isRTL ? 'pl-4 pr-12' : 'pl-4 pr-12';
-  const trialDaysLabel = isRTL
-    ? `${config.defaultTrialDays} ימי ניסיון חינם`
-    : `${config.defaultTrialDays}-day free trial`;
+  const selectedTrialDays = productType === 'clinic'
+    ? config.clinicTrialDays
+    : productType === 'business'
+      ? config.businessTrialDays
+      : null;
+  const trialDaysLabel = selectedTrialDays === null
+    ? t('register.product.selectToSeeTrial')
+    : t('register.product.trialDuration', { days: selectedTrialDays });
 
   const handleFieldBlur = (fieldName: keyof typeof fieldErrors) => {
     setTouched((prev) => ({ ...prev, [fieldName]: true }));
@@ -181,6 +190,7 @@ export default function Register() {
         language: i18n.language,
         timeZoneId: Intl.DateTimeFormat().resolvedOptions().timeZone,
         fullName,
+        productType,
         acceptedTerms,
       });
 
@@ -246,6 +256,39 @@ export default function Register() {
           <form onSubmit={handleSubmit} noValidate className={`w-full max-w-md mx-auto space-y-6 ${textAlignClass}`}>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('register.startFreeTrialTitle')}</h2>
             <div className="space-y-4">
+              <fieldset className="space-y-3" aria-describedby={getFieldError('productType') ? 'register-product-error' : undefined}>
+                <legend className="text-sm font-semibold text-gray-900">{t('register.product.title')}</legend>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(['clinic', 'business'] as const).map((product) => {
+                    const selected = productType === product;
+                    return (
+                      <label
+                        key={product}
+                        className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition ${selected ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-100' : 'border-gray-200 bg-white hover:border-blue-300'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="productType"
+                          value={product}
+                          checked={selected}
+                          onChange={() => {
+                            setProductType(product);
+                            setTouched((previous) => ({ ...previous, productType: true }));
+                          }}
+                          onBlur={() => handleFieldBlur('productType')}
+                          className="mt-1 h-4 w-4 shrink-0 accent-blue-600"
+                        />
+                        <span className="min-w-0">
+                          <span className="block font-semibold text-gray-900">{t(`register.product.${product}.name`)}</span>
+                          <span className="mt-1 block text-sm text-gray-600">{t(`register.product.${product}.audience`)}</span>
+                          <span className="mt-2 block text-xs text-gray-500">{t(`register.product.${product}.description`)}</span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {getFieldError('productType') && <p id="register-product-error" role="alert" className={`text-sm text-red-600 ${textAlignClass}`}>{getFieldError('productType')}</p>}
+              </fieldset>
               <div>
               <input
                 className={`w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-200 text-gray-900 bg-gray-50 shadow-sm ${textAlignClass}`}

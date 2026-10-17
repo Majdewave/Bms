@@ -370,6 +370,7 @@ const DicomViewer = ({
 }
 
 
+
   const loadImageIds = async (loader: any, targetInstances: ImagingInstanceDetail[]) => {
     const imageIds: string[] = []
     for (const target of targetInstances) {

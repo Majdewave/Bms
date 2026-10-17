@@ -7,12 +7,6 @@ export const getApiBaseUrl = () => {
   }
 
   if (typeof window !== 'undefined') {
-    const { protocol, hostname, port } = window.location
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      const backendPort = port === '5173' || port === '5174' || port === '5175' ? '5000' : port
-      return trimTrailingSlash(`${protocol}//${hostname}${backendPort ? `:${backendPort}` : ''}`)
-    }
-
     return trimTrailingSlash(window.location.origin)
   }
 

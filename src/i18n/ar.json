@@ -1,4 +1,274 @@
 {
+  "pm": {
+    "workspaceTitle": "مساحة عمل العميل",
+    "openFullQuotes": "فتح عروض الأسعار",
+    "openFullInvoices": "فتح الفواتير",
+    "project": "المشروع",
+    "noProject": "بدون مشروع",
+    "createQuote": "إنشاء عرض سعر",
+    "createInvoice": "إنشاء فاتورة",
+    "quotedTotal": "إجمالي عروض الأسعار",
+    "invoicedTotal": "إجمالي الفواتير",
+    "billingPlan": "خطة الفوترة",
+    "manageBillingPlan": "إدارة خطة الفوترة",
+    "billingPlanHint": "المراحل ومواعيد الفوترة والفواتير",
+    "billingPlanSubtitle": "إدارة مراحل ومواعيد الفوترة والفواتير الخاصة بالمشروع",
+    "backToClientProjects": "العودة إلى العميل والمشاريع",
+    "billingMilestone": "مرحلة فوترة",
+    "projectValueBeforeVat": "قيمة المشروع (قبل ضريبة القيمة المضافة)",
+    "plannedBilling": "الفوترة المخططة (قبل ضريبة القيمة المضافة)",
+    "milestonesInvoiced": "الفواتير الصادرة (قبل ضريبة القيمة المضافة)",
+    "notYetInvoiced": "المتبقي للفوترة (قبل ضريبة القيمة المضافة)",
+    "billingDifference": "فرق الفوترة",
+    "nextBilling": "الفوترة التالية",
+    "addMilestone": "إضافة مرحلة",
+    "editMilestone": "تعديل المرحلة",
+    "milestoneTitle": "عنوان المرحلة",
+    "amount": "المبلغ",
+    "description": "الوصف",
+    "linkedInvoice": "الفاتورة المرتبطة",
+    "openInvoice": "فتح الفاتورة",
+    "cancelMilestone": "إلغاء",
+    "linkInvoice": "ربط فاتورة",
+    "markReady": "جاهز للفوترة",
+    "noBillingMilestones": "لا توجد مراحل فوترة",
+    "deleteMilestoneConfirm": "حذف مرحلة الفوترة؟ لا يمكن التراجع عن هذا الإجراء.",
+    "billingPlanMismatch": "خطة الفوترة لا تطابق قيمة المشروع",
+    "billingPlanMatches": "خطة الفوترة تطابق قيمة المشروع",
+    "editMilestoneAction": "تعديل",
+    "deleteMilestoneAction": "حذف",
+    "linkedMilestoneDeleteBlocked": "لا يمكن حذف مرحلة مرتبطة بفاتورة.",
+    "milestoneStatus": { "Planned": "مخطط", "ReadyToInvoice": "جاهز للفوترة", "Invoiced": "تمت فوترته", "Cancelled": "ملغى" },
+    "featureUnavailable": "هذه الميزة غير متاحة لهذه المنشأة أو لحسابك.",
+    "projectQuotes": "عروض أسعار المشروع",
+    "projectInvoices": "فواتير المشروع",
+    "viewProjectDocuments": "عروض الأسعار والفواتير",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "projects": "المشاريع",
+      "contacts": "جهات الاتصال",
+      "quotes": "عروض الأسعار",
+      "invoices": "الفواتير",
+      "files": "الملفات",
+      "notes": "الملاحظات"
+    },
+    "status": {
+      "Draft": "مسودة",
+      "Active": "نشط",
+      "OnHold": "معلق",
+      "Completed": "مكتمل",
+      "Cancelled": "ملغي"
+    },
+    "overview": {
+      "activeProjects": "المشاريع النشطة",
+      "projectValue": "قيمة المشاريع",
+      "clientInvoiced": "تمت الفوترة (العميل)",
+      "clientOutstanding": "المستحق (العميل)",
+      "clientLevelHint": "إجمالي على مستوى العميل، ويشمل الفواتير المرتبطة بالمشاريع وغير المرتبطة بها",
+      "recentProjects": "المشاريع الأخيرة",
+      "primaryContact": "جهة الاتصال الرئيسية",
+      "billingContact": "جهة اتصال الفوترة"
+    },
+    "projects": {
+      "new": "مشروع جديد",
+      "edit": "تعديل المشروع",
+      "empty": "لا توجد مشاريع بعد",
+      "name": "الاسم",
+      "status": "الحالة",
+      "value": "قيمة المشروع",
+      "startDate": "تاريخ البدء",
+      "endDate": "تاريخ الانتهاء",
+      "description": "الوصف",
+      "confirmDelete": "حذف المشروع \"{{name}}\"؟",
+      "financialSummary": "المستندات المالية المرتبطة"
+    },
+    "quotes": {
+      "general": "عرض سعر تجاري عام"
+    },
+    "contacts": {
+      "new": "إضافة جهة اتصال",
+      "edit": "تعديل جهة الاتصال",
+      "empty": "لا توجد جهات اتصال بعد",
+      "name": "الاسم",
+      "roleTitle": "المنصب / القسم",
+      "phone": "الهاتف",
+      "whatsApp": "واتساب",
+      "email": "البريد الإلكتروني",
+      "primary": "جهة الاتصال الرئيسية",
+      "billing": "جهة اتصال الفوترة",
+      "confirmDelete": "حذف جهة الاتصال \"{{name}}\"؟"
+    },
+    "quotes": {
+      "empty": "لا توجد عروض أسعار لهذا العميل"
+    },
+    "invoices": {
+      "empty": "لا توجد فواتير لهذا العميل"
+    },
+    "files": {
+      "upload": "رفع ملف",
+      "empty": "لا توجد ملفات بعد",
+      "confirmDelete": "حذف الملف \"{{name}}\"؟",
+      "documents": "المستندات",
+      "projectEmpty": "لم تتم إضافة أي مستندات إلى هذا المشروع بعد.",
+      "uploadDocument": "رفع مستند",
+      "chooseFile": "اختيار ملف",
+      "documentTitle": "عنوان المستند",
+      "documentTitlePlaceholder": "عنوان المستند (اختياري)",
+      "originalFilename": "اسم الملف الأصلي",
+      "uploadedBy": "تم الرفع بواسطة",
+      "fileSize": "حجم الملف",
+      "general": "عام",
+      "allFiles": "كل الملفات",
+      "project": "المشروع: {{name}}",
+      "filterLabel": "تصفية الملفات",
+      "rename": "إعادة تسمية",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "download": "تنزيل",
+      "deleteDocument": "حذف المستند",
+      "confirmDeleteDocument": "حذف المستند \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+      "uploading": "جارٍ الرفع...",
+      "uploadSuccess": "تم رفع المستند.",
+      "renameSuccess": "تم تحديث عنوان المستند.",
+      "deleteSuccess": "تم حذف المستند.",
+      "errors": {
+        "upload": "تعذر رفع المستند. حاول مرة أخرى.",
+        "rename": "تعذر تحديث العنوان. حاول مرة أخرى.",
+        "delete": "تعذر حذف المستند. حاول مرة أخرى.",
+        "download": "تعذر تنزيل المستند. حاول مرة أخرى.",
+        "load": "تعذر تحميل المستندات.",
+        "invalidFile": "الملف كبير جدًا (الحد الأقصى 10 ميغابايت) أو نوعه غير مسموح (PDF وWord وExcel ونص وJPG وPNG).",
+        "invalidTitle": "العنوان غير صالح أو أطول من 200 حرف.",
+        "session": "انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.",
+        "forbidden": "ليست لديك صلاحية، أو أن إدارة المشاريع غير متاحة.",
+        "notFound": "لم يتم العثور على المستند أو المشروع.",
+        "conflict": "يتعارض هذا الإجراء مع الحالة الحالية للمشروع."
+      }
+    }
+  },
+  "payments": {
+    "title": "المدفوعات",
+    "invoiceHeader": "المدفوعات",
+    "paymentState": "حالة الدفع",
+    "paymentStates": { "pending": "معلق", "partially_paid": "مدفوع جزئياً", "paid": "مدفوع" },
+    "saveError": "تعذر حفظ الدفعة. يرجى المحاولة مرة أخرى.",
+    "cancelError": "تعذر إلغاء الدفعة. يرجى المحاولة مرة أخرى.",
+    "record": "تسجيل دفعة",
+    "edit": "تعديل الدفعة",
+    "cancel": "إلغاء الدفعة",
+    "date": "تاريخ الدفع",
+    "paymentMethod": "طريقة الدفع",
+    "invoiceTotal": "إجمالي الفاتورة",
+    "invoiceAmountDue": "إجمالي الفواتير المستحقة",
+    "paid": "المدفوع",
+    "actualPaid": "المدفوع فعلياً",
+    "remaining": "الرصيد المتبقي",
+    "outstanding": "المتبقي المستحق",
+    "recordedBy": "سُجل بواسطة",
+    "confirmCancel": "إلغاء هذه الدفعة؟ ستبقى في السجل ولن تُحتسب ضمن المبلغ المدفوع.",
+    "cancelConfirmTitle": "إلغاء هذه الدفعة؟",
+    "cancelConfirmDescription": "ستبقى الدفعة في السجل لكنها لن تُحتسب ضمن المبلغ المدفوع.",
+    "goBack": "رجوع",
+    "loadError": "تعذر تحميل سجل الدفعات. يرجى المحاولة مرة أخرى.",
+    "savePayment": "حفظ الدفعة",
+    "statusLabel": "الحالة",
+    "editingAmount": "مبلغ الدفعة الحالي",
+    "actualIncludingVat": "المبالغ الفعلية المستحقة، شاملة ضريبة القيمة المضافة ووفق المبلغ النهائي لكل فاتورة",
+    "projectPayments": "مدفوعات المشروع",
+    "clientPayments": "مدفوعات العميل",
+    "history": "سجل المدفوعات",
+    "amount": "المبلغ",
+    "reference": "المرجع",
+    "notes": "ملاحظات",
+    "noPayments": "لا توجد دفعات بعد",
+    "currentRemaining": "الرصيد الحالي المتبقي للدفع",
+    "pendingPayment": "دفعة معلّقة",
+    "status": { "Verified": "تم التحقق", "PendingVerification": "بانتظار التحقق", "Rejected": "مرفوض", "Cancelled": "ملغى" },
+    "methods": { "cash": "نقداً", "credit": "بطاقة ائتمان", "bank_transfer": "تحويل بنكي", "check": "شيك", "bit": "Bit", "paybox": "PayBox", "other": "أخرى" }
+  },
+  "paymentConfirmation": {
+    "loading": "جارٍ تحميل طلب الدفع…",
+    "language": "اختيار اللغة",
+    "language": "اختيار اللغة",
+    "title": "تأكيد تحويل بنكي",
+    "subtitle": "أبلغ عن دفعة لهذه الفاتورة. ستراجعها الشركة قبل احتسابها كمدفوعة.",
+    "invoice": "الفاتورة",
+    "project": "المشروع",
+    "for": "مقابل",
+    "remaining": "الرصيد الحالي المتبقي",
+    "requestedAmount": "المبلغ المطلوب",
+    "bankTransfer": "تحويل بنكي",
+    "bankTransferInstructions": "أدخل مبلغ وتاريخ التحويل البنكي. لا تشارك كلمات مرور البطاقة أو الحساب.",
+    "amountPaid": "المبلغ المدفوع",
+    "paymentDate": "تاريخ الدفع",
+    "reference": "مرجع التحويل (اختياري)",
+    "uploadProof": "إثبات الدفع (اختياري)",
+    "proofOptional": "PDF أو JPEG أو PNG حتى 5 ميغابايت",
+    "invalidProof": "اختر ملف PDF أو JPEG أو PNG لا يتجاوز 5 ميغابايت.",
+    "pendingNotice": "سيبقى البلاغ قيد المراجعة ولن يغيّر رصيد الفاتورة حتى تتحقق الشركة من الدفع.",
+    "submit": "إرسال تأكيد الدفع",
+    "submittedTitle": "تم إرسال التأكيد",
+    "submittedDescription": "البلاغ قيد المراجعة. يتغير رصيد الفاتورة فقط بعد تحقق الشركة من الدفع.",
+    "alreadySubmitted": "تم إرسال بلاغ الدفع مسبقاً",
+    "alreadySubmittedDescription": "تم استلام البلاغ وهو بانتظار مراجعة الشركة.",
+    "alreadyProcessed": "تمت معالجة بلاغ الدفع",
+    "alreadyProcessedDescription": "تمت معالجة هذا البلاغ. يرجى التواصل مع الشركة للمزيد من المعلومات.",
+    "reportedAmount": "المبلغ المُبلغ عنه",
+    "unavailable": "هذا الرابط غير متاح. ربما انتهت صلاحيته أو لم يعد فعالاً. يرجى التواصل مع الشركة للحصول على رابط جديد.",
+    "submitError": "تعذر إرسال التأكيد. يرجى المحاولة مرة أخرى.",
+    "invalidAmount": "أدخل مبلغاً أكبر من صفر.",
+    "amountExceedsRemaining": "لا يمكن أن يتجاوز المبلغ المُبلغ عنه الرصيد المتبقي الحالي.",
+    "paymentDateRequired": "حدد تاريخ التحويل البنكي.",
+    "expired": "انتهت صلاحية رابط تأكيد الدفع.",
+    "expiry": "تنتهي صلاحية الرابط في {{date}}",
+    "secureNotice": "لا يلزم حساب Clienta لاستخدام هذا الرابط الآمن.",
+    "createTitle": "إرسال طلب تأكيد دفع",
+    "createDescription": "إنشاء رابط عام لمرة واحدة ليبلغ العميل عن التحويل البنكي.",
+    "expiryDays": "مدة صلاحية الرابط",
+    "days_one": "يوم واحد",
+    "days_other": "{{count}} أيام",
+    "create": "إنشاء رابط آمن",
+    "sendRequest": "إرسال طلب تأكيد الدفع",
+    "createError": "تعذر إنشاء طلب تأكيد الدفع.",
+    "createAuthorizationError": "ليست لديك صلاحية لإنشاء رابط تأكيد دفع لهذه الفاتورة.",
+    "invalidResponseToken": "أنشأ الخادم الطلب لكنه لم يُرجع رابطًا آمنًا صالحًا. يرجى المحاولة مرة أخرى.",
+    "copyError": "تعذر نسخ الرابط.",
+    "linkCreated": "تم إنشاء الرابط الآمن",
+    "linkExpires": "تنتهي صلاحية الرابط في {{date}}",
+    "copyLink": "نسخ الرابط المحلي",
+    "copied": "تم النسخ",
+    "requests": "طلبات تأكيد الدفع",
+    "created": "تاريخ الإنشاء",
+    "expires": "ينتهي في",
+    "proofAttached": "تم إرفاق ملف إثبات",
+    "viewProof": "عرض الإثبات",
+    "proofOpenError": "تعذر فتح ملف الإثبات. يرجى المحاولة مرة أخرى.",
+    "verify": "التحقق من الدفع",
+    "reject": "رفض",
+    "rejectReport": "رفض البلاغ",
+    "verifyTitle": "التحقق من الدفع",
+    "verifyConfirmation": "أبلغ العميل عن تحويل بنكي بقيمة {{amount}}.\n\nبعد التحقق، سيُحتسب المبلغ كمدفوع وسيتم تحديث رصيد الفاتورة.",
+    "rejectTitle": "رفض بلاغ الدفع",
+    "rejectionReasonOptional": "سبب الرفض (اختياري)",
+    "rejectionReasonPlaceholder": "يمكنك إدخال سبب اختياري لرفض البلاغ",
+    "reportedBy": "أبلغ عنه",
+    "source": "المصدر",
+    "sourceConfirmationLink": "رابط تأكيد الدفع",
+    "confirmReject": "رفض بلاغ الدفع؟ لن يُحتسب ضمن المبلغ المدفوع.",
+    "verifyError": "تعذر التحقق من الدفع. راجع الرصيد الحالي للفاتورة وحاول مرة أخرى.",
+    "rejectError": "تعذر رفض الدفع. يرجى المحاولة مرة أخرى.",
+    "status": {
+      "Active": "الرابط فعال",
+      "Submitted": "تم الإرسال",
+      "PendingVerification": "بانتظار التحقق",
+      "Verified": "تم التحقق",
+      "Rejected": "مرفوض",
+      "Revoked": "ملغى",
+      "Expired": "منتهي الصلاحية",
+      "Cancelled": "ملغى"
+    },
+    "fullyPaidNoRequest": "الفاتورة مدفوعة بالكامل. لا حاجة لإرسال طلب دفع جديد."
+  },
   "dashboard": {
     "totalClients": "إجمالي العملاء",
     "activeClients": "العملاء النشطون",
@@ -575,6 +845,21 @@
   },
   "register": {
     "startFreeTrialTitle": "أنشئ حسابك في Clienta",
+    "product": {
+      "title": "اختر منتج CLIENTA",
+      "selectToSeeTrial": "اختر منتجًا لمعرفة مدة الفترة التجريبية.",
+      "trialDuration": "فترة تجريبية لمدة {{days}} يومًا، تبدأ بعد الموافقة",
+      "clinic": {
+        "name": "CLIENTA Clinic",
+        "audience": "للعيادات والأطباء والممارسات الطبية وشركات الرعاية الصحية.",
+        "description": "إدارة العملاء والمواعيد وسير العمل في مجال الرعاية الصحية."
+      },
+      "business": {
+        "name": "CLIENTA Business",
+        "audience": "للشركات العامة وشركات الخدمات والفرق التي تعمل بالمشاريع.",
+        "description": "إدارة علاقات العملاء والعملاء والمشاريع وعروض الأسعار والفواتير والمدفوعات."
+      }
+    },
     "businessName": "اسم النشاط التجاري",
     "fullName": "الاسم الكامل",
     "email": "البريد الإلكتروني",
@@ -614,6 +899,8 @@
       "invalidEmail": "بريد إلكتروني غير صالح",
       "passwordsDoNotMatch": "كلمتا المرور غير متطابقتين",
       "passwordTooShort": "كلمة المرور قصيرة جدًا",
+      "productTypeRequired": "اختر CLIENTA Clinic أو CLIENTA Business للمتابعة.",
+      "termsRequired": "يجب الموافقة على شروط الخدمة وسياسة الخصوصية.",
       "registrationFailed": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
       "emailExists": "هذا البريد الإلكتروني مسجل بالفعل."
     }
@@ -778,11 +1065,17 @@
       "notes": {
         "placeholder": "أضف ملاحظة عن هذا العميل...",
         "add": "أضف ملاحظة",
-        "delete": "حذف الملاحظة"
+        "delete": "حذف الملاحظة",
+        "edit": "تعديل",
+        "save": "حفظ",
+        "cancel": "إلغاء",
+        "editComment": "تعديل الملاحظة"
       },
       "form": {
         "name": "الاسم الكامل",
         "namePlaceholder": "أدخل الاسم الكامل للعميل",
+        "businessRegistrationNumber": "رقم تسجيل الشركة",
+        "businessRegistrationNumberPlaceholder": "أدخل رقم تسجيل الشركة",
         "idNumberPlaceholder": "أدخل رقم الهوية",
         "email": "البريد الإلكتروني",
         "emailPlaceholder": "client@example.com",
@@ -943,6 +1236,7 @@
       "search": "ابحث حسب رقم الفاتورة أو العميل...",
       "filter": "تصفية",
       "download": "PDF",
+      "viewInvoice": "عرض الفاتورة",
       "table": {
         "number": "الفاتورة #",
         "client": "العميل",
@@ -1019,6 +1313,7 @@
       "filter": {
         "allClients": "كل العملاء",
         "allStatuses": "كل الحالات",
+        "dateRange": "نطاق التاريخ",
         "quickRange": "نطاق سريع",
         "last30Days": "آخر 30 يومًا",
         "last3Months": "آخر 3 أشهر",
@@ -1178,6 +1473,10 @@
           "title": "إدارة عروض الأسعار",
           "description": "إنشاء وتعديل ونسخ وتحويل عروض الأسعار إلى فواتير"
         },
+        "manage_projects": {
+          "title": "إدارة المشاريع",
+          "description": "عرض وإدارة مشاريع الأعمال وخطط الفوترة"
+        },
         "manage_notes": {
           "title": "إدارة الملاحظات",
           "description": "إضافة، تعديل وحذف الملاحظات الداخلية عن العملاء"
@@ -1336,5 +1635,110 @@
     "stampRemoveError": "تعذرت إزالة الختم.",
     "invalidStamp": "اختر ملف PNG أو JPG.",
     "stampTooLarge": "يجب ألا يتجاوز حجم الختم 2 ميغابايت."
+  }
+,
+  "businessShell": {
+    "appName": "CLIENTA Business",
+    "nav": {
+      "dashboard": "لوحة التحكم",
+      "clients": "العملاء / CRM",
+      "projects": "المشاريع",
+      "quotes": "عروض الأسعار",
+      "invoices": "الفواتير",
+      "payments": "المدفوعات",
+      "files": "الملفات",
+      "team": "الفريق / المستخدمون",
+      "settings": "الإعدادات",
+      "billing": "الفوترة والاشتراك"
+    },
+    "team": {
+      "readOnly": "عرض دليل فريق العمل. إدارة الفريق متاحة لمسؤولي الأعمال."
+    },
+    "projects": {
+      "title": "المشاريع",
+      "subtitle": "تابع جميع المشاريع عبر عملائك.",
+      "empty": "لا توجد مشاريع بعد. أنشئ مشروعًا من تبويب مشاريع العميل."
+    },
+    "files": {
+      "title": "المستندات / الملفات",
+      "subtitle": "اختر عميلاً لعرض مستنداته وإدارتها.",
+      "empty": "أضف عميلاً قبل إدارة المستندات.",
+      "open": "فتح المستندات"
+    },
+    "billing": {
+      "title": "الفوترة والاشتراك",
+      "subtitle": "خطة الأعمال وحالة الفترة التجريبية.",
+      "currentPlan": "الخطة الحالية",
+      "trialStatus": "الفترة التجريبية للأعمال نشطة.",
+      "trialEnds": "تنتهي الفترة التجريبية في {{date}}.",
+      "daysRemaining": "متبقي {{count}} يومًا.",
+      "dashboardTrial": "تنتهي الفترة في {{date}} · متبقي {{count}} يومًا",
+      "upgradeToBasic": "الترقية إلى Business Basic",
+      "checkoutUnavailable": "شراء Business Basic غير متاح بعد. لم يبدأ أي دفع أو تسجيل Legacy Pro.",
+      "activeStatus": "نشطة"
+    },
+    "payments": {
+      "title": "المدفوعات",
+      "subtitle": "راجع أرصدة الفواتير وسجّل المدفوعات وأدر تأكيدات الدفع.",
+      "invoiceAmount": "مبلغ الفاتورة",
+      "openInvoice": "عرض الفاتورة",
+      "loadError": "تعذر تحميل المدفوعات. حاول مرة أخرى.",
+      "empty": "لا توجد فواتير متاحة بعد."
+    },
+    "dashboard": {
+      "title": "لوحة تحكم الأعمال",
+      "subtitle": "نظرة عامة على مشاريعك والفوترة والتحصيل.",
+      "notAvailable": "غير متاح",
+      "error": "تعذّر تحميل لوحة التحكم. حاول مرة أخرى.",
+      "unavailable": "لوحة التحكم المالية غير متاحة لحسابك.",
+      "retry": "حاول مرة أخرى",
+      "kpi": {
+        "projectValue": {
+          "label": "قيمة المشاريع",
+          "hint": "قبل ضريبة القيمة المضافة · {{count}} مشاريع نشطة ومعلّقة ومكتملة"
+        },
+        "invoiced": {
+          "label": "المفوتر",
+          "hint": "مبالغ الفواتير المستحقة بما فيها الضريبة"
+        },
+        "paid": {
+          "label": "المدفوع",
+          "hint": "المدفوعات المؤكدة فقط"
+        },
+        "outstanding": {
+          "label": "المتبقي",
+          "hint": "المفوتر ناقص المدفوعات المؤكدة"
+        },
+        "notYetInvoiced": {
+          "label": "لم تتم فوترته بعد",
+          "hint": "فوترة مخططة، قبل الضريبة"
+        }
+      },
+      "nextBilling": {
+        "title": "الفوترة التالية",
+        "empty": "لا توجد فوترة مجدولة حاليًا.",
+        "emptyHint": "أضف مراحل فوترة بتاريخ إلى خطة فوترة المشروع.",
+        "amountNote": "قبل الضريبة",
+        "dueDate": "تاريخ الاستحقاق",
+        "overdue": "متأخر",
+        "billingContact": "جهة الاتصال للفوترة",
+        "noContact": "لم تُحدَّد جهة اتصال للفوترة لهذا العميل.",
+        "openPlan": "فتح خطة الفوترة"
+      },
+      "quick": {
+        "title": "إجراءات سريعة",
+        "projects": "المشاريع",
+        "newClient": "عميل جديد",
+        "quotes": "عروض الأسعار",
+        "invoices": "الفواتير"
+      },
+      "empty": {
+        "title": "لا توجد مشاريع بعد",
+        "text": "أضف عميلًا ثم أنشئ مشروعه الأول لبدء تتبّع الفوترة.",
+        "cta": "أنشئ مشروعك الأول"
+      }
+    },
+    "openMenu": "فتح القائمة",
+    "closeMenu": "إغلاق القائمة"
   }
 }

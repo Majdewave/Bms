@@ -22,6 +22,7 @@ export interface Quote {
   departmentId?: string
   clientId?: string
   clientName: string
+  projectId?: string | null
   customerPhone?: string
   customerEmail?: string
   quoteDate: string
@@ -49,6 +50,7 @@ export interface QuoteListItem {
   quoteNumber: string
   departmentId?: string
   clientId?: string
+  projectId?: string | null
   clientName: string
   quoteDate: string
   validUntil?: string
@@ -72,6 +74,7 @@ export interface GetQuotesListParams {
   search?: string
   status?: QuoteStatus | 'all'
   clientId?: string | 'all'
+  projectId?: string
   sortBy?: QuoteSortBy
   sortDirection?: QuoteSortDirection
 }
@@ -85,6 +88,7 @@ export interface CreateQuoteLineItemRequest {
 export interface CreateQuoteRequest {
   isExistingClient?: boolean
   clientId?: string
+  projectId?: string | null
   departmentId?: string
   customerName?: string
   customerPhone?: string
@@ -145,6 +149,7 @@ const normalizeQuote = (quote: any): Quote => {
     quoteNumber: String(quote?.quoteNumber ?? quote?.number ?? ''),
     departmentId: quote?.departmentId ? String(quote.departmentId) : undefined,
     clientId: quote?.clientId ? String(quote.clientId) : undefined,
+    projectId: quote?.projectId ? String(quote.projectId) : null,
     clientName: String(quote?.clientName ?? ''),
     customerPhone: typeof quote?.customerPhone === 'string' ? quote.customerPhone : undefined,
     customerEmail: typeof quote?.customerEmail === 'string' ? quote.customerEmail : undefined,
@@ -175,6 +180,7 @@ const normalizeQuoteListItem = (item: any): QuoteListItem => {
     quoteNumber: String(item?.quoteNumber ?? item?.number ?? ''),
     departmentId: item?.departmentId ? String(item.departmentId) : undefined,
     clientId: item?.clientId ? String(item.clientId) : undefined,
+    projectId: item?.projectId ? String(item.projectId) : null,
     clientName: String(item?.clientName ?? ''),
     quoteDate: String(item?.quoteDate ?? item?.createdAt ?? new Date().toISOString()),
     validUntil: item?.validUntil ? String(item.validUntil) : undefined,
@@ -216,6 +222,10 @@ export const getQuotesList = async (params: GetQuotesListParams): Promise<QuoteL
     searchParams.set('clientId', params.clientId)
   }
 
+    if (params.projectId) {
+      searchParams.set('projectId', params.projectId)
+    }
+
   if (params.sortBy) {
     const normalizedSortBy = params.sortBy === 'quoteNumber' ? 'quoteNumber' : params.sortBy
     searchParams.set('sortBy', normalizedSortBy)
@@ -238,6 +248,22 @@ export const getQuotesList = async (params: GetQuotesListParams): Promise<QuoteL
     pageSize: Math.max(1, toNumber(response?.pageSize, params.pageSize)),
     hasNextPage: Boolean(response?.hasNextPage),
   }
+}
+
+export const getAllQuotesList = async (
+  params: Omit<GetQuotesListParams, 'pageNumber' | 'pageSize'>
+): Promise<QuoteListItem[]> => {
+  const items: QuoteListItem[] = []
+  let pageNumber = 1
+  let response: QuoteListResponse
+
+  do {
+    response = await getQuotesList({ ...params, pageNumber, pageSize: 100 })
+    items.push(...response.items)
+    pageNumber += 1
+  } while (response.hasNextPage && pageNumber <= Math.ceil(response.totalCount / response.pageSize))
+
+  return items
 }
 
 export const getQuoteDepartments = async (): Promise<Array<{ id: string; name: string }>> => {

@@ -17,6 +17,7 @@ export interface Invoice {
   id: string
   number: string
   clientId: string
+  projectId?: string | null
   clientName: string
   clientEmail: string
   amount: number
@@ -46,6 +47,7 @@ export interface CreateInvoiceLineItemRequest {
 
 export interface CreateInvoiceRequest {
   clientId: string
+  projectId?: string | null
   invoiceNumber?: string
   invoiceDate?: string
   dueDate?: string
@@ -165,6 +167,7 @@ const normalizeInvoice = (invoice: any): Invoice => {
     id: String(invoice?.id ?? ''),
     number: String(invoice?.number ?? invoice?.invoiceNumber ?? ''),
     clientId: String(invoice?.clientId ?? ''),
+    projectId: invoice?.projectId ? String(invoice.projectId) : null,
     clientName: String(invoice?.clientName ?? ''),
     clientEmail: String(invoice?.clientEmail ?? ''),
     amount: totalAmount,
@@ -187,8 +190,12 @@ const normalizeInvoice = (invoice: any): Invoice => {
   }
 }
 
-export const getInvoices = async (): Promise<Invoice[]> => {
-  const invoices = await get<any[]>('/api/invoices')
+export const getInvoices = async (params?: { clientId?: string; projectId?: string }): Promise<Invoice[]> => {
+  const searchParams = new URLSearchParams()
+  if (params?.clientId) searchParams.set('clientId', params.clientId)
+  if (params?.projectId) searchParams.set('projectId', params.projectId)
+  const suffix = searchParams.size ? `?${searchParams.toString()}` : ''
+  const invoices = await get<any[]>(`/api/invoices${suffix}`)
   return invoices.map(normalizeInvoice)
 }
 

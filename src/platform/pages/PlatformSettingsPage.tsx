@@ -3,15 +3,18 @@ import { BadgeDollarSign, CalendarClock, MessageSquare, Save, Settings2, ToggleL
 import { fetchPlatformSettings, updatePlatformSettings, type PlatformSettings } from '@/platform/settings/services/platformSettingsService'
 import { PlatformApiError } from '@/platform/services/platformApiClient'
 import ErrorState from '@/platform/components/ui/ErrorState'
+import BusinessPlansSection from '@/platform/pages/BusinessPlansSection'
 
-const tabOrder = ['general', 'trial', 'plans', 'features'] as const
+const tabOrder = ['general', 'trial', 'plans', 'business-plans', 'features'] as const
 
 type SettingsTab = typeof tabOrder[number]
+const fallbackLegacyTrialDays = 21
 
 const tabMeta: Record<SettingsTab, { label: string; icon: typeof Settings2 }> = {
   general: { label: 'SUPPORT', icon: MessageSquare },
   trial: { label: 'TRIAL', icon: CalendarClock },
   plans: { label: 'PLANS', icon: BadgeDollarSign },
+  'business-plans': { label: 'BUSINESS PLANS', icon: BadgeDollarSign },
   features: { label: 'FEATURE FLAGS', icon: ToggleLeft },
 }
 
@@ -20,7 +23,9 @@ const defaultSettings: PlatformSettings = {
   supportEmail: 'support@clienta.digitalpenpro.com',
   supportPhone: null,
   websiteUrl: 'https://clienta.digitalpenpro.com',
-  defaultTrialDays: 21,
+  defaultTrialDays: fallbackLegacyTrialDays,
+  clinicTrialDays: fallbackLegacyTrialDays,
+  businessTrialDays: fallbackLegacyTrialDays,
   trialReminderDays: 3,
   allowRegistrations: true,
   requireManualApproval: true,
@@ -170,8 +175,14 @@ export default function PlatformSettingsPage() {
           </SectionCard>
 
           <SectionCard id="trial" title="TRIAL">
-            <Field label="Default Trial Days">
+            <Field label="Legacy / Default Trial Days">
               <input className="input" type="number" min={0} value={settings.defaultTrialDays} onChange={(event) => update('defaultTrialDays', Number(event.target.value))} />
+            </Field>
+            <Field label="Clinic Trial Days">
+              <input className="input" type="number" min={0} value={settings.clinicTrialDays} onChange={(event) => update('clinicTrialDays', Number(event.target.value))} />
+            </Field>
+            <Field label="Business Trial Days">
+              <input className="input" type="number" min={0} value={settings.businessTrialDays} onChange={(event) => update('businessTrialDays', Number(event.target.value))} />
             </Field>
             <Field label="Trial Reminder Days">
               <input className="input" type="number" min={0} value={settings.trialReminderDays} onChange={(event) => update('trialReminderDays', Number(event.target.value))} />
@@ -185,6 +196,7 @@ export default function PlatformSettingsPage() {
           </SectionCard>
 
           <SectionCard id="plans" title="PLANS">
+            <p className="platform-field-hint">Existing global Pro configuration for Legacy / Clinic. Business plans are configured separately below.</p>
             <Field label="Plan Name">
               <input className="input" value="Pro" disabled />
             </Field>
@@ -207,6 +219,8 @@ export default function PlatformSettingsPage() {
               <input type="checkbox" checked={settings.enableBilling} onChange={(event) => update('enableBilling', event.target.checked)} />
             </Field>
           </SectionCard>
+
+          <BusinessPlansSection />
 
           <SectionCard id="features" title="FEATURE FLAGS">
             <Field label="Help Center Enabled">

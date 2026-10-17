@@ -15,6 +15,7 @@ export type Permission =
   | 'manage_appointments' // All appointment management
   | 'manage_invoices' // All invoice management
   | 'manage_quotes' // All quotes management
+  | 'manage_projects' // PM projects/contacts management
   | 'view_reports' // View system reports
 
 /**
@@ -31,6 +32,7 @@ export const PERMISSION_MATRIX: Record<UserRole, Permission[]> = {
     'manage_appointments',
     'manage_invoices',
     'manage_quotes',
+    'manage_projects',
     'view_reports',
   ],
   staff: [

@@ -1,5 +1,5 @@
 
-import { updateLastActivity, getLastActivity, isSessionExpired, resetSession } from './sessionManager'
+import { updateLastActivity, isSessionExpired } from './sessionManager'
 import { logout as doLogout } from './auth'
 import { toast } from 'react-toastify';
 import { getApiBaseUrl } from '@/lib/apiBaseUrl'
@@ -266,6 +266,13 @@ export async function put<T>(url: string, body?: any, isFormData?: boolean): Pro
     method: 'PUT',
     body: requestBody,
     ...(isFormDataRequest ? { isFormData: true } : {})
+  })
+}
+
+export async function patch<T>(url: string, body?: any): Promise<T> {
+  return request<T>(url, {
+    method: 'PATCH',
+    body: JSON.stringify(body ?? {}),
   })
 }
 

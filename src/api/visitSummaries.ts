@@ -110,7 +110,7 @@ export const visitSummariesService = {
   }
   try {
         const baseUrl =
-        (import.meta as any).env.VITE_API_URL || 'http://localhost:5146';
+        (import.meta as any).env.VITE_API_URL || '';
 
         const response = await fetch(
         `${baseUrl}/api/VisitSummary/${id}/pdf`,

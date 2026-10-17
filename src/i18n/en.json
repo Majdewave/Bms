@@ -1,4 +1,274 @@
 {
+  "pm": {
+    "workspaceTitle": "Client Workspace",
+    "openFullQuotes": "Open Quotes",
+    "openFullInvoices": "Open Invoices",
+    "project": "Project",
+    "noProject": "No Project",
+    "createQuote": "Create Quote",
+    "createInvoice": "Create Invoice",
+    "quotedTotal": "Quoted Total",
+    "invoicedTotal": "Invoiced Total",
+    "billingPlan": "Billing Plan",
+    "manageBillingPlan": "Manage Billing Plan",
+    "billingPlanHint": "Milestones, billing dates and invoices",
+    "billingPlanSubtitle": "Manage milestones, billing dates and invoices for this project",
+    "backToClientProjects": "Back to Client Projects",
+    "billingMilestone": "Billing Milestone",
+    "projectValueBeforeVat": "Project Value (before VAT)",
+    "plannedBilling": "Planned Billing (before VAT)",
+    "milestonesInvoiced": "Invoices Issued (before VAT)",
+    "notYetInvoiced": "Remaining to Invoice (before VAT)",
+    "billingDifference": "Billing Difference",
+    "nextBilling": "Next Billing",
+    "addMilestone": "Add Milestone",
+    "editMilestone": "Edit Milestone",
+    "milestoneTitle": "Milestone title",
+    "amount": "Amount",
+    "description": "Description",
+    "linkedInvoice": "Linked Invoice",
+    "openInvoice": "Open Invoice",
+    "cancelMilestone": "Cancel",
+    "linkInvoice": "Link Invoice",
+    "markReady": "Ready to Invoice",
+    "noBillingMilestones": "No Billing Milestones",
+    "deleteMilestoneConfirm": "Delete this billing milestone? This action cannot be undone.",
+    "billingPlanMismatch": "Billing plan does not match project value",
+    "billingPlanMatches": "Billing plan matches project value",
+    "editMilestoneAction": "Edit",
+    "deleteMilestoneAction": "Delete",
+    "linkedMilestoneDeleteBlocked": "Cannot delete a milestone linked to an invoice.",
+    "milestoneStatus": { "Planned": "Planned", "ReadyToInvoice": "Ready to Invoice", "Invoiced": "Invoiced", "Cancelled": "Cancelled" },
+    "featureUnavailable": "This feature is unavailable for this tenant or your account.",
+    "projectQuotes": "Project Quotes",
+    "projectInvoices": "Project Invoices",
+    "viewProjectDocuments": "Quotes & Invoices",
+    "tabs": {
+      "overview": "Overview",
+      "projects": "Projects",
+      "contacts": "Contacts",
+      "quotes": "Quotes",
+      "invoices": "Invoices",
+      "files": "Files",
+      "notes": "Notes"
+    },
+    "status": {
+      "Draft": "Draft",
+      "Active": "Active",
+      "OnHold": "On Hold",
+      "Completed": "Completed",
+      "Cancelled": "Cancelled"
+    },
+    "overview": {
+      "activeProjects": "Active Projects",
+      "projectValue": "Project Value",
+      "clientInvoiced": "Invoiced (Client)",
+      "clientOutstanding": "Outstanding (Client)",
+      "clientLevelHint": "Client-level total, including project-linked and unlinked invoices",
+      "recentProjects": "Recent Projects",
+      "primaryContact": "Primary Contact",
+      "billingContact": "Billing Contact"
+    },
+    "projects": {
+      "new": "New Project",
+      "edit": "Edit Project",
+      "empty": "No projects yet",
+      "name": "Name",
+      "status": "Status",
+      "value": "Project Value",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "description": "Description",
+      "confirmDelete": "Delete project \"{{name}}\"?",
+      "financialSummary": "Linked Financial Documents"
+    },
+    "quotes": {
+      "general": "General business quote"
+    },
+    "contacts": {
+      "new": "Add Contact",
+      "edit": "Edit Contact",
+      "empty": "No contacts yet",
+      "name": "Name",
+      "roleTitle": "Role / Department",
+      "phone": "Phone",
+      "whatsApp": "WhatsApp",
+      "email": "Email",
+      "primary": "Primary Contact",
+      "billing": "Billing Contact",
+      "confirmDelete": "Delete contact \"{{name}}\"?"
+    },
+    "quotes": {
+      "empty": "No quotes for this client"
+    },
+    "invoices": {
+      "empty": "No invoices for this client"
+    },
+    "files": {
+      "upload": "Upload File",
+      "empty": "No files yet",
+      "confirmDelete": "Delete file \"{{name}}\"?",
+      "documents": "Documents",
+      "projectEmpty": "No documents have been added to this project yet.",
+      "uploadDocument": "Upload document",
+      "chooseFile": "Choose a file",
+      "documentTitle": "Document title",
+      "documentTitlePlaceholder": "Document title (optional)",
+      "originalFilename": "Original filename",
+      "uploadedBy": "Uploaded by",
+      "fileSize": "File size",
+      "general": "General",
+      "allFiles": "All files",
+      "project": "Project: {{name}}",
+      "filterLabel": "Filter files",
+      "rename": "Rename",
+      "save": "Save",
+      "cancel": "Cancel",
+      "download": "Download",
+      "deleteDocument": "Delete document",
+      "confirmDeleteDocument": "Delete document \"{{name}}\"? This cannot be undone.",
+      "uploading": "Uploading...",
+      "uploadSuccess": "Document uploaded.",
+      "renameSuccess": "Document title updated.",
+      "deleteSuccess": "Document deleted.",
+      "errors": {
+        "upload": "Could not upload the document. Please try again.",
+        "rename": "Could not update the title. Please try again.",
+        "delete": "Could not delete the document. Please try again.",
+        "download": "Could not download the document. Please try again.",
+        "load": "Could not load documents.",
+        "invalidFile": "The file is too large (max 10 MB) or its type is not allowed (PDF, Word, Excel, text, JPG, PNG).",
+        "invalidTitle": "The title is invalid or longer than 200 characters.",
+        "session": "Your session has expired. Please sign in again.",
+        "forbidden": "You do not have permission, or Project Management is not available.",
+        "notFound": "The document or project was not found.",
+        "conflict": "This action conflicts with the current state of the project."
+      }
+    }
+  },
+  "payments": {
+    "title": "Payments",
+    "invoiceHeader": "Payments",
+    "paymentState": "Payment state",
+    "paymentStates": { "pending": "Pending", "partially_paid": "Partially Paid", "paid": "Paid" },
+    "saveError": "Payment could not be saved. Please try again.",
+    "cancelError": "Payment could not be cancelled. Please try again.",
+    "confirmCancel": "Cancel this payment? The payment will remain in history but will no longer count toward the amount paid.",
+    "cancelConfirmTitle": "Cancel this payment?",
+    "cancelConfirmDescription": "The payment will remain in history but will no longer count toward the amount paid.",
+    "goBack": "Back",
+    "loadError": "Payment history could not be loaded. Please try again.",
+    "savePayment": "Save Payment",
+    "statusLabel": "Status",
+    "editingAmount": "Current payment amount",
+    "record": "Record Payment",
+    "edit": "Edit Payment",
+    "cancel": "Cancel Payment",
+    "date": "Payment Date",
+    "paymentMethod": "Payment Method",
+    "invoiceTotal": "Invoice Total",
+    "invoiceAmountDue": "Invoice Amount Due",
+    "paid": "Paid",
+    "actualPaid": "Actually Paid",
+    "remaining": "Remaining Balance",
+    "outstanding": "Outstanding",
+    "recordedBy": "Recorded By",
+    "actualIncludingVat": "Actual payable amounts, including VAT and based on each invoice's final payable amount.",
+    "projectPayments": "Project Payments",
+    "clientPayments": "Client Payments",
+    "history": "Payment History",
+    "amount": "Amount",
+    "reference": "Reference",
+    "notes": "Notes",
+    "noPayments": "No payments yet",
+    "currentRemaining": "Current remaining balance",
+    "pendingPayment": "Pending Payment",
+    "status": { "Verified": "Verified", "PendingVerification": "Pending Verification", "Rejected": "Rejected", "Cancelled": "Cancelled" },
+    "methods": { "cash": "Cash", "credit": "Credit Card", "bank_transfer": "Bank Transfer", "check": "Cheque", "bit": "Bit", "paybox": "PayBox", "other": "Other" }
+  },
+  "paymentConfirmation": {
+    "loading": "Loading payment request…",
+    "language": "Choose language",
+    "language": "Choose language",
+    "title": "Confirm a bank transfer",
+    "subtitle": "Report a payment made for this invoice. The business will review it before it is counted as paid.",
+    "invoice": "Invoice",
+    "project": "Project",
+    "for": "Payment for",
+    "remaining": "Current remaining balance",
+    "requestedAmount": "Requested amount",
+    "bankTransfer": "Bank transfer",
+    "bankTransferInstructions": "Enter the amount and date of your bank transfer. Do not send card or account passwords.",
+    "amountPaid": "Amount paid",
+    "paymentDate": "Payment date",
+    "reference": "Bank reference (optional)",
+    "uploadProof": "Payment proof (optional)",
+    "proofOptional": "PDF, JPEG, or PNG up to 5 MB",
+    "invalidProof": "Choose a PDF, JPEG, or PNG file no larger than 5 MB.",
+    "pendingNotice": "Your report will remain pending until the business verifies it. It will not change the invoice balance yet.",
+    "submit": "Submit payment confirmation",
+    "submittedTitle": "Confirmation submitted",
+    "submittedDescription": "Your report is pending review. The invoice balance changes only after the business verifies the payment.",
+    "alreadySubmitted": "Payment report already submitted",
+    "alreadySubmittedDescription": "The business is reviewing your payment report. The invoice balance will change only after verification.",
+    "alreadyProcessed": "Payment report processed",
+    "alreadyProcessedDescription": "This payment report has already been processed. Contact the business if you need help.",
+    "reportedAmount": "Reported amount",
+    "unavailable": "This link is unavailable. It may have expired or is no longer active. Contact the business to request a new link.",
+    "submitError": "Your confirmation could not be submitted. Please try again.",
+    "invalidAmount": "Enter an amount greater than zero.",
+    "amountExceedsRemaining": "The reported amount cannot exceed the current remaining balance.",
+    "paymentDateRequired": "Select the date of the bank transfer.",
+    "expired": "This payment confirmation link has expired.",
+    "expiry": "Link expires {{date}}",
+    "secureNotice": "This secure link does not require a Clienta account.",
+    "createTitle": "Send payment confirmation request",
+    "createDescription": "Create a one-time public link for the customer to report a bank transfer.",
+    "expiryDays": "Link expiry",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "create": "Create secure link",
+    "sendRequest": "Send confirmation request",
+    "createError": "The payment confirmation request could not be created.",
+    "createAuthorizationError": "You do not have permission to create a payment confirmation link for this invoice.",
+    "invalidResponseToken": "The server created the request but did not return a valid secure link. Please try again.",
+    "copyError": "The link could not be copied.",
+    "linkCreated": "Secure link created",
+    "linkExpires": "Expires {{date}}",
+    "copyLink": "Copy local link",
+    "copied": "Copied",
+    "requests": "Confirmation requests",
+    "created": "Created",
+    "expires": "Expires",
+    "proofAttached": "Proof file attached",
+    "viewProof": "View proof",
+    "proofOpenError": "The proof file could not be opened. Please try again.",
+    "verify": "Verify payment",
+    "reject": "Reject",
+    "rejectReport": "Reject report",
+    "verifyTitle": "Verify payment",
+    "verifyConfirmation": "The customer reported a bank transfer of {{amount}}.\n\nAfter verification, this amount will count as paid and the invoice balance will update.",
+    "rejectTitle": "Reject payment report",
+    "rejectionReasonOptional": "Rejection reason (optional)",
+    "rejectionReasonPlaceholder": "Add an optional reason for rejecting this report",
+    "reportedBy": "Reported by",
+    "source": "Source",
+    "sourceConfirmationLink": "Payment confirmation link",
+    "confirmReject": "Reject this customer-reported payment? It will not count toward the amount paid.",
+    "verifyError": "The payment could not be verified. Check the current invoice balance and try again.",
+    "rejectError": "The payment could not be rejected. Please try again.",
+    "status": {
+      "Active": "Link active",
+      "Submitted": "Submitted",
+      "PendingVerification": "Pending verification",
+      "Verified": "Verified",
+      "Rejected": "Rejected",
+      "Revoked": "Revoked",
+      "Expired": "Expired",
+      "Cancelled": "Cancelled"
+    },
+    "fullyPaidNoRequest": "This invoice is fully paid. No new payment request is needed."
+  },
   "dashboard": {
     "totalClients": "Total Clients",
     "activeClients": "Active Clients",
@@ -573,6 +843,21 @@
   },
   "register": {
     "startFreeTrialTitle": "Create your Clienta account",
+    "product": {
+      "title": "Choose your CLIENTA product",
+      "selectToSeeTrial": "Select a product to see its trial duration.",
+      "trialDuration": "{{days}}-day trial, starting after approval",
+      "clinic": {
+        "name": "CLIENTA Clinic",
+        "audience": "For clinics, doctors, medical practices, and healthcare businesses.",
+        "description": "Manage clinical clients, appointments, and healthcare workflows."
+      },
+      "business": {
+        "name": "CLIENTA Business",
+        "audience": "For general businesses, service businesses, and project-based teams.",
+        "description": "Manage CRM, clients, projects, quotes, invoices, and payments."
+      }
+    },
     "businessName": "Business Name",
     "fullName": "Full Name",
     "email": "Email",
@@ -612,6 +897,8 @@
       "invalidEmail": "Invalid email",
       "passwordsDoNotMatch": "Passwords do not match",
       "passwordTooShort": "Password too short",
+      "productTypeRequired": "Choose CLIENTA Clinic or CLIENTA Business to continue.",
+      "termsRequired": "You must accept the Terms of Service and Privacy Policy.",
       "registrationFailed": "Registration failed. Please try again.",
       "emailExists": "This email is already registered."
     }
@@ -778,11 +1065,17 @@
       "notes": {
         "placeholder": "Add a note about this client...",
         "add": "Add Note",
-        "delete": "Delete Note"
+        "delete": "Delete Note",
+        "edit": "Edit",
+        "save": "Save",
+        "cancel": "Cancel",
+        "editComment": "Edit comment"
       },
       "form": {
         "name": "Full Name",
         "namePlaceholder": "Enter client's full name",
+        "businessRegistrationNumber": "Company Registration No.",
+        "businessRegistrationNumberPlaceholder": "Enter company registration number",
         "idNumberPlaceholder": "Enter ID number",
         "email": "Email Address",
         "emailPlaceholder": "client@example.com",
@@ -941,6 +1234,7 @@
       "search": "Search by invoice number or client...",
       "filter": "Filter",
       "download": "PDF",
+      "viewInvoice": "View Invoice",
       "table": {
         "number": "Invoice #",
         "client": "Client",
@@ -1017,10 +1311,11 @@
       "filter": {
         "allClients": "All clients",
         "allStatuses": "All statuses",
+        "dateRange": "Date Range",
         "quickRange": "Quick Range",
-        "last30Days": "Last 30 Days",
-        "last3Months": "Last 3 Months",
-        "lastYear": "Last Year",
+        "last30Days": "Last 30 days",
+        "last3Months": "Last 3 months",
+        "lastYear": "Last year",
         "all": "All",
         "fromDate": "From Date",
         "toDate": "To Date"
@@ -1175,6 +1470,10 @@
         "manage_quotes": {
           "title": "Manage Quotes",
           "description": "Create, edit, duplicate, and convert quotes to invoices"
+        },
+        "manage_projects": {
+          "title": "Manage Projects",
+          "description": "View and manage business projects and billing plans"
         },
         "manage_notes": {
           "title": "Manage Notes",
@@ -1350,5 +1649,110 @@
     "stampRemoveError": "The stamp could not be removed.",
     "invalidStamp": "Choose a PNG or JPG file.",
     "stampTooLarge": "The stamp cannot exceed 2 MB."
+  }
+,
+  "businessShell": {
+    "appName": "CLIENTA Business",
+    "nav": {
+      "dashboard": "Dashboard",
+      "clients": "Clients / CRM",
+      "projects": "Projects",
+      "quotes": "Quotes",
+      "invoices": "Invoices",
+      "payments": "Payments",
+      "files": "Files",
+      "team": "Team / Users",
+      "settings": "Settings",
+      "billing": "Billing & Subscription"
+    },
+    "team": {
+      "readOnly": "View your Business team directory. Team administration is available to Business admins."
+    },
+    "projects": {
+      "title": "Projects",
+      "subtitle": "Track all projects across your clients.",
+      "empty": "No projects yet. Create a project from a client's Projects tab."
+    },
+    "files": {
+      "title": "Documents / Files",
+      "subtitle": "Choose a client to view and manage their documents.",
+      "empty": "Add a client before managing documents.",
+      "open": "Open documents"
+    },
+    "billing": {
+      "title": "Billing & Subscription",
+      "subtitle": "Business plan and trial status.",
+      "currentPlan": "Current plan",
+      "trialStatus": "Your Business Trial is active.",
+      "trialEnds": "Trial ends {{date}}.",
+      "daysRemaining": "{{count}} days remaining.",
+      "dashboardTrial": "Trial ends {{date}} · {{count}} days remaining",
+      "upgradeToBasic": "Upgrade to Business Basic",
+      "checkoutUnavailable": "Business Basic checkout is not available yet. No payment or Legacy Pro checkout was started.",
+      "activeStatus": "Active"
+    },
+    "payments": {
+      "title": "Payments",
+      "subtitle": "Review invoice balances, record payments, and manage payment confirmations.",
+      "invoiceAmount": "Invoice amount",
+      "openInvoice": "View invoice",
+      "loadError": "Payments could not be loaded. Please try again.",
+      "empty": "No invoices are available yet."
+    },
+    "dashboard": {
+      "title": "Business Dashboard",
+      "subtitle": "An overview of your projects, billing and cash collection.",
+      "notAvailable": "Not available",
+      "error": "We couldn't load the dashboard. Please try again.",
+      "unavailable": "The financial dashboard isn't available for your account.",
+      "retry": "Try again",
+      "kpi": {
+        "projectValue": {
+          "label": "Project Value",
+          "hint": "Before VAT · {{count}} active, on-hold and completed projects"
+        },
+        "invoiced": {
+          "label": "Invoiced",
+          "hint": "Invoice amounts payable, including VAT"
+        },
+        "paid": {
+          "label": "Paid",
+          "hint": "Verified payments only"
+        },
+        "outstanding": {
+          "label": "Outstanding",
+          "hint": "Invoiced minus verified payments"
+        },
+        "notYetInvoiced": {
+          "label": "Not Yet Invoiced",
+          "hint": "Planned billing, before VAT"
+        }
+      },
+      "nextBilling": {
+        "title": "Next Billing",
+        "empty": "Nothing is scheduled for billing yet.",
+        "emptyHint": "Add dated billing milestones to a project's billing plan.",
+        "amountNote": "Before VAT",
+        "dueDate": "Due date",
+        "overdue": "Overdue",
+        "billingContact": "Billing contact",
+        "noContact": "No billing contact set for this client.",
+        "openPlan": "Open Billing Plan"
+      },
+      "quick": {
+        "title": "Quick actions",
+        "projects": "Projects",
+        "newClient": "New client",
+        "quotes": "Quotes",
+        "invoices": "Invoices"
+      },
+      "empty": {
+        "title": "No projects yet",
+        "text": "Add a client, then create their first project to start tracking billing.",
+        "cta": "Create your first project"
+      }
+    },
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   }
 }

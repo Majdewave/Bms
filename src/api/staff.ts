@@ -5,6 +5,7 @@ export type StaffPermission =
   | 'manage_appointments'
   | 'manage_invoices'
   | 'manage_quotes'
+  | 'manage_projects'
   | 'manage_notes'
   | 'manage_files'
   | 'manage_staff'

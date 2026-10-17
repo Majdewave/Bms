@@ -1,4 +1,274 @@
   {
+  "pm": {
+    "workspaceTitle": "כרטיס לקוח",
+    "openFullQuotes": "פתח הצעות מחיר",
+    "openFullInvoices": "פתח חשבוניות",
+    "project": "פרויקט",
+    "noProject": "ללא פרויקט",
+    "createQuote": "יצירת הצעת מחיר",
+    "createInvoice": "יצירת חשבונית",
+    "quotedTotal": "סה״כ הצעות מחיר",
+    "invoicedTotal": "סה״כ חשבוניות",
+    "billingPlan": "תוכנית חיוב",
+    "manageBillingPlan": "ניהול תוכנית חיוב",
+    "billingPlanHint": "אבני דרך, מועדי חיוב וחשבוניות",
+    "billingPlanSubtitle": "ניהול אבני דרך, מועדי חיוב וחשבוניות עבור הפרויקט",
+    "backToClientProjects": "חזרה ללקוח ולפרויקטים",
+    "billingMilestone": "אבן דרך לחיוב",
+    "projectValueBeforeVat": "שווי הפרויקט (לפני מע״מ)",
+    "plannedBilling": "חיוב מתוכנן (לפני מע״מ)",
+    "milestonesInvoiced": "הוצאו חשבוניות (לפני מע״מ)",
+    "notYetInvoiced": "נותר להוציא חשבונית (לפני מע״מ)",
+    "billingDifference": "הפרש חיוב",
+    "nextBilling": "החיוב הבא",
+    "addMilestone": "הוספת אבן דרך",
+    "editMilestone": "עריכת אבן דרך",
+    "milestoneTitle": "כותרת אבן הדרך",
+    "amount": "סכום",
+    "description": "תיאור",
+    "linkedInvoice": "חשבונית מקושרת",
+    "openInvoice": "פתיחת חשבונית",
+    "cancelMilestone": "ביטול",
+    "linkInvoice": "קישור חשבונית",
+    "markReady": "מוכן לחיוב",
+    "noBillingMilestones": "אין אבני דרך לחיוב",
+    "deleteMilestoneConfirm": "למחוק את אבן הדרך? פעולה זו אינה ניתנת לביטול.",
+    "billingPlanMismatch": "תוכנית החיוב אינה תואמת את ערך הפרויקט",
+    "billingPlanMatches": "תוכנית החיוב תואמת לשווי הפרויקט",
+    "editMilestoneAction": "עריכה",
+    "deleteMilestoneAction": "מחיקה",
+    "linkedMilestoneDeleteBlocked": "לא ניתן למחוק אבן דרך המקושרת לחשבונית.",
+    "milestoneStatus": { "Planned": "מתוכנן", "ReadyToInvoice": "מוכן לחיוב", "Invoiced": "חויב", "Cancelled": "בוטל" },
+    "featureUnavailable": "תכונה זו אינה זמינה לעסק או למשתמש זה.",
+    "projectQuotes": "הצעות מחיר לפרויקט",
+    "projectInvoices": "חשבוניות לפרויקט",
+    "viewProjectDocuments": "הצעות מחיר וחשבוניות",
+    "tabs": {
+      "overview": "סקירה",
+      "projects": "פרויקטים",
+      "contacts": "אנשי קשר",
+      "quotes": "הצעות מחיר",
+      "invoices": "חשבוניות",
+      "files": "קבצים",
+      "notes": "הערות"
+    },
+    "status": {
+      "Draft": "טיוטה",
+      "Active": "פעיל",
+      "OnHold": "בהמתנה",
+      "Completed": "הושלם",
+      "Cancelled": "בוטל"
+    },
+    "overview": {
+      "activeProjects": "פרויקטים פעילים",
+      "projectValue": "שווי הפרויקטים",
+      "clientInvoiced": "סכום שחויב (לקוח)",
+      "clientOutstanding": "יתרת חוב (לקוח)",
+      "clientLevelHint": "סה\"כ ברמת הלקוח, כולל חשבוניות המשויכות לפרויקט וחשבוניות ללא פרויקט",
+      "recentProjects": "פרויקטים אחרונים",
+      "primaryContact": "איש קשר ראשי",
+      "billingContact": "איש קשר לחיוב"
+    },
+    "projects": {
+      "new": "פרויקט חדש",
+      "edit": "עריכת פרויקט",
+      "empty": "אין פרויקטים עדיין",
+      "name": "שם",
+      "status": "סטטוס",
+      "value": "שווי הפרויקט",
+      "startDate": "תאריך התחלה",
+      "endDate": "תאריך סיום",
+      "description": "תיאור",
+      "confirmDelete": "למחוק את הפרויקט \"{{name}}\"?",
+      "financialSummary": "מסמכים כספיים מקושרים"
+    },
+    "quotes": {
+      "general": "הצעת מחיר עסקית כללית"
+    },
+    "contacts": {
+      "new": "הוסף איש קשר",
+      "edit": "עריכת איש קשר",
+      "empty": "אין אנשי קשר עדיין",
+      "name": "שם",
+      "roleTitle": "תפקיד / מחלקה",
+      "phone": "טלפון",
+      "whatsApp": "וואטסאפ",
+      "email": "דוא\"ל",
+      "primary": "איש קשר ראשי",
+      "billing": "איש קשר לחיוב",
+      "confirmDelete": "למחוק את איש הקשר \"{{name}}\"?"
+    },
+    "quotes": {
+      "empty": "אין הצעות מחיר ללקוח זה"
+    },
+    "invoices": {
+      "empty": "אין חשבוניות ללקוח זה"
+    },
+    "files": {
+      "upload": "העלאת קובץ",
+      "empty": "אין קבצים עדיין",
+      "confirmDelete": "למחוק את הקובץ \"{{name}}\"?",
+      "documents": "מסמכים",
+      "projectEmpty": "עדיין לא נוספו מסמכים לפרויקט זה.",
+      "uploadDocument": "העלאת מסמך",
+      "chooseFile": "בחירת קובץ",
+      "documentTitle": "כותרת המסמך",
+      "documentTitlePlaceholder": "כותרת המסמך (אופציונלי)",
+      "originalFilename": "שם הקובץ המקורי",
+      "uploadedBy": "הועלה על ידי",
+      "fileSize": "גודל הקובץ",
+      "general": "כללי",
+      "allFiles": "כל הקבצים",
+      "project": "פרויקט: {{name}}",
+      "filterLabel": "סינון קבצים",
+      "rename": "שינוי שם",
+      "save": "שמירה",
+      "cancel": "ביטול",
+      "download": "הורדה",
+      "deleteDocument": "מחיקת מסמך",
+      "confirmDeleteDocument": "למחוק את המסמך \"{{name}}\"? לא ניתן לבטל פעולה זו.",
+      "uploading": "מעלה...",
+      "uploadSuccess": "המסמך הועלה.",
+      "renameSuccess": "כותרת המסמך עודכנה.",
+      "deleteSuccess": "המסמך נמחק.",
+      "errors": {
+        "upload": "לא ניתן להעלות את המסמך. נסו שוב.",
+        "rename": "לא ניתן לעדכן את הכותרת. נסו שוב.",
+        "delete": "לא ניתן למחוק את המסמך. נסו שוב.",
+        "download": "לא ניתן להוריד את המסמך. נסו שוב.",
+        "load": "לא ניתן לטעון את המסמכים.",
+        "invalidFile": "הקובץ גדול מדי (מקסימום 10MB) או שסוגו אינו מותר (PDF, Word, Excel, טקסט, JPG, PNG).",
+        "invalidTitle": "הכותרת אינה תקינה או ארוכה מ-200 תווים.",
+        "session": "פג תוקף ההתחברות. יש להתחבר מחדש.",
+        "forbidden": "אין הרשאה, או שניהול פרויקטים אינו זמין.",
+        "notFound": "המסמך או הפרויקט לא נמצאו.",
+        "conflict": "הפעולה מתנגשת עם מצב הפרויקט הנוכחי."
+      }
+    }
+  },
+  "payments": {
+    "title": "תשלומים",
+    "invoiceHeader": "תשלומים",
+    "paymentState": "מצב תשלום",
+    "paymentStates": { "pending": "ממתין לתשלום", "partially_paid": "שולם חלקית", "paid": "שולם" },
+    "saveError": "שמירת התשלום נכשלה. נסה שוב.",
+    "cancelError": "ביטול התשלום נכשל. נסה שוב.",
+    "record": "רישום תשלום",
+    "edit": "עריכת תשלום",
+    "cancel": "ביטול תשלום",
+    "date": "תאריך תשלום",
+    "paymentMethod": "אמצעי תשלום",
+    "invoiceTotal": "סה״כ לתשלום",
+    "invoiceAmountDue": "סה״כ חשבוניות לתשלום",
+    "paid": "שולם",
+    "actualPaid": "שולם בפועל",
+    "remaining": "יתרה לתשלום",
+    "outstanding": "יתרה לתשלום",
+    "recordedBy": "נרשם על ידי",
+    "confirmCancel": "לבטל את התשלום? התשלום יישאר בהיסטוריה אך לא ייחשב בסכום ששולם.",
+    "cancelConfirmTitle": "לבטל את התשלום?",
+    "cancelConfirmDescription": "התשלום יישאר בהיסטוריה אך לא ייחשב בסכום ששולם.",
+    "goBack": "חזרה",
+    "loadError": "טעינת היסטוריית התשלומים נכשלה. נסה שוב.",
+    "savePayment": "שמירת תשלום",
+    "statusLabel": "סטטוס",
+    "editingAmount": "סכום התשלום הנוכחי",
+    "actualIncludingVat": "סכומים לתשלום בפועל, כולל מע״מ ובהתאם לסכום הסופי בחשבוניות",
+    "projectPayments": "תשלומים בפרויקט",
+    "clientPayments": "תשלומים ברמת הלקוח",
+    "history": "היסטוריית תשלומים",
+    "amount": "סכום",
+    "reference": "אסמכתא",
+    "notes": "הערות",
+    "noPayments": "אין עדיין תשלומים",
+    "currentRemaining": "יתרה נוכחית לתשלום",
+    "pendingPayment": "ממתין לתשלום",
+    "status": { "Verified": "אומת", "PendingVerification": "ממתין לאימות", "Rejected": "נדחה", "Cancelled": "בוטל" },
+    "methods": { "cash": "מזומן", "credit": "כרטיס אשראי", "bank_transfer": "העברה בנקאית", "check": "צ׳ק", "bit": "ביט", "paybox": "PayBox", "other": "אחר" }
+  },
+  "paymentConfirmation": {
+    "loading": "טוען בקשת תשלום…",
+    "language": "בחירת שפה",
+    "language": "בחירת שפה",
+    "title": "אישור העברה בנקאית",
+    "subtitle": "דווחו על תשלום שבוצע עבור החשבונית. העסק יבדוק את הדיווח לפני שייחשב כתשלום.",
+    "invoice": "חשבונית",
+    "project": "פרויקט",
+    "for": "עבור",
+    "remaining": "יתרה נוכחית לתשלום",
+    "requestedAmount": "הסכום המבוקש",
+    "bankTransfer": "העברה בנקאית",
+    "bankTransferInstructions": "יש להזין את סכום ותאריך ההעברה. אין למסור סיסמאות לכרטיס או לחשבון.",
+    "amountPaid": "הסכום ששולם",
+    "paymentDate": "תאריך התשלום",
+    "reference": "אסמכתת העברה (לא חובה)",
+    "uploadProof": "אסמכתת תשלום (לא חובה)",
+    "proofOptional": "PDF, JPEG או PNG עד 5 MB",
+    "invalidProof": "יש לבחור קובץ PDF, JPEG או PNG עד 5 MB.",
+    "pendingNotice": "הדיווח ימתין לבדיקה של העסק ולא ישנה עדיין את יתרת החשבונית.",
+    "submit": "שליחת דיווח תשלום",
+    "submittedTitle": "הדיווח נשלח",
+    "submittedDescription": "הדיווח ממתין לבדיקה. יתרת החשבונית תשתנה רק לאחר אימות התשלום על ידי העסק.",
+    "alreadySubmitted": "האישור כבר נשלח",
+    "alreadySubmittedDescription": "הדיווח התקבל וממתין לבדיקת בית העסק.",
+    "alreadyProcessed": "דיווח התשלום כבר טופל",
+    "alreadyProcessedDescription": "הדיווח כבר טופל. ניתן לפנות לבית העסק לקבלת מידע נוסף.",
+    "reportedAmount": "הסכום שדווח",
+    "unavailable": "הקישור אינו זמין. ייתכן שפג תוקפו או שאינו פעיל יותר. ניתן לפנות לבית העסק לקבלת קישור חדש.",
+    "submitError": "שליחת הדיווח נכשלה. נסו שוב.",
+    "invalidAmount": "יש להזין סכום גדול מאפס.",
+    "amountExceedsRemaining": "הסכום המדווח לא יכול להיות גבוה מהיתרה הנוכחית.",
+    "paymentDateRequired": "יש לבחור את תאריך ההעברה הבנקאית.",
+    "expired": "תוקף הקישור לאישור התשלום פג.",
+    "expiry": "תוקף הקישור עד {{date}}",
+    "secureNotice": "אין צורך בחשבון Clienta כדי להשתמש בקישור המאובטח.",
+    "createTitle": "שליחת בקשה לאישור תשלום",
+    "createDescription": "יצירת קישור ציבורי חד-פעמי לדיווח הלקוח על העברה בנקאית.",
+    "expiryDays": "תוקף הקישור",
+    "days_one": "יום אחד",
+    "days_other": "{{count}} ימים",
+    "create": "יצירת קישור מאובטח",
+    "sendRequest": "שליחת בקשה לאישור תשלום",
+    "createError": "יצירת בקשת אישור התשלום נכשלה.",
+    "createAuthorizationError": "אין לך הרשאה ליצור קישור אישור תשלום לחשבונית זו.",
+    "invalidResponseToken": "השרת יצר את הבקשה אך לא החזיר קישור מאובטח תקין. יש לנסות שוב.",
+    "copyError": "העתקת הקישור נכשלה.",
+    "linkCreated": "הקישור המאובטח נוצר",
+    "linkExpires": "תוקף הקישור עד {{date}}",
+    "copyLink": "העתקת קישור מקומי",
+    "copied": "הועתק",
+    "requests": "בקשות אישור תשלום",
+    "created": "נוצר בתאריך",
+    "expires": "תוקף עד",
+    "proofAttached": "צורף קובץ אסמכתא",
+    "viewProof": "צפייה באסמכתא",
+    "proofOpenError": "לא ניתן לפתוח את קובץ האסמכתא. נסו שוב.",
+    "verify": "אימות תשלום",
+    "reject": "דחייה",
+    "rejectReport": "דחיית דיווח",
+    "verifyTitle": "אימות תשלום",
+    "verifyConfirmation": "הלקוח דיווח על העברה בנקאית בסך {{amount}}.\n\nלאחר האימות, הסכום ייחשב כתשלום בפועל ויתרת החשבונית תתעדכן.",
+    "rejectTitle": "דחיית דיווח תשלום",
+    "rejectionReasonOptional": "סיבת דחייה (אופציונלי)",
+    "rejectionReasonPlaceholder": "הזנת סיבת דחייה אינה חובה",
+    "reportedBy": "דווח על ידי",
+    "source": "מקור",
+    "sourceConfirmationLink": "קישור אישור תשלום",
+    "confirmReject": "לדחות את דיווח התשלום? הוא לא ייחשב בסכום ששולם.",
+    "verifyError": "אימות התשלום נכשל. בדקו את יתרת החשבונית הנוכחית ונסו שוב.",
+    "rejectError": "דחיית התשלום נכשלה. נסו שוב.",
+    "status": {
+      "Active": "קישור פעיל",
+      "Submitted": "נשלח לבדיקה",
+      "PendingVerification": "ממתין לאימות",
+      "Verified": "מאומת",
+      "Rejected": "נדחה",
+      "Revoked": "בוטל",
+      "Expired": "פג תוקף",
+      "Cancelled": "בוטל"
+    },
+    "fullyPaidNoRequest": "החשבונית שולמה במלואה. אין צורך לשלוח בקשת תשלום נוספת."
+  },
   "dashboard": {
     "totalClients": "סה״כ לקוחות",
     "activeClients": "לקוחות פעילים",
@@ -559,6 +829,21 @@
   },
   "register": {
     "startFreeTrialTitle": "צור את חשבון ה-Clienta שלך",
+    "product": {
+      "title": "בחרו את מוצר CLIENTA",
+      "selectToSeeTrial": "בחרו מוצר כדי לראות את משך תקופת הניסיון.",
+      "trialDuration": "תקופת ניסיון של {{days}} ימים, שמתחילה לאחר האישור",
+      "clinic": {
+        "name": "CLIENTA Clinic",
+        "audience": "למרפאות, רופאים, פרקטיקות רפואיות ועסקי בריאות.",
+        "description": "ניהול לקוחות רפואיים, פגישות ותהליכי עבודה בתחום הבריאות."
+      },
+      "business": {
+        "name": "CLIENTA Business",
+        "audience": "לעסקים כלליים, עסקים מבוססי שירות וצוותים מבוססי פרויקטים.",
+        "description": "ניהול CRM, לקוחות, פרויקטים, הצעות מחיר, חשבוניות ותשלומים."
+      }
+    },
     "businessName": "שם העסק",
     "fullName": "שם מלא",
     "email": "אימייל",
@@ -598,6 +883,8 @@
       "invalidEmail": "אימייל לא תקין",
       "passwordsDoNotMatch": "הסיסמאות אינן תואמות",
       "passwordTooShort": "הסיסמה קצרה מדי",
+      "productTypeRequired": "יש לבחור CLIENTA Clinic או CLIENTA Business כדי להמשיך.",
+      "termsRequired": "יש לאשר את תנאי השימוש ומדיניות הפרטיות.",
       "registrationFailed": "ההרשמה נכשלה. נסה שוב.",
       "emailExists": "האימייל כבר רשום במערכת."
     }
@@ -762,11 +1049,17 @@
       "notes": {
         "placeholder": "הוסף הערה על הלקוח הזה...",
         "add": "הוסף הערה",
-        "delete": "מחק הערה"
+        "delete": "מחק הערה",
+        "edit": "עריכה",
+        "save": "שמירה",
+        "cancel": "ביטול",
+        "editComment": "עריכת הערה"
       },
       "form": {
         "name": "שם מלא",
         "namePlaceholder": "הזן את השם המלא של הלקוח",
+        "businessRegistrationNumber": "ח.פ. / מספר חברה",
+        "businessRegistrationNumberPlaceholder": "הזן ח.פ. / מספר חברה",
         "idNumberPlaceholder": "הזן מספר תעודת זהות",
         "email": "כתובת דוא\"ל",
         "emailPlaceholder": "client@example.com",
@@ -924,6 +1217,7 @@
       "search": "חפש לפי מספר חשבונית או לקוח...",
       "filter": "סנן",
       "download": "PDF",
+      "viewInvoice": "צפייה בחשבונית",
       "table": {
         "number": "חשבונית #",
         "client": "לקוח",
@@ -1000,11 +1294,12 @@
       "filter": {
         "allClients": "כל הלקוחות",
         "allStatuses": "כל הסטטוסים",
+        "dateRange": "טווח תאריכים",
         "quickRange": "טווח תאריכים מהיר",
         "last30Days": "30 ימים אחרונים",
         "last3Months": "3 חודשים אחרונים",
         "lastYear": "שנה אחרונה",
-        "all": "הכול",
+        "all": "הכל",
         "fromDate": "מתאריך",
         "toDate": "עד תאריך"
       },
@@ -1157,6 +1452,10 @@
         "manage_quotes": {
           "title": "הצעות מחיר",
           "description": "צור, ערוך, שכפל והמר הצעות מחיר לחשבוניות"
+        },
+        "manage_projects": {
+          "title": "ניהול פרויקטים",
+          "description": "צפייה וניהול של פרויקטים עסקיים ותוכניות חיוב"
         },
         "manage_notes": {
           "title": "נהל הערות",
@@ -1325,5 +1624,110 @@
     "stampRemoveError": "הסרת החותמת נכשלה.",
     "invalidStamp": "יש לבחור קובץ PNG או JPG.",
     "stampTooLarge": "גודל החותמת לא יכול לעלות על 2MB."
+  }
+,
+  "businessShell": {
+    "appName": "CLIENTA Business",
+    "nav": {
+      "dashboard": "לוח בקרה",
+      "clients": "לקוחות / CRM",
+      "projects": "פרויקטים",
+      "quotes": "הצעות מחיר",
+      "invoices": "חשבוניות",
+      "payments": "תשלומים",
+      "files": "קבצים",
+      "team": "צוות / משתמשים",
+      "settings": "הגדרות",
+      "billing": "חיוב ומנוי"
+    },
+    "team": {
+      "readOnly": "צפייה ברשימת צוות העסק. ניהול הצוות זמין למנהלי העסק."
+    },
+    "projects": {
+      "title": "פרויקטים",
+      "subtitle": "מעקב אחר כל הפרויקטים של הלקוחות.",
+      "empty": "אין עדיין פרויקטים. ניתן ליצור פרויקט בכרטיסיית הפרויקטים של לקוח."
+    },
+    "files": {
+      "title": "מסמכים / קבצים",
+      "subtitle": "בחרו לקוח כדי לצפות ולנהל את המסמכים שלו.",
+      "empty": "הוסיפו לקוח לפני ניהול מסמכים.",
+      "open": "פתיחת מסמכים"
+    },
+    "billing": {
+      "title": "חיוב ומנוי",
+      "subtitle": "מסלול העסק וסטטוס תקופת הניסיון.",
+      "currentPlan": "המסלול הנוכחי",
+      "trialStatus": "תקופת הניסיון העסקית פעילה.",
+      "trialEnds": "תקופת הניסיון מסתיימת ב־{{date}}.",
+      "daysRemaining": "נותרו {{count}} ימים.",
+      "dashboardTrial": "הניסיון מסתיים ב־{{date}} · נותרו {{count}} ימים",
+      "upgradeToBasic": "שדרוג ל־Business Basic",
+      "checkoutUnavailable": "רכישת Business Basic עדיין אינה זמינה. לא הופעל תשלום או תהליך Legacy Pro.",
+      "activeStatus": "פעיל"
+    },
+    "payments": {
+      "title": "תשלומים",
+      "subtitle": "צפייה ביתרות החשבוניות, רישום תשלומים וניהול אישורי תשלום.",
+      "invoiceAmount": "סכום החשבונית",
+      "openInvoice": "צפייה בחשבונית",
+      "loadError": "לא ניתן לטעון את התשלומים. נסו שוב.",
+      "empty": "אין עדיין חשבוניות זמינות."
+    },
+    "dashboard": {
+      "title": "לוח בקרה עסקי",
+      "subtitle": "סקירה של הפרויקטים, החיוב והגבייה שלך.",
+      "notAvailable": "לא זמין",
+      "error": "לא הצלחנו לטעון את לוח הבקרה. נסו שוב.",
+      "unavailable": "לוח הבקרה הפיננסי אינו זמין עבור החשבון שלך.",
+      "retry": "נסו שוב",
+      "kpi": {
+        "projectValue": {
+          "label": "שווי הפרויקטים",
+          "hint": "לפני מע״מ · {{count}} פרויקטים פעילים, מושהים ושהושלמו"
+        },
+        "invoiced": {
+          "label": "חויב בחשבוניות",
+          "hint": "סכומים לתשלום בחשבוניות, כולל מע״מ"
+        },
+        "paid": {
+          "label": "שולם",
+          "hint": "תשלומים מאומתים בלבד"
+        },
+        "outstanding": {
+          "label": "יתרה לתשלום",
+          "hint": "חויב בחשבוניות פחות תשלומים מאומתים"
+        },
+        "notYetInvoiced": {
+          "label": "טרם חויב",
+          "hint": "חיוב מתוכנן, לפני מע״מ"
+        }
+      },
+      "nextBilling": {
+        "title": "החיוב הבא",
+        "empty": "אין חיוב מתוכנן כרגע.",
+        "emptyHint": "הוסיפו אבני דרך לחיוב עם תאריך בתוכנית החיוב של פרויקט.",
+        "amountNote": "לפני מע״מ",
+        "dueDate": "תאריך יעד",
+        "overdue": "באיחור",
+        "billingContact": "איש קשר לחיוב",
+        "noContact": "לא הוגדר איש קשר לחיוב עבור הלקוח.",
+        "openPlan": "פתיחת תוכנית חיוב"
+      },
+      "quick": {
+        "title": "פעולות מהירות",
+        "projects": "פרויקטים",
+        "newClient": "לקוח חדש",
+        "quotes": "הצעות מחיר",
+        "invoices": "חשבוניות"
+      },
+      "empty": {
+        "title": "עדיין אין פרויקטים",
+        "text": "הוסיפו לקוח ואז צרו את הפרויקט הראשון שלו כדי להתחיל לעקוב אחר החיוב.",
+        "cta": "יצירת הפרויקט הראשון"
+      }
+    },
+    "openMenu": "פתיחת תפריט",
+    "closeMenu": "סגירת תפריט"
   }
 }

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ClientaWordmark } from '@/components/Logo'
 import { get } from "../api/apiClient";
 import { usePlatformConfig } from '@/hooks/usePlatformConfig'
+import { fetchTenantProduct, getProductRoleLandingPath } from '@/utils/productRouting'
 
 
 import { post } from "../api/apiClient";
@@ -24,7 +25,7 @@ interface FormData {
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login: authLogin, user } = useAuth()
+  const { login: authLogin, user, loading: authLoading } = useAuth()
   const { t, i18n } = useTranslation()
   const { config } = usePlatformConfig()
   const [formData, setFormData] = useState<FormData>({
@@ -38,6 +39,16 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [successMessage, setSuccessMessage] = useState('')
+
+  // A restored session entering /login follows the same tenant-product landing policy as fresh login.
+  useEffect(() => {
+    if (authLoading || !user) return
+    let active = true
+    void fetchTenantProduct().then((productType) => {
+      if (active) navigate(getProductRoleLandingPath(productType, user.role), { replace: true })
+    })
+    return () => { active = false }
+  }, [authLoading, user, navigate])
 
   type MeResponse = {
   businessId: string;
@@ -200,12 +211,8 @@ const payload = JSON.parse(atob(token.split('.')[1]));
 const role =
   payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]?.toLowerCase();
 
-// ðŸ”¥ × ×™×•×•×˜ ×œ×¤×™ role
-if (role === 'admin') navigate('/admin/dashboard', { replace: true });
-else if (role === 'staff') navigate('/staff/dashboard', { replace: true });
-else if (role === 'client') navigate('/client/dashboard', { replace: true });
-else if (role === 'interpreter') navigate('/interpreter/requests', { replace: true });
-else navigate('/', { replace: true });
+const productType = await fetchTenantProduct()
+navigate(getProductRoleLandingPath(productType, role), { replace: true })
     setSuccessMessage("Login successful");
 
       // Handle remember me
@@ -465,7 +472,6 @@ else navigate('/', { replace: true });
                   value={formData.password}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   className={`w-full pl-10 pr-12 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                     errors.password && touched.password
                       ? 'border-red-300 bg-red-50 focus:ring-red-500 focus:ring-offset-red-50'

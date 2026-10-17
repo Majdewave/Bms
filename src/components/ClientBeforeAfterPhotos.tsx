@@ -114,7 +114,7 @@ export default function ClientBeforeAfterPhotos({ clientId, onCountChange }: Pro
   const resolveImageUrl = (url: string) => {
     if (!url) return ''
     if (url.startsWith('http')) return url
-    const baseUrl = (import.meta as any).env.VITE_API_URL || 'http://localhost:5146'
+    const baseUrl = (import.meta as any).env.VITE_API_URL || ''
     return `${baseUrl}${url}`
   }
 

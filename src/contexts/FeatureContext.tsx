@@ -62,7 +62,7 @@ export function FeatureProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const data = await apiClient.get<Features>('/api/features')
+        const data = await apiClient.get<Features>('/api/features/commercial-capabilities')
 
         setFeatures((prev) => (areFeaturesEqual(prev, data) ? prev : data))
 

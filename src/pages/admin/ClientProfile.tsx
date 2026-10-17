@@ -7,6 +7,7 @@ import { clientsService, imagingService, invoicesService } from '@/api'
 import type { Invoice } from '@/api/invoices'
 import {deleteImagingOrder,deleteInterpretationRequest, getClientImagingCases, getImagingOrderReferralDocument, type ClientImagingCase, type ImagingStudyHierarchy, type ImagingStudySummary,} from '@/api/imaging'
 import { useAuth } from "@/contexts/AuthContext"
+import { useTenant } from '@/contexts/TenantContext'
 import { useDepartmentFeatures } from "@/contexts/DepartmentFeatureContext"
 import { getDepartmentFeatureEnabled } from "@/api/departmentFeatureCheck"
 import { servicesService, type BusinessService } from "@/api/servicesService"
@@ -194,6 +195,8 @@ export default function ClientProfile() {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
+  const { productType } = useTenant()
+  const isBusiness = productType === 'business'
 
   const isAdmin = user?.role === "admin"
   const isRTL = i18n.language === "he" || i18n.language === "ar"
@@ -202,7 +205,7 @@ export default function ClientProfile() {
   const stampSrc = currentStaff?.stampUrl
     ? (currentStaff.stampUrl.startsWith('http')
       ? currentStaff.stampUrl
-      : `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5146'}${currentStaff.stampUrl}`)
+      : `${(import.meta as any).env.VITE_API_URL || ''}${currentStaff.stampUrl}`)
     : null
 
   const [client, setClient] = useState<Client | null>(null)
@@ -780,7 +783,7 @@ useEffect(() => {
 
   const handlePrescriptionDocumentAction = async (prescriptionId: string, action: 'view' | 'download' | 'print') => {
     try {
-      const baseUrl = (import.meta as any).env.VITE_API_URL || 'http://localhost:5146'
+      const baseUrl = (import.meta as any).env.VITE_API_URL || ''
       const blob = await fetchProtectedPdfBlob(`${baseUrl}/api/prescriptions/${prescriptionId}/pdf`)
       performPdfAction(blob, `prescription-${prescriptionId}.pdf`, action)
     } catch (error) {
@@ -790,7 +793,7 @@ useEffect(() => {
 
   const handleVisitSummaryDocumentAction = async (summaryId: string, action: 'view' | 'download' | 'print') => {
     try {
-      const baseUrl = (import.meta as any).env.VITE_API_URL || 'http://localhost:5146'
+      const baseUrl = (import.meta as any).env.VITE_API_URL || ''
       const blob = await fetchProtectedPdfBlob(`${baseUrl}/api/VisitSummary/${summaryId}/pdf`)
       performPdfAction(blob, `visit-summary-${summaryId}.pdf`, action)
     } catch (error) {
@@ -864,9 +867,11 @@ useEffect(() => {
 const saveClient = async () => {
   if (!client) return
 
-  const hasDuplicateIdNumber = await checkDuplicateClientIdNumber(client.idNumber)
-  if (hasDuplicateIdNumber) {
-    return
+  if (!isBusiness) {
+    const hasDuplicateIdNumber = await checkDuplicateClientIdNumber(client.idNumber)
+    if (hasDuplicateIdNumber) {
+      return
+    }
   }
 
   setSavingClient(true)
@@ -1133,7 +1138,7 @@ const saveClient = async () => {
   const resolveAssetUrl = (url?: string | null) => {
     if (!url) return null
     if (url.startsWith('http')) return url
-    const baseUrl = (import.meta as any).env.VITE_API_URL || 'http://localhost:5146'
+    const baseUrl = (import.meta as any).env.VITE_API_URL || ''
     return `${baseUrl}${url}`
   }
 
@@ -1618,7 +1623,7 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
 
         <div>
           <label className={`block text-sm text-slate-500 mb-2 ${isRTL ? "text-right" : "text-left"}`}>
-            תעודת זהות
+            {isBusiness ? t('admin.clients.form.businessRegistrationNumber') : 'תעודת זהות'}
           </label>
           <input
             type="text"

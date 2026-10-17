@@ -25,8 +25,8 @@ export const updateNote = async (
   note: {
     content: string
   }
-): Promise<Note> => {
-  return put<Note>(`/api/notes/${id}`, note)
+): Promise<void> => {
+  return put<void>(`/api/notes/${id}`, note)
 }
 
 export const deleteNote = async (id: string): Promise<void> => {

@@ -1,17 +1,29 @@
 import { useRef, useState } from 'react'
 import { clientsService } from '@/api'
+import type { Client } from '@/api'
 import { useTranslation } from 'react-i18next'
+import { useTenant } from '@/contexts/TenantContext'
 
-export default function CreateClientModal({ onClose, onCreated }) {
+type Props = {
+  onClose: () => void
+  onCreated: (client: Client) => void
+  client?: Client | null
+  onUpdated?: () => void
+}
+
+export default function CreateClientModal({ onClose, onCreated, client = null, onUpdated }: Props) {
   const { t } = useTranslation()
+  const { productType } = useTenant()
+  const isBusiness = productType === 'business'
+  const isEditing = client !== null
   const [form, setForm] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    address: '',
-    idNumber: '',
-    birthDate: '',
-    internalNote: '',
+    fullName: client?.fullName ?? '',
+    email: client?.email ?? '',
+    phone: client?.phone ?? '',
+    address: client?.address ?? '',
+    idNumber: client?.idNumber ?? '',
+    birthDate: client?.birthDate ?? '',
+    internalNote: client?.internalNote ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -115,22 +127,38 @@ export default function CreateClientModal({ onClose, onCreated }) {
       return
     }
 
-    const duplicateFound = await checkDuplicateIdNumber(form.idNumber || '')
-    if (duplicateFound) {
-      return
+    if (!isBusiness) {
+      const duplicateFound = await checkDuplicateIdNumber(form.idNumber || '')
+      if (duplicateFound) {
+        return
+      }
     }
 
     setSaving(true)
     setError('')
     try {
       const payload = {
-          ...form,
-          idNumber: form.idNumber?.trim() || null,
-          birthDate: form.birthDate ? form.birthDate : null,
-        }
+        ...form,
+        idNumber: form.idNumber?.trim() || null,
+        birthDate: isBusiness ? null : form.birthDate ? form.birthDate : null,
+      }
 
-      const client = await clientsService.createClient(payload)
-      onCreated(client)
+      if (client) {
+        await clientsService.updateClient(client.id, {
+          fullName: payload.fullName.trim(),
+          email: payload.email.trim() || null,
+          phone: payload.phone.trim() || null,
+          address: payload.address.trim() || null,
+          idNumber: payload.idNumber,
+          ...(isBusiness ? {} : { birthDate: payload.birthDate }),
+          internalNote: payload.internalNote.trim() || null,
+          isActive: client.isActive,
+        })
+        onUpdated?.()
+      } else {
+        const created = await clientsService.createClient(payload)
+        onCreated(created)
+      }
     } catch (err: any) {
       if (isDuplicateConflictError(err)) {
         applyDuplicateValidation(err?.response?.clientName)
@@ -151,7 +179,7 @@ export default function CreateClientModal({ onClose, onCreated }) {
         >
           &times;
         </button>
-        <h2 className="text-xl font-bold mb-4">{t('admin.clients.add')}</h2>
+        <h2 className="text-xl font-bold mb-4">{isEditing ? t('admin.clients.editClient') : t('admin.clients.add')}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <input
@@ -173,7 +201,9 @@ export default function CreateClientModal({ onClose, onCreated }) {
             )}
           </div>        
           <div>
+            {isBusiness && <label htmlFor="business-client-id-number" className="mb-1 block text-sm font-medium text-slate-700">{t('admin.clients.form.businessRegistrationNumber')}</label>}
             <input
+              id="business-client-id-number"
               name="idNumber"
               type="text"
               value={form.idNumber || ''}
@@ -183,8 +213,8 @@ export default function CreateClientModal({ onClose, onCreated }) {
                 lastCheckedIdNumber.current = ''
                 clearDuplicateValidation()
               }}
-              onBlur={() => void checkDuplicateIdNumber(form.idNumber || '')}
-              placeholder={t('admin.clients.form.idNumberPlaceholder')}
+              onBlur={() => { if (!isBusiness) void checkDuplicateIdNumber(form.idNumber || '') }}
+              placeholder={isBusiness ? t('admin.clients.form.businessRegistrationNumberPlaceholder') : t('admin.clients.form.idNumberPlaceholder')}
               className={`w-full rounded-lg px-3 py-2 border ${
                 errors.idNumber
                   ? 'border-red-500 focus:ring-1 focus:ring-red-500'
@@ -201,7 +231,7 @@ export default function CreateClientModal({ onClose, onCreated }) {
             )}
           </div>
 
-          <div>
+          {!isBusiness && <div>
             <input
               name="birthDate"
               type="date"
@@ -209,7 +239,7 @@ export default function CreateClientModal({ onClose, onCreated }) {
               onChange={handleChange}
               className="w-full rounded-lg px-3 py-2 border border-slate-300"
             />
-        </div>
+        </div>}
 
           <input name="email" value={form.email} onChange={handleChange} type="email" placeholder={t('admin.clients.form.emailPlaceholder')} className="input w-full" />
           <div> 

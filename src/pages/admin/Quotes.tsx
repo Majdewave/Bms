@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { isBusinessPath } from '@/pm/utils/pmPaths'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
+import { useFeatures } from '@/contexts/FeatureContext'
 import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
 import { useTenant } from '@/contexts/TenantContext'
 import { clientsService } from '@/api'
@@ -9,6 +11,9 @@ import * as quotesService from '@/api/quotes'
 import type { Client } from '@/api'
 import type { Quote, QuoteStatus, CreateQuoteRequest, QuoteListItem, QuoteDateRange } from '@/api/quotes'
 import { calculateInvoiceTotals, DEFAULT_VAT_RATE } from '@/api/invoices'
+import { getProjectsByClient } from '@/api/projects'
+import type { Project } from '@/types/pm'
+import { usePmEnabled } from '@/pm/hooks/usePmEnabled'
 import Autocomplete from '@/components/Autocomplete'
 import { Download, Eye, FilePlus2, Pencil, Plus, Printer, Repeat2, Search, Trash2, User, UserPlus, Loader2 } from 'lucide-react'
 
@@ -21,6 +26,7 @@ type QuoteFormLineItem = {
 
 type QuoteFormState = {
   clientId: string
+  projectId: string
   departmentId: string
   customerName: string
   customerPhone: string
@@ -63,6 +69,7 @@ const createEmptyLineItem = (): QuoteFormLineItem => ({
 
 const createDefaultForm = (defaultDepartmentId = ''): QuoteFormState => ({
   clientId: '',
+  projectId: '',
   departmentId: defaultDepartmentId,
   customerName: '',
   customerPhone: '',
@@ -115,10 +122,14 @@ const splitQuoteNotes = (value?: string | null) => {
 
 export default function AdminQuotes() {
   const navigate = useNavigate()
+  const quotesBase = isBusinessPath(useLocation().pathname) ? '/business/quotes' : '/admin/quotes'
+  const [searchParams] = useSearchParams()
   const { t, i18n } = useTranslation()
   const { hasPermission } = useAuth()
+  const { features } = useFeatures()
   const { departmentFeatures } = useDepartmentFeatures()
-  const { tenant } = useTenant()
+  const { tenant, productType } = useTenant()
+  const { pmEnabled, loading: pmLoading } = usePmEnabled()
 
   const canManageQuotes = hasPermission('manage_quotes')
 
@@ -133,6 +144,8 @@ export default function AdminQuotes() {
   const [totalCount, setTotalCount] = useState(0)
   const [isBootstrapLoaded, setIsBootstrapLoaded] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
+  const [clientProjects, setClientProjects] = useState<Project[]>([])
+  const [projectsLoading, setProjectsLoading] = useState(false)
   const [availableDepartments, setAvailableDepartments] = useState<Array<{ id: string; name: string }>>([])
   const [customerMode, setCustomerMode] = useState<'existing' | 'new'>('existing')
   const [clientQuery, setClientQuery] = useState('')
@@ -147,8 +160,10 @@ export default function AdminQuotes() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<QuoteFormState>(() => createDefaultForm())
   const requestCounterRef = useRef(0)
+  const projectPrefillHandledRef = useRef(false)
 
-  const isQuotesEnabled = departmentFeatures?.quotesEnabled === true
+  const isQuotesEnabled = features?.quotesEnabled === true && departmentFeatures?.quotesEnabled === true
+  const canUseDepartmentlessQuotes = productType === 'business' && availableDepartments.length === 0
   const isRtl = isRtlLanguage(i18n.language)
 
   const getActionLoadingKey = (quoteId: string, action: QuoteActionType) => `${quoteId}:${action}`
@@ -185,7 +200,7 @@ export default function AdminQuotes() {
         clientsService.getClients(),
       ])
 
-      if (departmentsData.length === 0) {
+      if (departmentsData.length === 0 && productType !== 'business') {
         navigate('/unauthorized')
         return
       }
@@ -254,7 +269,7 @@ export default function AdminQuotes() {
   }
 
   useEffect(() => {
-    if (!canManageQuotes || departmentFeatures === null) {
+    if (!canManageQuotes || features === null || departmentFeatures === null) {
       return
     }
 
@@ -265,7 +280,46 @@ export default function AdminQuotes() {
     }
 
     void loadBootstrapData()
-  }, [canManageQuotes, departmentFeatures, isQuotesEnabled, navigate])
+  }, [canManageQuotes, features, departmentFeatures, isQuotesEnabled, navigate, productType])
+
+  useEffect(() => {
+    if (!isBootstrapLoaded || pmLoading || features === null || projectPrefillHandledRef.current) return
+    const clientId = searchParams.get('clientId') ?? ''
+    const projectId = searchParams.get('projectId') ?? ''
+    const client = clients.find((item) => item.id === clientId)
+    if (!clientId || !client) return
+
+    projectPrefillHandledRef.current = true
+    setCustomerMode('existing')
+    setClientQuery(client.fullName || client.email || '')
+    setForm({ ...createDefaultForm(availableDepartments[0]?.id ?? ''), clientId, projectId: pmEnabled ? projectId : '' })
+    setShowModal(true)
+  }, [isBootstrapLoaded, pmLoading, features, searchParams, clients, availableDepartments, pmEnabled])
+
+  useEffect(() => {
+    if (!pmEnabled || customerMode !== 'existing' || !form.clientId) {
+      setClientProjects([])
+      setProjectsLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setProjectsLoading(true)
+    getProjectsByClient(form.clientId)
+      .then((projects) => {
+        if (cancelled) return
+        setClientProjects(projects)
+        setForm((current) => current.projectId && !projects.some((project) => project.id === current.projectId)
+          ? { ...current, projectId: '' }
+          : current)
+      })
+      .catch((error) => {
+        console.error('Failed to load quote projects for client:', error)
+        if (!cancelled) setClientProjects([])
+      })
+      .finally(() => { if (!cancelled) setProjectsLoading(false) })
+    return () => { cancelled = true }
+  }, [pmEnabled, customerMode, form.clientId])
 
   useEffect(() => {
     if (!isBootstrapLoaded) {
@@ -350,7 +404,7 @@ export default function AdminQuotes() {
   const validationMessages = [
     customerMode === 'existing' && !form.clientId ? t('admin.quotes.form.validationClient') : null,
     customerMode === 'new' && !form.customerName.trim() ? t('admin.quotes.form.validationCustomerName') : null,
-    !form.departmentId ? t('admin.quotes.form.validationDepartment') : null,
+    !form.departmentId && !canUseDepartmentlessQuotes ? t('admin.quotes.form.validationDepartment') : null,
     form.lineItems.length === 0 ? t('admin.quotes.form.validationLineItems') : null,
     form.lineItems.some((lineItem) => !lineItem.description.trim()) ? t('admin.quotes.form.validationDescription') : null,
     form.lineItems.some((lineItem) => toNumber(lineItem.quantity) <= 0) ? t('admin.quotes.form.validationQuantity') : null,
@@ -362,7 +416,10 @@ export default function AdminQuotes() {
   const buildRequest = (): CreateQuoteRequest => ({
     isExistingClient: customerMode === 'existing',
     clientId: customerMode === 'existing' ? form.clientId : undefined,
-    departmentId: form.departmentId,
+    projectId: pmEnabled
+      ? (customerMode === 'existing' && form.projectId ? form.projectId : null)
+      : editingId && form.projectId ? form.projectId : undefined,
+    departmentId: form.departmentId || undefined,
     customerName: customerMode === 'new' ? form.customerName.trim() || undefined : undefined,
     customerPhone: customerMode === 'new' ? form.customerPhone.trim() || undefined : undefined,
     customerEmail: customerMode === 'new' ? form.customerEmail.trim() || undefined : undefined,
@@ -415,6 +472,7 @@ export default function AdminQuotes() {
 
     setForm({
       clientId: quote.clientId ?? '',
+      projectId: quote.projectId ?? '',
       departmentId: quote.departmentId ?? '',
       customerName: quote.clientName,
       customerPhone: quote.customerPhone ?? '',
@@ -513,7 +571,7 @@ export default function AdminQuotes() {
     }
   }
 
-  const canCreateQuote = isQuotesEnabled && availableDepartments.length > 0
+  const canCreateQuote = isQuotesEnabled && (availableDepartments.length > 0 || canUseDepartmentlessQuotes)
   const departmentNameById = new Map(availableDepartments.map((department) => [department.id, department.name]))
 
   if (departmentFeatures === null) {
@@ -594,37 +652,18 @@ export default function AdminQuotes() {
           </div>
 
           <div className="space-y-2 min-w-0">
-            <label className="block text-sm font-semibold text-slate-700">{t('admin.quotes.filter.quickRange')}</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setDateRange('last30days')}
-                className={`btn btn-sm ${dateRange === 'last30days' ? 'btn-primary' : 'btn-secondary'}`}
-              >
-                {t('admin.quotes.filter.last30Days')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setDateRange('last3months')}
-                className={`btn btn-sm ${dateRange === 'last3months' ? 'btn-primary' : 'btn-secondary'}`}
-              >
-                {t('admin.quotes.filter.last3Months')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setDateRange('lastyear')}
-                className={`btn btn-sm ${dateRange === 'lastyear' ? 'btn-primary' : 'btn-secondary'}`}
-              >
-                {t('admin.quotes.filter.lastYear')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setDateRange('all')}
-                className={`btn btn-sm ${dateRange === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-              >
-                {t('admin.quotes.filter.all')}
-              </button>
-            </div>
+            <label className="block text-sm font-semibold text-slate-700">{t('admin.quotes.filter.dateRange')}</label>
+            <select
+              value={dateRange}
+              onChange={(event) => setDateRange(event.target.value as QuoteDateRange)}
+              className="input w-full"
+              aria-label={t('admin.quotes.filter.dateRange')}
+            >
+              <option value="last30days">{t('admin.quotes.filter.last30Days')}</option>
+              <option value="last3months">{t('admin.quotes.filter.last3Months')}</option>
+              <option value="lastyear">{t('admin.quotes.filter.lastYear')}</option>
+              <option value="all">{t('admin.quotes.filter.all')}</option>
+            </select>
           </div>
         </div>
         <div className="text-sm text-slate-500">{t('admin.quotes.totalCount', { count: totalCount })}</div>
@@ -688,12 +727,12 @@ export default function AdminQuotes() {
                     </div>
                     <div>
                       <div className="text-xs text-slate-400">{t('admin.quotes.form.department')}</div>
-                      <div className="truncate">{quote.departmentId ? departmentNameById.get(quote.departmentId) ?? '-' : '-'}</div>
+                      <div className="truncate">{quote.departmentId ? departmentNameById.get(quote.departmentId) ?? '-' : t('businessShell.quotes.general')}</div>
                     </div>
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => navigate(`/admin/quotes/${quote.id}`)} className="btn btn-secondary btn-sm flex-1 min-w-[120px] gap-2">
+                    <button type="button" onClick={() => navigate(`${quotesBase}/${quote.id}`)} className="btn btn-secondary btn-sm flex-1 min-w-[120px] gap-2">
                       <Eye className="w-4 h-4" />
                       {t('admin.quotes.actions.view')}
                     </button>
@@ -778,7 +817,7 @@ export default function AdminQuotes() {
 
                           return (
                         <div className="flex flex-wrap items-center justify-end gap-2">
-                          <button type="button" title={t('admin.quotes.actions.view')} onClick={() => navigate(`/admin/quotes/${quote.id}`)} className="inline-flex items-center justify-center rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"><Eye className="w-4 h-4" /></button>
+                          <button type="button" title={t('admin.quotes.actions.view')} onClick={() => navigate(`${quotesBase}/${quote.id}`)} className="inline-flex items-center justify-center rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"><Eye className="w-4 h-4" /></button>
                           <button type="button" title={t('common.edit')} onClick={() => void handleEdit(quote)} className="inline-flex items-center justify-center rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"><Pencil className="w-4 h-4" /></button>
                           <button type="button" disabled={isDuplicating} title={isDuplicating ? t('admin.quotes.actions.duplicating') : t('admin.quotes.actions.duplicate')} onClick={() => handleDuplicate(quote.id)} className="inline-flex items-center justify-center rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50">{isDuplicating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Repeat2 className="w-4 h-4" />}</button>
                           <button type="button" disabled={isPrinting} title={isPrinting ? t('admin.quotes.actions.printing') : t('common.print')} onClick={() => handleDownloadPdf(quote, true)} className="inline-flex items-center justify-center rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50">{isPrinting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}</button>
@@ -856,7 +895,7 @@ export default function AdminQuotes() {
                         type="button"
                         onClick={() => {
                           setCustomerMode('new')
-                          setForm((current) => ({ ...current, clientId: '' }))
+                          setForm((current) => ({ ...current, clientId: '', projectId: '' }))
                           setClientQuery('')
                         }}
                         className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 transition-colors ${customerMode === 'new' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}
@@ -876,10 +915,10 @@ export default function AdminQuotes() {
                           query={clientQuery}
                           onQueryChange={(value) => {
                             setClientQuery(value)
-                            setForm((current) => ({ ...current, clientId: '' }))
+                            setForm((current) => ({ ...current, clientId: '', projectId: '' }))
                           }}
                           onSelect={(client) => {
-                            setForm((current) => ({ ...current, clientId: client.id }))
+                            setForm((current) => ({ ...current, clientId: client.id, projectId: '' }))
                             setClientQuery(client.fullName || client.email || '')
                           }}
                           getItemId={(client) => client.id}
@@ -925,7 +964,24 @@ export default function AdminQuotes() {
                       </>
                     )}
 
-                    <div className="space-y-2 md:col-span-2">
+                    {pmEnabled && features?.quotesEnabled === true && departmentFeatures?.quotesEnabled === true && customerMode === 'existing' && form.clientId && (
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="block text-sm font-semibold text-slate-700">{t('pm.project')}</label>
+                        <select
+                          className="input"
+                          value={form.projectId}
+                          onChange={(event) => updateField('projectId', event.target.value)}
+                          disabled={projectsLoading}
+                        >
+                          <option value="">{t('pm.noProject')}</option>
+                          {clientProjects.map((project) => (
+                            <option key={project.id} value={project.id}>{project.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {availableDepartments.length > 0 && <div className="space-y-2 md:col-span-2">
                       <label className="block text-sm font-semibold text-slate-700">{t('admin.quotes.form.department')}</label>
                       <select className="input" value={form.departmentId} onChange={(e) => updateField('departmentId', e.target.value)}>
                         <option value="">{t('admin.quotes.form.selectDepartment')}</option>
@@ -933,7 +989,7 @@ export default function AdminQuotes() {
                           <option key={department.id} value={department.id}>{department.name}</option>
                         ))}
                       </select>
-                    </div>
+                    </div>}
 
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-slate-700">{t('admin.quotes.form.quoteDate')}</label>

@@ -249,7 +249,7 @@ export default function AdminLayout() {
   function getTenantLogo(tenant: any) {
     if (tenant?.logoUrl) {
       if (tenant.logoUrl.startsWith('http')) return tenant.logoUrl;
-      return `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5146'}${tenant.logoUrl}`;
+      return `${(import.meta as any).env.VITE_API_URL || ''}${tenant.logoUrl}`;
     }
     return '/clienta-logo.png';
   }

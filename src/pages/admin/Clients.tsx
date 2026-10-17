@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePmAreaPrefix, pmClientPath } from '@/pm/utils/pmPaths'
 import { Container, Card, CardHeader, CardContent, Badge } from '@/components'
 import CreateClientModal from '@/components/CreateClientModal'
 import Autocomplete from '@/components/Autocomplete'
@@ -11,6 +12,9 @@ import { Search, Plus, Mail, Phone, Users, Edit, ShieldOff, ShieldCheck, Trash2,
 
 export default function Clients() {
   const navigate = useNavigate()
+  // '/admin' here, '/business' when this page is rendered inside the Business shell.
+  const areaPrefix = usePmAreaPrefix()
+  const isBusiness = areaPrefix === '/business'
   const { t } = useTranslation()
   const { user, hasPermission } = useAuth()
 
@@ -19,6 +23,7 @@ export default function Clients() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
   const [showNotDocumentedOnly, setShowNotDocumentedOnly] = useState(false)
 
   const canView =
@@ -50,12 +55,12 @@ export default function Clients() {
 
   const safeClients = Array.isArray(clients) ? clients : []
 
-  const notDocumentedCount = safeClients.filter(c => c.isNotDocumented).length
+  const notDocumentedCount = isBusiness ? 0 : safeClients.filter(c => c.isNotDocumented).length
 
   const normalizeDigits = (value?: string) => (value ?? '').replace(/\D/g, '')
 
   const filteredClients = safeClients.filter((client) => {
-    if (showNotDocumentedOnly && !client.isNotDocumented) return false
+    if (!isBusiness && showNotDocumentedOnly && !client.isNotDocumented) return false
 
     if (!searchQuery) return true
 
@@ -67,9 +72,20 @@ export default function Clients() {
       client.fullName?.toLowerCase().includes(q) ||
       client.email?.toLowerCase().includes(q) ||
       client.phone?.toLowerCase().includes(q) ||
-      (idQuery.length > 0 && clientIdNumber.includes(idQuery))
+      (!isBusiness && idQuery.length > 0 && clientIdNumber.includes(idQuery))
     )
   })
+
+  const reloadClients = async () => {
+    const response = await clientsService.getClients()
+    const items = Array.isArray(response) ? response : (response as any)?.data
+    if (!Array.isArray(items)) return
+
+    const validClients = items.filter((item): item is Client =>
+      Boolean(item && typeof item === 'object' && typeof item.id === 'string' && item.id.length > 0)
+    )
+    setClients(validClients)
+  }
 
   function getInitials(name?: string | null) {
     if (!name) return 'U'
@@ -120,7 +136,10 @@ export default function Clients() {
           {hasPermission?.('manage_clients') && (
             <div className="order-2 w-full md:order-1 md:w-auto md:self-center">
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => {
+                  setClientToEdit(null)
+                  setShowCreateModal(true)
+                }}
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary-600 px-5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(37,99,235,0.2)] transition-colors hover:bg-primary-700 md:w-auto"
               >
                 <Plus className="h-4 w-4" />
@@ -130,7 +149,7 @@ export default function Clients() {
           )}
 
           <div className="flex-1">
-            <h1 className="text-5xl font-semibold leading-tight tracking-tight text-slate-900">{t('admin.clients.title')}</h1>
+            <h1 className={`${isBusiness ? 'text-4xl font-bold' : 'text-5xl font-semibold'} leading-tight tracking-tight text-slate-900`}>{t('admin.clients.title')}</h1>
             <p className="mt-2 text-lg text-slate-500">{t('admin.clients.subtitle')}</p>
           </div>
 
@@ -139,10 +158,25 @@ export default function Clients() {
 
       {showCreateModal && (
         <CreateClientModal
-          onClose={() => setShowCreateModal(false)}
+          key={clientToEdit?.id ?? 'create-client'}
+          client={clientToEdit}
+          onClose={() => {
+            setShowCreateModal(false)
+            setClientToEdit(null)
+          }}
           onCreated={(client) => {
             setShowCreateModal(false)
-            navigate(`/admin/clients/${client.id}`)
+            setClientToEdit(null)
+            navigate(pmClientPath(areaPrefix, client.id))
+          }}
+          onUpdated={() => {
+            setClientToEdit(null)
+            setShowCreateModal(false)
+            if (isBusiness) {
+              void reloadClients().catch((reloadError) => {
+                console.error('Client was updated, but the list could not be refreshed:', reloadError)
+              })
+            }
           }}
         />
       )}
@@ -165,7 +199,7 @@ export default function Clients() {
                 getItemId={(client) => client.id}
                 getItemLabel={(client) => client.fullName ?? client.email ?? ''}
                 getItemSecondaryText={(client) => client.email || client.phone || undefined}
-                getItemSearchText={(client) => `${client.fullName ?? ''} ${client.email ?? ''} ${client.phone ?? ''} ${client.idNumber ?? ''}`}
+                getItemSearchText={(client) => `${client.fullName ?? ''} ${client.email ?? ''} ${client.phone ?? ''} ${isBusiness ? '' : client.idNumber ?? ''}`}
                 placeholder={t('admin.clients.searchPlaceholder')}
                 inputClassName="h-11 w-full rounded-md border border-slate-200 bg-white ps-12 pe-4 text-sm text-slate-800 transition-colors focus:border-primary-300 focus:ring-2 focus:ring-primary-500/10"
                 noResultsText="לא נמצאו לקוחות"
@@ -175,7 +209,7 @@ export default function Clients() {
               />
             </div>
 
-              <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+              {!isBusiness && <div className="flex flex-wrap items-center gap-3 lg:justify-end">
                 <label className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3">
                   <input
                     type="checkbox"
@@ -188,7 +222,7 @@ export default function Clients() {
                 <div className="basis-full text-sm font-medium text-red-500 lg:basis-auto lg:whitespace-nowrap">
                   {t('notDocumentedClients', { count: notDocumentedCount })}
                 </div>
-              </div>
+              </div>}
             </div>
           </div>
 
@@ -207,7 +241,7 @@ export default function Clients() {
                   const rowNumber = idx + 1
                   const clientId = client?.id ?? ''
                   const isBlocked = client?.isActive === false || client?.status === 'blocked' || client?.status === 'inactive';
-                  const isNotDocumented = Boolean(client?.isNotDocumented || (client as any)?.isDocumented === false);
+                  const isNotDocumented = !isBusiness && Boolean(client?.isNotDocumented || (client as any)?.isDocumented === false);
                   const handleBlock = async (e: React.MouseEvent) => {
                     e.stopPropagation();
                     await clientsService.updateClient(clientId, { ...client, isActive: !client.isActive });
@@ -226,7 +260,7 @@ export default function Clients() {
                   return (
                     <div
                       key={clientId}
-                      onClick={() => clientId && navigate(`/admin/clients/${clientId}`)}
+                      onClick={() => clientId && navigate(pmClientPath(areaPrefix, clientId))}
                       className="cursor-pointer overflow-hidden rounded-xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:bg-slate-50"
                     >
                       <div className="w-full border-b border-slate-200 bg-slate-50 px-4 py-3">
@@ -247,7 +281,7 @@ export default function Clients() {
                       </div>
 
                       <div className={`px-4 py-3 space-y-3 ${
-                        client.isNotDocumented
+                        !isBusiness && client.isNotDocumented
                           ? 'bg-red-50 border-t border-red-100'
                           : idx % 2 === 0
                           ? 'bg-slate-50 border-t border-slate-100'
@@ -260,7 +294,7 @@ export default function Clients() {
                             <div className="flex items-center gap-2">
                               <Phone className="w-3.5 h-3.5" /><span className="text-slate-700"><span className="text-slate-500">Phone:</span> {client?.phone ?? '-'}</span>
                             </div>
-                            <div className="text-slate-700"><span className="text-slate-500">{t('admin.clients.table.lastVisit')}:</span> {formatDate(client?.lastVisit)}</div>
+                            {!isBusiness && <div className="text-slate-700"><span className="text-slate-500">{t('admin.clients.table.lastVisit')}:</span> {formatDate(client?.lastVisit)}</div>}
                           </div>
                           <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
                             <span className="text-slate-500">{t('common.status')}:</span>
@@ -273,7 +307,15 @@ export default function Clients() {
                           <div className="flex gap-3 items-center" onClick={e => e.stopPropagation()}>
                             <Edit
                               className="w-5 h-5 text-slate-500 hover:text-primary-700 cursor-pointer"
-                              onClick={e => { e.stopPropagation(); navigate(`/admin/clients/${clientId}`); }}
+                              onClick={e => {
+                                e.stopPropagation()
+                                if (isBusiness) {
+                                  setClientToEdit(client)
+                                  setShowCreateModal(true)
+                                } else {
+                                  navigate(pmClientPath(areaPrefix, clientId))
+                                }
+                              }}
                             />
                             {isBlocked
                               ? <ShieldCheck className="w-5 h-5 text-green-500 hover:text-green-700 cursor-pointer" onClick={handleBlock} />
@@ -302,9 +344,9 @@ export default function Clients() {
                         {t('admin.clients.table.phone', 'Phone')}
                       </th>
 
-                      <th className="px-6 py-3.5 text-start text-xs font-semibold text-slate-500">
+                      {!isBusiness && <th className="px-6 py-3.5 text-start text-xs font-semibold text-slate-500">
                         {t('admin.clients.table.lastVisit')}
-                      </th>
+                      </th>}
 
                       <th className="px-6 py-3.5 text-start text-xs font-semibold text-slate-500">
                         {t('common.status')}
@@ -321,6 +363,7 @@ export default function Clients() {
                       const rowNumber = idx + 1
                       const clientId = client?.id ?? ''
                       const isBlocked = client?.isActive === false || client?.status === 'blocked' || client?.status === 'inactive';
+                      const isNotDocumented = !isBusiness && Boolean(client?.isNotDocumented || (client as any)?.isDocumented === false)
                       const handleBlock = async (e: React.MouseEvent) => {
                         e.stopPropagation();
                         await clientsService.updateClient(clientId, {
@@ -342,11 +385,11 @@ export default function Clients() {
                         <tr
                           key={clientId}
                           className={`cursor-pointer transition-[background-color,box-shadow] duration-200 ${
-                            client.isNotDocumented
+                            isNotDocumented
                               ? 'hover:bg-red-50/35 hover:shadow-[inset_0_1px_0_rgba(248,113,113,0.16)]'
                               : 'hover:bg-primary-50/35 hover:shadow-[inset_0_1px_0_rgba(37,99,235,0.12)]'
                           }`}
-                          onClick={() => clientId && navigate(`/admin/clients/${clientId}`)}
+                          onClick={() => clientId && navigate(pmClientPath(areaPrefix, clientId))}
                         >
                           <td className="w-12 min-w-12 px-3 py-5 text-center align-middle font-semibold text-slate-500">
                             {rowNumber}
@@ -372,20 +415,20 @@ export default function Clients() {
                               {client?.phone ?? '-'}
                             </div>
                           </td>
-                          <td className="px-6 py-5 align-middle text-sm text-slate-700">
+                          {!isBusiness && <td className="px-6 py-5 align-middle text-sm text-slate-700">
                             {formatDate(client?.lastVisit)}
-                          </td>
+                          </td>}
                           <td className="px-6 py-5 align-middle">
                             <span
                               className={
-                                client.isNotDocumented
+                                isNotDocumented
                                   ? 'inline-flex rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700'
                                   : isBlocked
                                   ? 'inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600'
                                   : 'inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700'
                               }
                             >
-                              {client.isNotDocumented
+                              {isNotDocumented
                                 ? t('admin.clients.missingDocumentation', 'Missing documentation')
                                 : isBlocked
                                 ? t('admin.clients.blocked', 'Inactive')
@@ -401,7 +444,12 @@ export default function Clients() {
                                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition-all duration-200 ease-out hover:-translate-y-px hover:bg-[#2563EB] hover:text-white"
                                 onClick={e => {
                                   e.stopPropagation();
-                                  navigate(`/admin/clients/${clientId}`);
+                                  if (isBusiness) {
+                                    setClientToEdit(client)
+                                    setShowCreateModal(true)
+                                  } else {
+                                    navigate(pmClientPath(areaPrefix, clientId));
+                                  }
                                 }}
                               >
                                 <Edit className="h-4.5 w-4.5" />

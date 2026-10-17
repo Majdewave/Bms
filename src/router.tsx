@@ -17,6 +17,16 @@ import BillingSuccess from '@/pages/BillingSuccess'
 import BillingPage from '@/pages/BillingPage'
 
 import AdminLayout from '@/layouts/AdminLayout'
+import BusinessLayout from '@/layouts/BusinessLayout'
+import BusinessDashboard from '@/pages/business/BusinessDashboard'
+import BusinessProjectsPage from '@/pages/business/BusinessProjectsPage'
+import BusinessFilesPage from '@/pages/business/BusinessFilesPage'
+import BusinessBillingPage from '@/pages/business/BusinessBillingPage'
+import BusinessPaymentsPage from '@/pages/business/BusinessPaymentsPage'
+import { BusinessProductRoute } from '@/components/BusinessProductRoute'
+import { BusinessPmRoute } from '@/components/BusinessPmRoute'
+import ProductAreaRoute from '@/components/ProductAreaRoute'
+import ProjectClientWorkspace from '@/pm/ProjectClientWorkspace'
 import AdminBillingPage from '@/pages/admin/BillingPage'
 import ClientLayout from '@/layouts/ClientLayout'
 import InterpreterLayout from '@/layouts/InterpreterLayout'
@@ -28,7 +38,7 @@ import InterpreterProfile from '@/pages/interpreter/Profile'
 
 import AdminDashboard from '@/pages/admin/Dashboard'
 import AdminClients from '@/pages/admin/Clients'
-import AdminClientProfile from '@/pages/admin/ClientProfile'
+import ClientProfileEntry from '@/pages/admin/ClientProfileEntry'
 import EditClient from '@/pages/admin/EditClient'
 import AdminAppointments from '@/pages/admin/Appointments'
 import AdminInvoices from '@/pages/admin/Invoices'
@@ -60,6 +70,7 @@ import React from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useFeatures } from '@/contexts/FeatureContext'
 import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
+import { useTenant } from '@/contexts/TenantContext'
 import { PlatformProtectedRoute } from '@/platform/components/PlatformProtectedRoute'
 import PlatformLayout from '@/platform/layouts/PlatformLayout'
 import PlatformBusinessesPage from '@/platform/pages/PlatformBusinessesPage'
@@ -74,15 +85,20 @@ import Register from './pages/Register';
 import PrivacyPolicy from '@/pages/legal/PrivacyPolicy'
 import TermsOfService from '@/pages/legal/TermsOfService'
 import LegalNotice from '@/pages/legal/LegalNotice'
+import ProjectBillingPlanPage from '@/pm/ProjectBillingPlanPage'
+import PaymentConfirmationPage from '@/pages/public/PaymentConfirmationPage'
 
 const QuotesEntryRedirect = () => {
   const { user } = useAuth()
+  const { productType, productResolved } = useTenant()
   const { features } = useFeatures()
   const { departmentFeatures } = useDepartmentFeatures()
 
-  if (!features || !departmentFeatures) {
+  if (!productResolved || !features || !departmentFeatures) {
     return <div className="flex min-h-screen items-center justify-center text-slate-600">Loading...</div>
   }
+
+  if (productType === 'business') return <Navigate to="/business/quotes" replace />
 
   if (!features.quotesEnabled || !departmentFeatures.quotesEnabled) {
     return <Navigate to="/unauthorized" replace />
@@ -93,6 +109,15 @@ const QuotesEntryRedirect = () => {
   }
 
   return <Navigate to="/admin/quotes" replace />
+}
+
+const LegacyBillingRoute = ({ children }: { children: React.ReactNode }) => {
+  const { productType, productResolved } = useTenant()
+  const { user } = useAuth()
+
+  if (user && !productResolved) return <div className="flex min-h-screen items-center justify-center text-slate-500">Loading...</div>
+  if (productType === 'business') return <Navigate to="/business/billing" replace />
+  return <>{children}</>
 }
 
 const ErrorFallback = () => (
@@ -108,7 +133,7 @@ const ErrorFallback = () => (
 export const router = createBrowserRouter([
   {
     path: '/success',
-    element: <Success />,
+    element: <LegacyBillingRoute><Success /></LegacyBillingRoute>,
   },
   {
     path: '/',
@@ -141,6 +166,11 @@ export const router = createBrowserRouter([
   {
     path: '/queue-display/:token',
     element: <QueueDisplayPage />,
+  },
+
+  {
+    path: '/payment-confirmation/:token',
+    element: <PaymentConfirmationPage />,
   },
 
   {
@@ -200,7 +230,7 @@ export const router = createBrowserRouter([
 
   {
     path: '/upgrade',
-    element: <Upgrade />,
+    element: <LegacyBillingRoute><Upgrade /></LegacyBillingRoute>,
   },
 
   {
@@ -210,14 +240,14 @@ export const router = createBrowserRouter([
 
   {
     path: '/billing/success',
-    element: <BillingSuccess />,
+    element: <LegacyBillingRoute><BillingSuccess /></LegacyBillingRoute>,
   },
 
   {
     path: '/billing',
     element: (
       <ProtectedRoute>
-        <BillingPage />
+        <LegacyBillingRoute><BillingPage /></LegacyBillingRoute>
       </ProtectedRoute>
     ),
   },
@@ -237,7 +267,7 @@ export const router = createBrowserRouter([
     path: '/admin',
     element: (
       <ProtectedRoute>
-        <AdminLayout />
+        <ProductAreaRoute><AdminLayout /></ProductAreaRoute>
       </ProtectedRoute>
     ),
     children: [
@@ -282,7 +312,16 @@ export const router = createBrowserRouter([
         path: 'clients/:id',
         element: (
           <PermissionBasedRoute requiredPermission="manage_clients">
-            <AdminClientProfile />
+            <ClientProfileEntry />
+          </PermissionBasedRoute>
+        ),
+      },
+
+      {
+        path: 'clients/:clientId/projects/:projectId/billing',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_projects">
+            <ProjectBillingPlanPage />
           </PermissionBasedRoute>
         ),
       },
@@ -384,13 +423,132 @@ export const router = createBrowserRouter([
     ],
   },
 
+  /* ================= BUSINESS (explicit Business tenants only) ================= */
+
+  {
+    path: '/business',
+    element: (
+      <ProtectedRoute>
+        <BusinessProductRoute>
+          <RoleBasedRoute allowedRoles={['admin', 'staff']}>
+            <BusinessLayout />
+          </RoleBasedRoute>
+        </BusinessProductRoute>
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
+      { path: 'dashboard', element: <BusinessDashboard /> },
+      {
+        path: 'clients',
+        element: (
+          <BusinessPmRoute>
+            <PermissionBasedRoute requiredPermission="manage_clients">
+              <AdminClients />
+            </PermissionBasedRoute>
+          </BusinessPmRoute>
+        ),
+      },
+      {
+        path: 'projects',
+        element: (
+          <BusinessPmRoute>
+            <PermissionBasedRoute requiredPermission="manage_projects">
+              <BusinessProjectsPage />
+            </PermissionBasedRoute>
+          </BusinessPmRoute>
+        ),
+      },
+      {
+        path: 'projects/:id',
+        element: (
+          <BusinessPmRoute>
+            <PermissionBasedRoute requiredPermission="manage_clients">
+              <ProjectClientWorkspace />
+            </PermissionBasedRoute>
+          </BusinessPmRoute>
+        ),
+      },
+      {
+        path: 'projects/:clientId/projects/:projectId/billing',
+        element: (
+          <BusinessPmRoute>
+            <PermissionBasedRoute requiredPermission="manage_projects">
+              <ProjectBillingPlanPage />
+            </PermissionBasedRoute>
+          </BusinessPmRoute>
+        ),
+      },
+      {
+        path: 'quotes',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_quotes">
+            <AdminQuotes />
+          </PermissionBasedRoute>
+        ),
+      },
+      {
+        path: 'quotes/:id',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_quotes">
+            <QuoteDetails />
+          </PermissionBasedRoute>
+        ),
+      },
+      {
+        path: 'invoices',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_invoices">
+            <AdminInvoices />
+          </PermissionBasedRoute>
+        ),
+      },
+      {
+        path: 'payments',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_invoices">
+            <BusinessPaymentsPage />
+          </PermissionBasedRoute>
+        ),
+      },
+      {
+        path: 'files',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_files">
+            <BusinessFilesPage />
+          </PermissionBasedRoute>
+        ),
+      },
+      {
+        path: 'team',
+        element: <AdminStaff />,
+      },
+      {
+        path: 'settings',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_business_settings">
+            <AdminBusinessSettings />
+          </PermissionBasedRoute>
+        ),
+      },
+      {
+        path: 'billing',
+        element: (
+          <RoleBasedRoute allowedRoles={['admin']}>
+            <BusinessBillingPage />
+          </RoleBasedRoute>
+        ),
+      },
+    ],
+  },
+
   /* ================= STAFF ================= */
 
   {
     path: '/staff',
     element: (
       <ProtectedRoute>
-        <AdminLayout />
+        <ProductAreaRoute><AdminLayout /></ProductAreaRoute>
       </ProtectedRoute>
     ),
     children: [
@@ -436,7 +594,16 @@ export const router = createBrowserRouter([
             allowedRoles={['staff']}
             requiredPermission="manage_clients"
           >
-            <AdminClientProfile />
+            <ClientProfileEntry />
+          </PermissionBasedRoute>
+        ),
+      },
+
+      {
+        path: 'clients/:clientId/projects/:projectId/billing',
+        element: (
+          <PermissionBasedRoute allowedRoles={['staff']} requiredPermission="manage_projects">
+            <ProjectBillingPlanPage />
           </PermissionBasedRoute>
         ),
       },

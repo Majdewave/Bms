@@ -7,6 +7,8 @@ export interface PlatformSettings {
   supportPhone: string | null
   websiteUrl: string | null
   defaultTrialDays: number
+  clinicTrialDays: number
+  businessTrialDays: number
   trialReminderDays: number
   allowRegistrations: boolean
   requireManualApproval: boolean

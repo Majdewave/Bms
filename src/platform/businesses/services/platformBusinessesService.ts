@@ -59,6 +59,7 @@ interface RawPlatformBusiness {
   email?: string
   phone?: string
   businessType?: string | null
+  productType?: string | null
   subscriptionStatus?: string
   status?: string
   approvalStatus?: string
@@ -135,6 +136,7 @@ const mapBusiness = (item: RawPlatformBusiness): BusinessRecord => {
     email: ensureString(item.email || item.ownerEmail, '-'),
     phone: ensureString(item.phone, '-'),
     businessType: typeof item.businessType === 'string' ? item.businessType : null,
+    productType: item.productType === 'Clinic' || item.productType === 'Business' ? item.productType : null,
     status,
     approvalStatus: status,
     plan: normalizePlan(ensureString(item.plan, 'starter')),

@@ -174,7 +174,7 @@ export const deleteInterpretationRequest = async (
 }
 
 export const getInstanceFileBlob = async (instanceId: string): Promise<Blob> => {
-  const response = await fetch(`${(import.meta as any).env.VITE_API_URL || 'http://localhost:5146'}/api/imaging/instances/${instanceId}/file`, {
+  const response = await fetch(`${(import.meta as any).env.VITE_API_URL || ''}/api/imaging/instances/${instanceId}/file`, {
     method: 'GET',
     credentials: 'include',
     headers: {

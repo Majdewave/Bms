@@ -61,6 +61,7 @@ export default function BusinessTable({
           <TableHeader>Owner</TableHeader>
           <TableHeader>Email</TableHeader>
           <TableHeader>Phone</TableHeader>
+          {mode === 'pendingApprovals' && <TableHeader>CLIENTA Product</TableHeader>}
           {mode === 'pendingApprovals' && <TableHeader>Business Type</TableHeader>}
           <TableHeader>Status</TableHeader>
           <TableHeader>Plan</TableHeader>
@@ -80,6 +81,7 @@ export default function BusinessTable({
             <TableCell>{business.ownerName}</TableCell>
             <TableCell>{business.email}</TableCell>
             <TableCell>{business.phone}</TableCell>
+            {mode === 'pendingApprovals' && <TableCell>{business.productType ?? '-'}</TableCell>}
             {mode === 'pendingApprovals' && <TableCell>{business.businessType || '-'}</TableCell>}
             <TableCell>
               <BusinessStatusBadge status={mode === 'pendingApprovals' ? business.approvalStatus : business.status} />
