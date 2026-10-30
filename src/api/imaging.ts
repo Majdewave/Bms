@@ -125,6 +125,10 @@ export const getStudyHierarchy = async (studyId: string): Promise<ImagingStudyHi
   return apiClient.get<ImagingStudyHierarchy>(`/api/imaging/studies/${studyId}`)
 }
 
+export const downloadStudy = async (studyId: string): Promise<Blob> => {
+  return apiClient.getBlob(`/api/imaging/studies/${studyId}/download`)
+}
+
 export const uploadImagingOrderReferralDocument = async (
   imagingOrderId: string,
   file: File,

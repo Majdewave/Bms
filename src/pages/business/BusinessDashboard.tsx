@@ -12,6 +12,7 @@ import { formatMoney } from '@/utils/businessFormat'
 import type { BusinessDashboard as BusinessDashboardData, BusinessNextBilling } from '@/types/businessDashboard'
 import BusinessKpiCard from './components/BusinessKpiCard'
 import BusinessNextBillingCard from './components/BusinessNextBillingCard'
+import BusinessProjectEndingsCard from './components/BusinessProjectEndingsCard'
 
 type State =
   | { status: 'loading' }
@@ -138,6 +139,8 @@ export default function BusinessDashboard() {
               <BusinessKpiCard icon={Scale} tone="amber" label={t('businessShell.dashboard.kpi.outstanding.label')} hint={t('businessShell.dashboard.kpi.outstanding.hint')} value={money(data.outstanding)} unavailableText={unavailable} />
               <BusinessKpiCard icon={Hourglass} tone="violet" label={t('businessShell.dashboard.kpi.notYetInvoiced.label')} hint={t('businessShell.dashboard.kpi.notYetInvoiced.hint')} value={money(data.notYetInvoiced)} unavailableText={unavailable} />
             </div>
+
+            <BusinessProjectEndingsCard projects={data.projectsEndingSoon ?? []} />
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <div className="min-w-0 lg:col-span-2">

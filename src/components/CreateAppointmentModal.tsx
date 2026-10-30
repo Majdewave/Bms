@@ -25,6 +25,7 @@ type EditableAppointment = {
   serviceId?: string | null
   staffId?: string | null
   imagingOrderId?: string | null
+  roomNumber?: string | null
   departmentName?: string | null
   departmentColor?: string | null
   startTime: string
@@ -82,6 +83,7 @@ export default function CreateAppointmentModal({
     time: '',
     duration: '',
     description: '',
+    roomNumber: '',
     status: 'Scheduled'
   })
 
@@ -145,6 +147,7 @@ export default function CreateAppointmentModal({
         time: start.toTimeString().slice(0,5),
         duration: '',
         description: appointment.notes ?? '',
+        roomNumber: appointment.roomNumber ?? '',
         status: appointment.status ?? 'Scheduled'
       })
 
@@ -494,6 +497,7 @@ if (!formData.date || !formData.time) {
         endTime: endLocal.toLocaleString('sv-SE').replace(' ', 'T'),
         status: formData.status,
         notes: formData.description || undefined,
+        roomNumber: formData.roomNumber.trim(),
         ...(mode === 'create' && isImagingAppointment && referringDoctorName.trim()
           ? { referringDoctorName: referringDoctorName.trim() }
           : {})
@@ -838,6 +842,20 @@ if (!formData.date || !formData.time) {
                 {errors.staffId}
               </p>
             )}
+            <label className="block text-sm font-semibold" htmlFor="appointment-room-number">
+              {t('appointments.form.roomNumber')}
+            </label>
+            <select
+              id="appointment-room-number"
+              value={formData.roomNumber}
+              onChange={(event) => setFormData((previous) => ({ ...previous, roomNumber: event.target.value }))}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            >
+              <option value="">{t('appointments.form.roomUnassigned')}</option>
+              {Array.from({ length: 10 }, (_, index) => String(index + 1)).map((roomNumber) => (
+                <option key={roomNumber} value={roomNumber}>{roomNumber}</option>
+              ))}
+            </select>
 
             {/* STATUS */}
             <label className="block text-sm font-semibold mb-1">

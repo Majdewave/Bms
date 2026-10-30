@@ -38,7 +38,12 @@
     "editMilestoneAction": "Edit",
     "deleteMilestoneAction": "Delete",
     "linkedMilestoneDeleteBlocked": "Cannot delete a milestone linked to an invoice.",
-    "milestoneStatus": { "Planned": "Planned", "ReadyToInvoice": "Ready to Invoice", "Invoiced": "Invoiced", "Cancelled": "Cancelled" },
+    "milestoneStatus": {
+      "Planned": "Planned",
+      "ReadyToInvoice": "Ready to Invoice",
+      "Invoiced": "Invoiced",
+      "Cancelled": "Cancelled"
+    },
     "featureUnavailable": "This feature is unavailable for this tenant or your account.",
     "projectQuotes": "Project Quotes",
     "projectInvoices": "Project Invoices",
@@ -55,7 +60,7 @@
     "status": {
       "Draft": "Draft",
       "Active": "Active",
-      "OnHold": "On Hold",
+      "OnHold": "Waiting",
       "Completed": "Completed",
       "Cancelled": "Cancelled"
     },
@@ -75,15 +80,27 @@
       "empty": "No projects yet",
       "name": "Name",
       "status": "Status",
+      "paymentType": "Project Payment Type",
+      "paymentTypeNotSet": "Not selected",
       "value": "Project Value",
       "startDate": "Start Date",
       "endDate": "End Date",
+      "notSet": "Not set",
+      "endDateWarningTwoMonths": "Project ends in less than two months — {{endDate}}",
+      "endDateWarningOneMonth": "Project ends in less than one month — {{endDate}}",
+      "endDateWarningOverdue": "Project ended {{count}} days ago — {{endDate}}",
       "description": "Description",
       "confirmDelete": "Delete project \"{{name}}\"?",
       "financialSummary": "Linked Financial Documents"
     },
+    "paymentTypes": {
+      "Retainer": "Retainer",
+      "Monthly": "Monthly",
+      "Hourly": "Hourly",
+      "Milestone": "Milestone"
+    },
     "quotes": {
-      "general": "General business quote"
+      "empty": "No quotes for this client"
     },
     "contacts": {
       "new": "Add Contact",
@@ -97,9 +114,6 @@
       "primary": "Primary Contact",
       "billing": "Billing Contact",
       "confirmDelete": "Delete contact \"{{name}}\"?"
-    },
-    "quotes": {
-      "empty": "No quotes for this client"
     },
     "invoices": {
       "empty": "No invoices for this client"
@@ -144,13 +158,43 @@
         "notFound": "The document or project was not found.",
         "conflict": "This action conflicts with the current state of the project."
       }
+    },
+    "projectProposals": {
+      "title": "Project Proposal / הצעת פרויקט",
+      "titleInput": "Proposal title",
+      "titlePlaceholder": "Enter proposal title",
+      "chooseFile": "Choose proposal file",
+      "upload": "Upload proposal",
+      "uploading": "Uploading proposal...",
+      "uploadSuccess": "Project proposal uploaded.",
+      "originalFilename": "Original filename",
+      "empty": "No project proposals have been uploaded yet.",
+      "loadError": "Could not load project proposals.",
+      "view": "View PDF",
+      "viewBlocked": "Allow pop-ups to view this PDF, or use Download.",
+      "download": "Download",
+      "editTitle": "Edit title",
+      "save": "Save title",
+      "cancel": "Cancel",
+      "renameSuccess": "Proposal title updated.",
+      "delete": "Delete proposal",
+      "confirmDelete": "Delete project proposal \"{{name}}\"? This cannot be undone.",
+      "deleteSuccess": "Project proposal deleted.",
+      "invalidFileType": "Choose a PDF, DOC, DOCX, XLS, or XLSX file.",
+      "invalidUpload": "The proposal file is invalid or exceeds the 10 MB limit. Allowed types: PDF, DOC, DOCX, XLS, XLSX.",
+      "invalidTitle": "Enter a proposal title of up to 200 characters."
     }
   },
   "payments": {
     "title": "Payments",
     "invoiceHeader": "Payments",
     "paymentState": "Payment state",
-    "paymentStates": { "pending": "Pending", "partially_paid": "Partially Paid", "paid": "Paid" },
+    "paymentStates": {
+      "pending": "Pending",
+      "partially_paid": "Partially Paid",
+      "paid": "Paid",
+      "overdue": "Overdue"
+    },
     "saveError": "Payment could not be saved. Please try again.",
     "cancelError": "Payment could not be cancelled. Please try again.",
     "confirmCancel": "Cancel this payment? The payment will remain in history but will no longer count toward the amount paid.",
@@ -183,12 +227,24 @@
     "noPayments": "No payments yet",
     "currentRemaining": "Current remaining balance",
     "pendingPayment": "Pending Payment",
-    "status": { "Verified": "Verified", "PendingVerification": "Pending Verification", "Rejected": "Rejected", "Cancelled": "Cancelled" },
-    "methods": { "cash": "Cash", "credit": "Credit Card", "bank_transfer": "Bank Transfer", "check": "Cheque", "bit": "Bit", "paybox": "PayBox", "other": "Other" }
+    "status": {
+      "Verified": "Verified",
+      "PendingVerification": "Pending Verification",
+      "Rejected": "Rejected",
+      "Cancelled": "Cancelled"
+    },
+    "methods": {
+      "cash": "Cash",
+      "credit": "Credit Card",
+      "bank_transfer": "Bank Transfer",
+      "check": "Cheque",
+      "bit": "Bit",
+      "paybox": "PayBox",
+      "other": "Other"
+    }
   },
   "paymentConfirmation": {
     "loading": "Loading payment request…",
-    "language": "Choose language",
     "language": "Choose language",
     "title": "Confirm a bank transfer",
     "subtitle": "Report a payment made for this invoice. The business will review it before it is counted as paid.",
@@ -303,6 +359,44 @@
     "deleteLogo": "Delete logo",
     "uploadLogo": "Upload new logo",
     "noLogo": "No logo",
+    "rivhit": {
+      "title": "Integrations — Rivhit",
+      "description": "Optional accounting integration. CLIENTA invoices and payments are not changed.",
+      "enabled": "Rivhit integration",
+      "statusLabel": "Status",
+      "status": {
+        "notConfigured": "Not configured",
+        "disabled": "Disabled",
+        "notTested": "Not tested",
+        "connected": "Connected",
+        "failed": "Connection failed"
+      },
+      "lastTest": "Last test: {{date}}",
+      "apiToken": "API Token",
+      "tokenSavedPlaceholder": "Token saved — enter a new one to replace it",
+      "tokenPlaceholder": "Paste your Rivhit API token",
+      "saveToken": "Save token",
+      "testConnection": "Test Connection",
+      "testing": "Testing...",
+      "accounting": "Accounting",
+      "documents": "Documents",
+      "payments": "Payments",
+      "comingSoon": "Coming soon",
+      "disconnect": "Disconnect",
+      "disconnectConfirm": "Remove the saved Rivhit token and turn the integration off? Existing Rivhit records are kept.",
+      "saved": "Saved.",
+      "testOk": "Rivhit accepted the connection.",
+      "loadError": "Could not load the Rivhit integration.",
+      "saveError": "Could not save the Rivhit settings.",
+      "errors": {
+        "InvalidCredentials": "Rivhit rejected the API token.",
+        "ProviderUnavailable": "Rivhit is unavailable. Try again later.",
+        "Timeout": "Rivhit did not respond in time.",
+        "InvalidResponse": "Rivhit returned an unexpected response.",
+        "CredentialUnreadable": "The saved token cannot be read. Please enter it again.",
+        "generic": "Connection test failed."
+      }
+    },
     "autoDeleteTitle": "Auto Delete Non-Documented Clients",
     "enableAutoDelete": "Enable auto delete",
     "autoDeleteOff": "Auto delete is OFF",
@@ -380,6 +474,8 @@
     "currentPatientHint": "Please proceed when your name and queue number appear.",
     "currentPatient": "Current Patient",
     "nextPatient": "Next Patient",
+    "nextQueueAndRoom": "Queue number: {{queueNumber}} | Room: {{roomNumber}}",
+    "nextQueueNumber": "Queue number: {{queueNumber}}",
     "upNext": "Up Next",
     "waiting": "Waiting",
     "waitingCount": "Waiting",
@@ -451,6 +547,10 @@
     "imageXOfY": "Image {{current}} of {{total}}",
     "viewImage": "View Image",
     "viewImages": "View Images",
+    "downloadStudy": "Download Study",
+    "studyDownloadPreparing": "Preparing download...",
+    "studyDownloadUnavailable": "The complete study is not currently available for download.",
+    "studyDownloadFailed": "Unable to download the study. Please try again.",
     "availableForViewing": "Available for viewing",
     "notAvailableForViewing": "Not yet available for viewing",
     "viewable": "Available for viewing",
@@ -505,7 +605,7 @@
     "modalityIo": "Dental Image (IO)",
     "modalityEcg": "ECG (ECG)"
   },
-    "billing": {
+  "billing": {
     "loading": "Loading...",
     "loadError": "Failed to load billing information",
     "error": "Something went wrong. Please try again.",
@@ -520,19 +620,17 @@
     "upgrade": "Upgrade",
     "redirect": "Redirecting...",
     "footer": "Cancel anytime",
-      "features": {
+    "features": {
       "clients": "✔ Unlimited Clients",
       "appointments": "✔ Appointment Management",
       "staff": "✔ Staff Management",
       "full": "✔ Full System Access"
     }
   },
-
   "validation": {
-  "required": "Required field",
-  "dateTimeRequired": "Date and time are required"
+    "required": "Required field",
+    "dateTimeRequired": "Date and time are required"
   },
-
   "consent": {
     "title": "Consent Form",
     "clientSignature": "Client Signature",
@@ -560,32 +658,10 @@
   "common": {
     "edit": "Edit",
     "delete": "Delete",
-    "client_signature": "Client Signature",
-    "doctor_signature": "Staff Member Signature",
-    "home": "Home",
-    "back": "Back",
-    "search": "Search",
-    "actions": "Actions",
-    "status": "Status",
     "cancel": "Cancel",
-    "close": "Close",
     "save": "Save",
-    "saving": "Saving...",
-    "sending": "Sending...",
-    "loading": "Loading...",
-    "uploading": "Uploading...",
-    "deleting": "Deleting...",
-    "off": "OFF",
-    "noResults": "No results found",
-    "email": "Email",
-    "phone": "Phone",
-    "address": "Address",
-    "print": "Print",
-    "signOut": "Sign Out",
-    "notifications": "Notifications",
-    "expand": "Expand",
-    "collapse": "Collapse",
-    "dashboard": "Dashboard"
+    "actions": "Actions",
+    "status": "Status"
   },
   "notifications": {
     "title": "Notifications",
@@ -692,12 +768,15 @@
   },
   "appointments": {
     "actions": {
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "waiting": "Waiting",
+      "noshow": "No Show",
       "arrived": "Arrived",
       "start": "Start Treatment",
       "complete": "Complete",
-      "cancel": "Cancel",
-      "noshow": "No Show",
-      "past":"Past"
+      "urgent": "Urgent"
     },
     "title": "Appointments",
     "new": "New Appointment",
@@ -710,7 +789,6 @@
     "filters": {
       "all": "All Status"
     },
-  
     "loading": "Loading appointments...",
     "empty": "No appointments found",
     "noSearchResults": "No appointments match your filters",
@@ -722,17 +800,6 @@
       "staff": "Staff",
       "status": "Status",
       "service": "Service"
-    },
-    "actions": {
-      "edit": "Edit",
-      "cancel": "Cancel",
-      "delete": "Delete",
-      "waiting": "Waiting",
-      "noshow": "No Show",
-      "arrived": "Arrived",
-      "start": "Start Treatment", 
-      "complete": "Complete",
-      "urgent": "Urgent"
     },
     "form": {
       "client": "Client",
@@ -748,6 +815,8 @@
       "date": "Date",
       "time": "Time",
       "staff": "Staff Member",
+      "roomNumber": "Room Number",
+      "roomUnassigned": "No room selected",
       "staffPlaceholder": "e.g., John Smith",
       "duration": "Duration",
       "description": "Description",
@@ -755,13 +824,13 @@
       "descriptionPlaceholder": "Add any additional notes..."
     },
     "status": {
-        "scheduled": "Scheduled",
-        "completed": "Completed",
-        "cancelled": "Cancelled",
-        "noshow": "No Show",
-        "inprogress": "In Progress",
-         "waiting": "Waiting"
-      },
+      "scheduled": "Scheduled",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "noshow": "No Show",
+      "inprogress": "In Progress",
+      "waiting": "Waiting"
+    },
     "services": {
       "consulting": "Consulting",
       "projectManagement": "Project Management",
@@ -793,8 +862,8 @@
       "workflows": "Appointment scheduling",
       "analytics": "Financial tracking",
       "security": "Secure data management"
-        },
-            "accessTitle": "System Access",
+    },
+    "accessTitle": "System Access",
     "accessDescription": "Enter your credentials to continue",
     "subtitle": "A digital operating system for your business",
     "headline": "Sign in to your account",
@@ -1235,6 +1304,45 @@
       "filter": "Filter",
       "download": "PDF",
       "viewInvoice": "View Invoice",
+      "accounting": {
+        "title": "Accounting / Rivhit",
+        "status": {
+          "NotIssued": "Not issued",
+          "Issuing": "Issuing",
+          "Issued": "Issued",
+          "Rejected": "Rejected",
+          "ReconciliationRequired": "Reconciliation required"
+        },
+        "issueAction": "Issue with Rivhit",
+        "confirmTitle": "Issue official Rivhit tax invoice?",
+        "confirmWarning": "This action creates an official accounting document in Rivhit. It will not change the CLIENTA invoice or payment records.",
+        "documentType": "Document type",
+        "taxInvoice": "Tax Invoice (חשבונית מס)",
+        "documentNumber": "Rivhit document number",
+        "issuedAt": "Issued",
+        "amount": "Rivhit amount",
+        "issuing": "Issuing...",
+        "confirmIssue": "Confirm and issue",
+        "issued": "The tax invoice was successfully issued in Rivhit.",
+        "reconciliationWarning": "The result is uncertain. Do not issue again until this request is reconciled.",
+        "rejected": "Rivhit rejected the request. Review the invoice before contacting support.",
+        "errors": {
+          "invalidIdentifier": "The tax invoice could not be issued: the client's ID/company number is invalid. Update the client details and try again.",
+          "missingIdentifier": "The tax invoice could not be issued: the client's ID/company number is missing.",
+          "reconciliationRequired": "Rivhit reconciliation is required. Do not issue the document again until the review is complete.",
+          "CurrencyUnsupported": "Rivhit issuance currently supports ILS invoices only.",
+          "CustomerIdentifierRequired": "A safe client registration number or existing Rivhit customer mapping is required.",
+          "CustomerIdentifierInvalid": "The customer's company/registration number is invalid for Rivhit. Review the ח.פ. on the client record.",
+          "VatMismatch": "The invoice VAT rate does not match the current Rivhit VAT rate.",
+          "InvoiceStateUnsupported": "Only pending invoices can be issued through Rivhit.",
+          "InvoiceDataInvalid": "This invoice does not meet the current Rivhit issuance rules.",
+          "ReconciliationRequired": "Rivhit reconciliation is required. Do not issue the document again until the review is complete.",
+          "deleteAccountingBlocked": "The invoice cannot be deleted because an accounting document exists for it in Rivhit.",
+          "deleteReconciliationBlocked": "The invoice cannot be deleted while Rivhit accounting reconciliation is required.",
+          "deleteFailed": "The invoice could not be deleted. Please try again.",
+          "generic": "Could not issue the Rivhit tax invoice."
+        }
+      },
       "table": {
         "number": "Invoice #",
         "client": "Client",
@@ -1400,10 +1508,39 @@
       "addNew": "Add Staff Member",
       "owner": "Owner",
       "ownerProtected": "The tenant owner cannot be deactivated, deleted, or changed from the Admin role.",
-      "permissions": "permissions",
+      "permissions": {
+        "manage_clients": {
+          "title": "Manage Clients",
+          "description": "View, add, edit and delete clients"
+        },
+        "manage_appointments": {
+          "title": "Manage Appointments",
+          "description": "Create and edit appointments"
+        },
+        "manage_invoices": {
+          "title": "Manage Invoices",
+          "description": "Create, edit, delete, and download invoice PDFs"
+        },
+        "manage_quotes": {
+          "title": "Manage Quotes",
+          "description": "Create, edit, duplicate, and convert quotes to invoices"
+        },
+        "manage_projects": {
+          "title": "Manage Projects",
+          "description": "View and manage business projects and billing plans"
+        },
+        "manage_notes": {
+          "title": "Manage Notes",
+          "description": "Add, edit and delete internal notes"
+        },
+        "manage_files": {
+          "title": "Manage Files",
+          "description": "Upload and manage client files"
+        }
+      },
       "searchPlaceholder": "Search by name, email or role...",
       "noResults": "No staff members found",
-       "permissionsLabel": "Permissions",
+      "permissionsLabel": "Permissions",
       "table": {
         "name": "Name",
         "email": "Email",
@@ -1454,36 +1591,6 @@
         "password": "Password",
         "passwordPlaceholder": "Enter a password for this staff member"
       },
-      "permissions": {
-        "manage_clients": {
-          "title": "Manage Clients",
-          "description": "View, add, edit and delete clients"
-        },
-        "manage_appointments": {
-          "title": "Manage Appointments",
-          "description": "Create and edit appointments"
-        },
-        "manage_invoices": {
-          "title": "Manage Invoices",
-          "description": "Create, edit, delete, and download invoice PDFs"
-        },
-        "manage_quotes": {
-          "title": "Manage Quotes",
-          "description": "Create, edit, duplicate, and convert quotes to invoices"
-        },
-        "manage_projects": {
-          "title": "Manage Projects",
-          "description": "View and manage business projects and billing plans"
-        },
-        "manage_notes": {
-          "title": "Manage Notes",
-          "description": "Add, edit and delete internal notes"
-        },
-        "manage_files": {
-          "title": "Manage Files",
-          "description": "Upload and manage client files"
-        }
-      },
       "menuItems": {
         "clients": "View Clients",
         "appointments": "View Appointments"
@@ -1516,34 +1623,20 @@
     "subtitle": "Enable or disable system features",
     "activeModules": "Active modules",
     "description": "Changes take effect immediately for all users",
-
     "reports": "Reports",
     "reportsDesc": "Show the Reports page in the navigation menu",
-
     "invoices": "Invoices",
     "invoicesDesc": "Show the Invoices page in the navigation menu",
-
     "quotes": "Quotes",
     "quotesDesc": "Show the quotes page in the navigation menu",
-
     "prescriptions": "Prescriptions",
     "prescriptionsDesc": "Show the prescription button in client profiles",
-
     "drugs": "Drugs Database",
     "drugsDesc": "Enable the drugs database and related features",
-
     "beforeAfterPhotos": "Before/After Photos",
     "beforeAfterPhotosDesc": "Show before and after photo uploads in the client profile",
     "visitSummaries": "Visit Summaries",
     "visitSummariesDesc": "Show the visit summary button in client profiles"
-  },
-  "common": {
-    "edit": "Edit",
-    "delete": "Delete",
-    "cancel": "Cancel",
-    "save": "Save",
-    "actions": "Actions",
-    "status": "Status"
   },
   "services": {
     "title": "Business Services",
@@ -1584,7 +1677,11 @@
     "emptyTitle": "No examinations are currently waiting for interpretation",
     "emptyDescription": "Examinations assigned by the clinic will appear here.",
     "tryAgain": "Try again",
-    "status": { "pending": "Awaiting interpretation", "inProgress": "Interpretation in progress", "completed": "Completed" },
+    "status": {
+      "pending": "Awaiting interpretation",
+      "inProgress": "Interpretation in progress",
+      "completed": "Completed"
+    },
     "statusLabel": "Interpretation status",
     "completedAt": "Completed on",
     "received": "Received",
@@ -1649,10 +1746,88 @@
     "stampRemoveError": "The stamp could not be removed.",
     "invalidStamp": "Choose a PNG or JPG file.",
     "stampTooLarge": "The stamp cannot exceed 2 MB."
-  }
-,
+  },
   "businessShell": {
     "appName": "CLIENTA Business",
+    "accounting": {
+      "title": "Accounting / Rivhit",
+      "description": "Explicit CLIENTA or Rivhit actions only. No automatic sync.",
+      "adminOnly": "Only Business admins can perform Rivhit accounting actions.",
+      "documentNumber": "Rivhit document number",
+      "issuedAt": "Issued",
+      "receiptNumber": "Receipt number",
+      "receiptAmount": "Receipt amount",
+      "reconciliationTitle": "Reconciliation required",
+      "reconciliationWarning": "The result is uncertain. Do not retry until this request is reconciled.",
+      "reconciliationRequired": "The Rivhit result needs verification. Do not retry automatically.",
+      "reconciliationCheck": "Check status with Rivhit",
+      "reconciliationChecking": "Checking...",
+      "reconciliationResolved": "Status checked; the document was confirmed and linked.",
+      "reconciliationRejected": "Rivhit rejected or no document found. The reservation was released; you can issue again.",
+      "reconciliationStillPending": "The status is still uncertain. Further reconciliation is required.",
+      "providerRejected": "Rivhit rejected the request. Review the invoice before contacting support.",
+      "taxInvoice": {
+        "issue": "Issue Tax Invoice in Rivhit",
+        "issued": "Tax invoice issued"
+      },
+      "receipts": {
+        "title": "Rivhit Receipts",
+        "description": "Issue an official Rivhit receipt for a CLIENTA payment. A confirmed Rivhit receipt creates the equivalent canonical verified CLIENTA payment.",
+        "issue": "Issue Receipt in Rivhit",
+        "confirmTitle": "Issue official Rivhit receipt?",
+        "confirmDescription": "This action creates an official accounting document in Rivhit. It will not change the CLIENTA invoice or payment records. After confirmation, CLIENTA will record the equivalent canonical verified payment.",
+        "amount": "Amount",
+        "paymentMethod": "Payment method",
+        "remainingBefore": "Remaining before this receipt",
+        "review": "Review",
+        "confirmIssue": "Confirm and issue",
+        "issuing": "Issuing...",
+        "success": "The receipt was successfully issued in Rivhit.",
+        "error": "Could not issue the Rivhit receipt.",
+        "amountUnavailable": "The receipt cannot be issued because no receivable balance is available. Refresh the invoice and review its payments.",
+        "invalidIdentifier": "The accounting document could not be issued: the client's ID/company number is invalid. Update the client details and try again.",
+        "missingIdentifier": "The accounting document could not be issued: the client's ID/company number is missing.",
+        "providerRejected": "Rivhit rejected the receipt. Review the invoice before contacting support.",
+        "reconciliationRequired": "The Rivhit result needs verification. Do not retry automatically.",
+        "partialSupported": "Partial and full payments are supported.",
+        "customerIdentifierInvalid": "The customer's company/registration number is invalid for Rivhit. Review the ח.פ. on the client record.",
+        "paymentNotFound": "The payment was not found or is not verified.",
+        "unsupportedPaymentMethod": "This payment method cannot currently be represented safely in Rivhit. No receipt was issued.",
+        "sourceLabel": "Payment source",
+        "sourceNew": "New payment",
+        "sourceExisting": "Existing payment {{amount}} ({{date}})",
+        "noExistingPayments": "No verified payments on this invoice.",
+        "allPaymentsReceipted": "Every verified payment already has a Rivhit receipt.",
+        "receiptLabel": "Receipt",
+        "provider": "Rivhit"
+      },
+      "delivery": {
+        "label": "Rivhit delivery method",
+        "none": "No delivery",
+        "email": "Send by email"
+      },
+      "archive": {
+        "view": "View official PDF",
+        "download": "Download PDF",
+        "notArchived": "Document not archived yet",
+        "retry": "Archive / Retry archive",
+        "archiving": "Archiving...",
+        "success": "The official PDF was archived.",
+        "issueSucceededButSaveFailed": "The accounting document was successfully issued in Rivhit, but its official PDF could not be saved in CLIENTA. You can try again using Archive / Retry archive.",
+        "delete": "Delete from archive",
+        "deleting": "Deleting...",
+        "deleted": "File removed from archive. You can archive it again.",
+        "errors": {
+          "DocumentNotIssued": "Only an issued document can be archived.",
+          "CopyUnavailable": "Could not retrieve the PDF copy from Rivhit right now.",
+          "DownloadRejected": "The PDF download was rejected.",
+          "StorageFailed": "Saving the PDF failed.",
+          "IntegrationUnavailable": "Rivhit connection is unavailable.",
+          "deleteFailed": "Could not delete the file right now.",
+          "generic": "Could not archive the PDF right now."
+        }
+      }
+    },
     "nav": {
       "dashboard": "Dashboard",
       "clients": "Clients / CRM",
@@ -1695,6 +1870,11 @@
       "title": "Payments",
       "subtitle": "Review invoice balances, record payments, and manage payment confirmations.",
       "invoiceAmount": "Invoice amount",
+      "project": "Project",
+      "projectEndDate": "Project end date",
+      "projectEndDateOverdue": "Project end date has passed",
+      "projectEndDateWithin30Days": "Project ends within 30 days",
+      "projectEndDateWithin60Days": "Project ends within 60 days",
       "openInvoice": "View invoice",
       "loadError": "Payments could not be loaded. Please try again.",
       "empty": "No invoices are available yet."
@@ -1739,6 +1919,10 @@
         "noContact": "No billing contact set for this client.",
         "openPlan": "Open Billing Plan"
       },
+      "projectEndings": {
+        "title": "Projects ending soon",
+        "empty": "No active or on-hold projects are ending within the warning window."
+      },
       "quick": {
         "title": "Quick actions",
         "projects": "Projects",
@@ -1754,5 +1938,92 @@
     },
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
+  },
+  "business": {
+    "accounting": {
+      "title": "Accounting",
+      "summary": {
+        "Issued": "Issued",
+        "ReconciliationRequired": "Review needed",
+        "Rejected": "Rejected",
+        "Issuing": "Issuing",
+        "NotIssued": "Issue document"
+      },
+      "description": "Issue accounting documents through Rivhit",
+      "documentNumber": "Document number",
+      "issuedAt": "Issue date",
+      "receiptNumber": "Receipt number",
+      "receiptAmount": "Receipt amount",
+      "reconciliationTitle": "Reconciliation required",
+      "reconciliationWarning": "Rivhit reconciliation is required. Do not issue the document again until the review is complete.",
+      "reconciliationRequired": "Rivhit reconciliation is required. Do not issue the document again until the review is complete.",
+      "actionFailed": "The Rivhit action failed. Check the document status before deciding whether to try again.",
+      "reconciliationCheck": "Check status with Rivhit",
+      "reconciliationChecking": "Checking...",
+      "reconciliationResolved": "Status checked; the document was confirmed and linked.",
+      "reconciliationRejected": "Rivhit rejected or no document found. The reservation was released; you can issue again.",
+      "reconciliationStillPending": "The status is still uncertain. Further reconciliation is required.",
+      "adminOnly": "Only authorized users can issue accounting documents",
+      "taxInvoice": {
+        "issue": "Issue tax invoice",
+        "issued": "The tax invoice was successfully issued in Rivhit."
+      },
+      "receipts": {
+        "issue": "Issue receipt",
+        "title": "Receipt details",
+        "description": "Enter payment details to issue a receipt through Rivhit",
+        "amount": "Payment amount",
+        "paymentMethod": "Payment method",
+        "remainingBefore": "Outstanding balance before receipt",
+        "partialSupported": "Partial payments are supported",
+        "review": "Review details",
+        "confirmTitle": "Confirm receipt issuance",
+        "confirmDescription": "Review the payment details before issuing the receipt through Rivhit.",
+        "confirmIssue": "Confirm and issue receipt",
+        "issuing": "Issuing receipt...",
+        "success": "The receipt was successfully issued in Rivhit.",
+        "error": "Failed to issue receipt. Check the payment details and try again.",
+        "amountUnavailable": "The receipt cannot be issued because no receivable balance is available. Refresh the invoice and review its payments.",
+        "invalidIdentifier": "The accounting document could not be issued: the client's ID/company number is invalid. Update the client details and try again.",
+        "missingIdentifier": "The accounting document could not be issued: the client's ID/company number is missing.",
+        "providerRejected": "Rivhit rejected the receipt request",
+        "reconciliationRequired": "The Rivhit result needs verification. Do not issue the document again until the review is complete.",
+        "customerIdentifierInvalid": "The customer's company/registration number is invalid for Rivhit. Review the ח.פ. on the client record.",
+        "paymentNotFound": "The payment was not found or is not verified.",
+        "sourceLabel": "Payment source",
+        "sourceNew": "New payment",
+        "sourceExisting": "Existing payment {{amount}} ({{date}})",
+        "noExistingPayments": "No verified payments on this invoice.",
+        "allPaymentsReceipted": "Every verified payment already has a Rivhit receipt.",
+        "receiptLabel": "Receipt",
+        "provider": "Rivhit"
+      },
+      "delivery": {
+        "label": "Rivhit delivery method",
+        "none": "No delivery",
+        "email": "Send by email"
+      },
+      "archive": {
+        "view": "View official PDF",
+        "download": "Download PDF",
+        "notArchived": "Document not archived yet",
+        "retry": "Archive / Retry archive",
+        "archiving": "Archiving...",
+        "success": "The official PDF was archived.",
+        "issueSucceededButSaveFailed": "The accounting document was successfully issued in Rivhit, but its official PDF could not be saved in CLIENTA. You can try again using Archive / Retry archive.",
+        "delete": "Delete from archive",
+        "deleting": "Deleting...",
+        "deleted": "File removed from archive. You can archive it again.",
+        "errors": {
+          "DocumentNotIssued": "Only an issued document can be archived.",
+          "CopyUnavailable": "Could not retrieve the PDF copy from Rivhit right now.",
+          "DownloadRejected": "The PDF download was rejected.",
+          "StorageFailed": "Saving the PDF failed.",
+          "IntegrationUnavailable": "Rivhit connection is unavailable.",
+          "deleteFailed": "Could not delete the file right now.",
+          "generic": "Could not archive the PDF right now."
+        }
+      }
+    }
   }
 }

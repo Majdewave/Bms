@@ -1,10 +1,11 @@
 ﻿import { Suspense, lazy, useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { CheckCircle, ChevronDown, Download, Edit, Eye, FileCheck, FileText, Image as ImageIcon, MessageSquare, Pill, Printer, Trash2, User } from "lucide-react"
+import { CheckCircle, ChevronDown, Download, Edit, Eye, FileCheck, FileText, Image as ImageIcon, Loader2, MessageSquare, Pill, Printer, Trash2, User } from "lucide-react"
 import { visitSummariesService, type VisitSummary } from '@/api/visitSummaries'
 import { clientsService, imagingService, invoicesService } from '@/api'
 import type { Invoice } from '@/api/invoices'
+import { formatInvoiceCalendarDate } from '@/utils/invoiceCalendarDate'
 import {deleteImagingOrder,deleteInterpretationRequest, getClientImagingCases, getImagingOrderReferralDocument, type ClientImagingCase, type ImagingStudyHierarchy, type ImagingStudySummary,} from '@/api/imaging'
 import { useAuth } from "@/contexts/AuthContext"
 import { useTenant } from '@/contexts/TenantContext'
@@ -248,6 +249,8 @@ export default function ClientProfile() {
   const [selectedInstanceIndex, setSelectedInstanceIndex] = useState(0)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [imagingLoading, setImagingLoading] = useState(false)
+  const [isDownloadingStudy, setIsDownloadingStudy] = useState(false)
+  const [studyDownloadError, setStudyDownloadError] = useState<string | null>(null)
   const [viewingReferral, setViewingReferral] = useState(false)
   const [interpreters, setInterpreters] = useState<ImagingInterpreterOption[]>([])
   const [selectedInterpreterId, setSelectedInterpreterId] = useState('')
@@ -1182,6 +1185,33 @@ const saveClient = async () => {
     console.log('[Imaging] user requested viewer')
     setSelectedInstanceIndex(0)
     setIsViewerOpen(true)
+  }
+
+  const handleDownloadStudy = async () => {
+    if (!selectedStudy || isDownloadingStudy) return
+
+    setIsDownloadingStudy(true)
+    setStudyDownloadError(null)
+    try {
+      const blob = await imagingService.downloadStudy(selectedStudy.id)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `imaging-study-${selectedStudy.accessionNumber.replace(/[^a-zA-Z0-9_-]/g, '_') || selectedStudy.id}.zip`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+    } catch (error) {
+      console.error('Failed to download imaging study:', error)
+      setStudyDownloadError(
+        error instanceof ApiError && error.status === 409
+          ? t('imaging.studyDownloadUnavailable')
+          : t('imaging.studyDownloadFailed')
+      )
+    } finally {
+      setIsDownloadingStudy(false)
+    }
   }
 
   const handleViewerSeriesChange = (index: number) => {
@@ -2181,18 +2211,29 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
                           </div>
 
                           <div className="flex flex-wrap items-center justify-between gap-3">
-                            <button
-                              type="button"
-                              onClick={handleOpenViewer}
-                              disabled={viewableInstances.length === 0}
-                              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                            >
-                              {viewableInstances.length === 0
-                                ? t('imaging.notAvailableForViewing')
-                                : viewableInstances.length === 1
-                                  ? t('imaging.viewImage')
-                                  : t('imaging.viewImages')}
-                            </button>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleOpenViewer}
+                                disabled={viewableInstances.length === 0}
+                                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                              >
+                                {viewableInstances.length === 0
+                                  ? t('imaging.notAvailableForViewing')
+                                  : viewableInstances.length === 1
+                                    ? t('imaging.viewImage')
+                                    : t('imaging.viewImages')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleDownloadStudy()}
+                                disabled={isDownloadingStudy || !selectedStudy}
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {isDownloadingStudy && <Loader2 className="h-4 w-4 animate-spin" />}
+                                {isDownloadingStudy ? t('imaging.studyDownloadPreparing') : t('imaging.downloadStudy')}
+                              </button>
+                            </div>
 
                             {isViewerOpen && (
                               <button
@@ -2204,6 +2245,12 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
                               </button>
                             )}
                           </div>
+
+                          {studyDownloadError && (
+                            <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                              {studyDownloadError}
+                            </div>
+                          )}
 
                           {isViewerOpen && viewableInstances.length === 0 && (
                             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
@@ -2369,7 +2416,7 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
                   {clientInvoices.map((invoice) => (
                     <div key={invoice.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
                       <div className="text-sm text-slate-500">{t('admin.clientProfile.invoiceNumber')} <span className="font-semibold text-slate-800">{invoice.number}</span></div>
-                      <div className="text-sm text-slate-500">{t('admin.clientProfile.date')} <span className="font-semibold text-slate-800">{new Date(invoice.invoiceDate).toLocaleDateString(i18n.language)}</span></div>
+                      <div className="text-sm text-slate-500">{t('admin.clientProfile.date')} <span className="font-semibold text-slate-800">{formatInvoiceCalendarDate(invoice.invoiceDate, i18n.language)}</span></div>
                       <div className="text-sm text-slate-500">{t('admin.clientProfile.amount')} <span className="font-semibold text-slate-800">{invoice.totalAmount.toFixed(2)}</span></div>
                       <div className="text-sm text-slate-500">{t('common.status')} <span className="font-semibold text-slate-800">{getInvoiceStatusLabel(invoice.status)}</span></div>
                       <div className="flex items-center gap-2 pt-1">
@@ -2395,7 +2442,7 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
                     {clientInvoices.map((invoice) => (
                       <tr key={invoice.id} className="border-t">
                         <td className="p-2 text-right font-medium">{invoice.number}</td>
-                        <td className="p-2 text-right">{new Date(invoice.invoiceDate).toLocaleDateString(i18n.language)}</td>
+                        <td className="p-2 text-right">{formatInvoiceCalendarDate(invoice.invoiceDate, i18n.language)}</td>
                         <td className="p-2 text-right">{invoice.totalAmount.toFixed(2)}</td>
                         <td className="p-2 text-right">{getInvoiceStatusLabel(invoice.status)}</td>
                         <td className="p-2 text-right">

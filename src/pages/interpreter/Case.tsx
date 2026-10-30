@@ -22,6 +22,9 @@ import {
   getInterpretationPdf,
   getInstanceFile,
   getInstanceAnnotations,
+  createInstanceMarker,
+  updateInstanceMarker,
+  deleteInstanceMarker,
   getReferral,
   saveInterpretationReport,
   type InterpreterCase as InterpreterCaseData,
@@ -537,6 +540,9 @@ export default function InterpreterCase() {
                     loadInstanceAnnotations={(instanceId, frameNumber) =>
                       getInstanceAnnotations(caseData.requestId, instanceId, frameNumber)
                     }
+                    createMarkerAnnotation={(request) => createInstanceMarker(caseData.requestId, request.imagingInstanceId, request)}
+                    updateMarkerAnnotation={(annotationId, request) => updateInstanceMarker(caseData.requestId, annotationId, request)}
+                    deleteMarkerAnnotation={(annotationId) => deleteInstanceMarker(caseData.requestId, annotationId)}
                   />
                 </Suspense>
               ) : (

@@ -233,7 +233,7 @@ export default function ProjectClientWorkspace() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
           <Tabs tabs={tabs} activeKey={activeTab} onChange={(key) => setActiveTab(key as TabKey)}>
             {activeTab === 'overview' && <PmOverviewTab clientId={id} />}
-            {activeTab === 'projects' && <PmProjectsTab clientId={id} canManage={canManageProjects} />}
+            {activeTab === 'projects' && <PmProjectsTab clientId={id} canManage={canManageProjects} isBusiness={isBusiness} />}
             {activeTab === 'contacts' && <PmContactsTab clientId={id} canManage={canManageProjects} />}
             {activeTab === 'quotes' && <PmQuotesTab clientId={id} />}
             {activeTab === 'invoices' && <PmInvoicesTab clientId={id} />}

@@ -1,8 +1,9 @@
 import { del, get, getBlob, post, put } from './apiClient'
+import type { ProjectPaymentType, ProjectStatus } from '@/types/pm'
 
 export const DEFAULT_VAT_RATE = 18
 
-export type InvoiceStatus = 'pending' | 'paid' | 'partially_paid' | 'cancelled'
+export type InvoiceStatus = 'pending' | 'partially_paid' | 'paid' | 'cancelled'
 export type InvoicePaymentMethod = 'cash' | 'credit' | 'bank_transfer' | 'check' | 'bit' | 'paybox' | 'other'
 
 export interface InvoiceLineItem {
@@ -18,6 +19,10 @@ export interface Invoice {
   number: string
   clientId: string
   projectId?: string | null
+  projectName?: string | null
+  projectEndDate?: string | null
+  projectStatus?: ProjectStatus | null
+  projectPaymentType?: ProjectPaymentType | null
   clientName: string
   clientEmail: string
   amount: number
@@ -168,6 +173,10 @@ const normalizeInvoice = (invoice: any): Invoice => {
     number: String(invoice?.number ?? invoice?.invoiceNumber ?? ''),
     clientId: String(invoice?.clientId ?? ''),
     projectId: invoice?.projectId ? String(invoice.projectId) : null,
+    projectName: typeof invoice?.projectName === 'string' ? invoice.projectName : null,
+    projectEndDate: typeof invoice?.projectEndDate === 'string' ? invoice.projectEndDate : null,
+    projectStatus: typeof invoice?.projectStatus === 'string' ? invoice.projectStatus as ProjectStatus : null,
+    projectPaymentType: typeof invoice?.projectPaymentType === 'string' ? invoice.projectPaymentType as ProjectPaymentType : null,
     clientName: String(invoice?.clientName ?? ''),
     clientEmail: String(invoice?.clientEmail ?? ''),
     amount: totalAmount,

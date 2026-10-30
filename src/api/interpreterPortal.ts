@@ -1,4 +1,8 @@
-﻿import type { ImagingAnnotation } from './imaging'
+﻿import type {
+  CreateImagingAnnotationRequest,
+  ImagingAnnotation,
+  UpdateImagingAnnotationRequest,
+} from './imaging'
 import * as apiClient from './apiClient'
 
 export type InterpretationRequestStatus =
@@ -121,6 +125,35 @@ export function getInstanceAnnotations(
     `/api/interpreter/interpretation-requests/${requestId}/instances/${instanceId}/annotations${query}`
   )
 }
+
+export function createInstanceMarker(
+  requestId: string,
+  instanceId: string,
+  request: CreateImagingAnnotationRequest,
+) {
+  return apiClient.post<ImagingAnnotation>(
+    `/api/interpreter/interpretation-requests/${requestId}/instances/${instanceId}/annotations`,
+    request,
+  )
+}
+
+export function updateInstanceMarker(
+  requestId: string,
+  annotationId: string,
+  request: UpdateImagingAnnotationRequest,
+) {
+  return apiClient.put<ImagingAnnotation>(
+    `/api/interpreter/interpretation-requests/${requestId}/annotations/${annotationId}`,
+    request,
+  )
+}
+
+export function deleteInstanceMarker(requestId: string, annotationId: string) {
+  return apiClient.delNoContent(
+    `/api/interpreter/interpretation-requests/${requestId}/annotations/${annotationId}`,
+  )
+}
+
 export function saveInterpretationReport(
   requestId: string,
   content: string

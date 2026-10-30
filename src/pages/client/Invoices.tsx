@@ -10,6 +10,7 @@ import type {
 } from '@/api'
 import { DEFAULT_VAT_RATE, calculateInvoiceTotals } from '@/api/invoices'
 import { useTranslation } from 'react-i18next'
+import { formatInvoiceCalendarDate, getLocalInvoiceCalendarDate, toInvoiceDateInput, toInvoiceDateRequest } from '@/utils/invoiceCalendarDate'
 import { Check, ChevronDown, ChevronUp, Download, Filter, Package, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 
 type InvoiceFormLineItem = {
@@ -46,7 +47,7 @@ const createEmptyLineItem = (): InvoiceFormLineItem => ({
 const createDefaultInvoiceForm = (): InvoiceFormState => ({
   clientId: '',
   invoiceNumber: `INV-${Date.now()}`,
-  invoiceDate: new Date().toISOString().split('T')[0],
+  invoiceDate: getLocalInvoiceCalendarDate(),
   dueDate: '',
   notes: '',
   lineItems: [createEmptyLineItem()],
@@ -71,7 +72,6 @@ const toCurrency = (value: number) => {
 }
 
 const toIsoDate = (date: string) => new Date(`${date}T00:00:00`).toISOString()
-
 export default function AdminInvoices() {
   const { t, i18n } = useTranslation()
   const { tenant } = useTenant()
@@ -191,8 +191,8 @@ export default function AdminInvoices() {
   const buildRequest = (): CreateInvoiceRequest => ({
     clientId: invoiceForm.clientId,
     invoiceNumber: invoiceForm.invoiceNumber.trim(),
-    invoiceDate: toIsoDate(invoiceForm.invoiceDate),
-    dueDate: invoiceForm.dueDate ? toIsoDate(invoiceForm.dueDate) : undefined,
+    invoiceDate: toInvoiceDateRequest(invoiceForm.invoiceDate),
+    dueDate: invoiceForm.dueDate ? toInvoiceDateRequest(invoiceForm.dueDate) : undefined,
     notes: invoiceForm.notes.trim() || undefined,
     lineItems: lineItemPayload,
   })
@@ -262,8 +262,8 @@ export default function AdminInvoices() {
     setInvoiceForm({
       clientId: invoice.clientId,
       invoiceNumber: invoice.number,
-      invoiceDate: invoice.invoiceDate ? invoice.invoiceDate.split('T')[0] : new Date().toISOString().split('T')[0],
-      dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : '',
+      invoiceDate: toInvoiceDateInput(invoice.invoiceDate) || getLocalInvoiceCalendarDate(),
+      dueDate: toInvoiceDateInput(invoice.dueDate),
       notes: invoice.notes ?? '',
       lineItems: nextLineItems,
     })
@@ -309,22 +309,7 @@ export default function AdminInvoices() {
     }).format(amount)
   }
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) {
-      return '-'
-    }
-
-    const date = new Date(dateString)
-    if (Number.isNaN(date.getTime())) {
-      return '-'
-    }
-
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }
+  const formatDate = (dateString: string) => formatInvoiceCalendarDate(dateString, 'en-US')
 
   return (
     <Container>

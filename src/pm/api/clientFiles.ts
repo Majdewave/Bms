@@ -34,11 +34,26 @@ export const getProjectFiles = async (projectId: string): Promise<ClientFileReco
   return get<ClientFileRecord[]>(`/api/projects/${projectId}/files`)
 }
 
+export const getProjectProposals = async (projectId: string): Promise<ClientFileRecord[]> => {
+  return get<ClientFileRecord[]>(`/api/projects/${projectId}/files/proposal`)
+}
+
+export const viewProjectProposal = async (projectId: string, fileId: string): Promise<Blob> => {
+  return getBlob(`/api/projects/${projectId}/files/proposal/${fileId}/view`)
+}
+
 export const uploadProjectFile = async (projectId: string, file: File, title?: string): Promise<ClientFileRecord> => {
   const formData = new FormData()
   formData.append('file', file)
   if (title && title.trim()) formData.append('title', title.trim())
   return post<ClientFileRecord>(`/api/projects/${projectId}/files`, formData, true)
+}
+
+export const uploadProjectProposal = async (projectId: string, file: File, title: string): Promise<ClientFileRecord> => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('title', title.trim())
+  return post<ClientFileRecord>(`/api/projects/${projectId}/files/proposal`, formData, true)
 }
 
 export const downloadProjectFile = async (projectId: string, fileId: string): Promise<Blob> => {
@@ -47,6 +62,10 @@ export const downloadProjectFile = async (projectId: string, fileId: string): Pr
 
 export const updateProjectFileTitle = async (projectId: string, fileId: string, title: string): Promise<ClientFileRecord> => {
   return patch<ClientFileRecord>(`/api/projects/${projectId}/files/${fileId}`, { title })
+}
+
+export const updateProjectProposalTitle = async (projectId: string, fileId: string, title: string): Promise<ClientFileRecord> => {
+  return patch<ClientFileRecord>(`/api/projects/${projectId}/files/proposal/${fileId}`, { title })
 }
 
 export const deleteProjectFile = async (projectId: string, fileId: string): Promise<void> => {

@@ -1,4 +1,4 @@
-import { get, post, put, del } from './apiClient'
+import { get, post, put, del, getBlob } from './apiClient'
 
 export interface Client {
   id: string
@@ -153,6 +153,28 @@ export const checkDuplicateClientIdNumber = async (
 
   return get<DuplicateClientIdNumberCheckResponse>(`/api/clients/check-id-number?${params.toString()}`)
 }
+
+// Client files (includes archived Rivhit PDFs linked via externalAccountingDocumentId).
+export interface ClientFileRecord {
+  id: string
+  clientId: string
+  fileName: string
+  fileSize: number
+  uploadedAt: string
+  projectId?: string | null
+  title?: string | null
+  externalAccountingDocumentId?: string | null
+}
+
+export const getClientFiles = (clientId: string) =>
+  get<ClientFileRecord[]>(`/api/clients/${encodeURIComponent(clientId)}/files`)
+
+export const downloadClientFile = (clientId: string, fileId: string) =>
+  getBlob(`/api/clients/${encodeURIComponent(clientId)}/files/${encodeURIComponent(fileId)}/download`)
+
+// Deletes only the ClientFile/S3 object; the ExternalAccountingDocument/audit record is preserved.
+export const deleteClientFile = (clientId: string, fileId: string) =>
+  del(`/api/clients/${encodeURIComponent(clientId)}/files/${encodeURIComponent(fileId)}`)
 
 // Note: These legacy methods are deprecated, use notes.ts API instead
 export interface ClientNote {

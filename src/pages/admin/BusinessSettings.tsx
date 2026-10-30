@@ -27,6 +27,7 @@ import { Container, PageHeader } from '@/components/Layout'
 import { getBusinessSettings, deleteBusinessStamp, uploadTenantLogo,  uploadBusinessStamp} from '@/api/businessSettings'
 import DepartmentsSection from './DepartmentsSection'
 import ServicesSection from './ServicesSection'
+import RivhitIntegrationSection from './RivhitIntegrationSection'
 import type { Department } from '@/api/departmentService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTenant } from '@/contexts/TenantContext'
@@ -1900,6 +1901,7 @@ export default function BusinessSettings() {
             </button>
           </div>
         </form>
+        {isBusinessTenant && isAdmin && <RivhitIntegrationSection />}
       </div>
     </Container>
   )

@@ -28,6 +28,7 @@ export interface QueueDisplayPatient {
   queueNumber: number | null
   displayName: string
   status: string
+  roomNumber?: string | null
 }
 
 export interface QueueDisplayData {

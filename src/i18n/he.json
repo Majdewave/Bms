@@ -1,4 +1,4 @@
-  {
+{
   "pm": {
     "workspaceTitle": "כרטיס לקוח",
     "openFullQuotes": "פתח הצעות מחיר",
@@ -38,7 +38,12 @@
     "editMilestoneAction": "עריכה",
     "deleteMilestoneAction": "מחיקה",
     "linkedMilestoneDeleteBlocked": "לא ניתן למחוק אבן דרך המקושרת לחשבונית.",
-    "milestoneStatus": { "Planned": "מתוכנן", "ReadyToInvoice": "מוכן לחיוב", "Invoiced": "חויב", "Cancelled": "בוטל" },
+    "milestoneStatus": {
+      "Planned": "מתוכנן",
+      "ReadyToInvoice": "מוכן לחיוב",
+      "Invoiced": "חויב",
+      "Cancelled": "בוטל"
+    },
     "featureUnavailable": "תכונה זו אינה זמינה לעסק או למשתמש זה.",
     "projectQuotes": "הצעות מחיר לפרויקט",
     "projectInvoices": "חשבוניות לפרויקט",
@@ -55,7 +60,7 @@
     "status": {
       "Draft": "טיוטה",
       "Active": "פעיל",
-      "OnHold": "בהמתנה",
+      "OnHold": "ממתין",
       "Completed": "הושלם",
       "Cancelled": "בוטל"
     },
@@ -75,15 +80,27 @@
       "empty": "אין פרויקטים עדיין",
       "name": "שם",
       "status": "סטטוס",
+      "paymentType": "סוג תשלום בפרויקט",
+      "paymentTypeNotSet": "לא נבחר",
       "value": "שווי הפרויקט",
       "startDate": "תאריך התחלה",
       "endDate": "תאריך סיום",
+      "notSet": "לא הוגדר",
+      "endDateWarningTwoMonths": "הפרויקט מסתיים בעוד פחות מחודשיים - {{endDate}}",
+      "endDateWarningOneMonth": "הפרויקט מסתיים בעוד פחות מחודש - {{endDate}}",
+      "endDateWarningOverdue": "הפרויקט הסתיים לפני {{count}} ימים - {{endDate}}",
       "description": "תיאור",
       "confirmDelete": "למחוק את הפרויקט \"{{name}}\"?",
       "financialSummary": "מסמכים כספיים מקושרים"
     },
+    "paymentTypes": {
+      "Retainer": "ריטיינר",
+      "Monthly": "חודשי",
+      "Hourly": "שעתי",
+      "Milestone": "אבן דרך"
+    },
     "quotes": {
-      "general": "הצעת מחיר עסקית כללית"
+      "empty": "אין הצעות מחיר ללקוח זה"
     },
     "contacts": {
       "new": "הוסף איש קשר",
@@ -97,9 +114,6 @@
       "primary": "איש קשר ראשי",
       "billing": "איש קשר לחיוב",
       "confirmDelete": "למחוק את איש הקשר \"{{name}}\"?"
-    },
-    "quotes": {
-      "empty": "אין הצעות מחיר ללקוח זה"
     },
     "invoices": {
       "empty": "אין חשבוניות ללקוח זה"
@@ -144,13 +158,43 @@
         "notFound": "המסמך או הפרויקט לא נמצאו.",
         "conflict": "הפעולה מתנגשת עם מצב הפרויקט הנוכחי."
       }
+    },
+    "projectProposals": {
+      "title": "הצעת פרויקט",
+      "titleInput": "כותרת ההצעה",
+      "titlePlaceholder": "הזינו כותרת להצעה",
+      "chooseFile": "בחירת קובץ הצעה",
+      "upload": "העלאת הצעה",
+      "uploading": "ההצעה מועלת...",
+      "uploadSuccess": "הצעת הפרויקט הועלתה.",
+      "originalFilename": "שם הקובץ המקורי",
+      "empty": "עדיין לא הועלו הצעות לפרויקט זה.",
+      "loadError": "לא ניתן לטעון את הצעות הפרויקט.",
+      "view": "צפייה ב-PDF",
+      "viewBlocked": "יש לאפשר חלונות קופצים כדי לצפות ב-PDF, או להשתמש בהורדה.",
+      "download": "הורדה",
+      "editTitle": "עריכת הכותרת",
+      "save": "שמירת הכותרת",
+      "cancel": "ביטול",
+      "renameSuccess": "כותרת ההצעה עודכנה.",
+      "delete": "מחיקת הצעה",
+      "confirmDelete": "למחוק את הצעת הפרויקט \"{{name}}\"? לא ניתן לבטל פעולה זו.",
+      "deleteSuccess": "הצעת הפרויקט נמחקה.",
+      "invalidFileType": "יש לבחור קובץ PDF, DOC, DOCX, XLS או XLSX.",
+      "invalidUpload": "הקובץ אינו תקין או גדול ממגבלת 10MB. הסוגים המותרים: PDF, DOC, DOCX, XLS, XLSX.",
+      "invalidTitle": "יש להזין כותרת להצעה באורך של עד 200 תווים."
     }
   },
   "payments": {
     "title": "תשלומים",
     "invoiceHeader": "תשלומים",
     "paymentState": "מצב תשלום",
-    "paymentStates": { "pending": "ממתין לתשלום", "partially_paid": "שולם חלקית", "paid": "שולם" },
+    "paymentStates": {
+      "pending": "ממתין לתשלום",
+      "partially_paid": "שולם חלקית",
+      "paid": "שולם",
+      "overdue": "באיחור"
+    },
     "saveError": "שמירת התשלום נכשלה. נסה שוב.",
     "cancelError": "ביטול התשלום נכשל. נסה שוב.",
     "record": "רישום תשלום",
@@ -183,12 +227,24 @@
     "noPayments": "אין עדיין תשלומים",
     "currentRemaining": "יתרה נוכחית לתשלום",
     "pendingPayment": "ממתין לתשלום",
-    "status": { "Verified": "אומת", "PendingVerification": "ממתין לאימות", "Rejected": "נדחה", "Cancelled": "בוטל" },
-    "methods": { "cash": "מזומן", "credit": "כרטיס אשראי", "bank_transfer": "העברה בנקאית", "check": "צ׳ק", "bit": "ביט", "paybox": "PayBox", "other": "אחר" }
+    "status": {
+      "Verified": "אומת",
+      "PendingVerification": "ממתין לאימות",
+      "Rejected": "נדחה",
+      "Cancelled": "בוטל"
+    },
+    "methods": {
+      "cash": "מזומן",
+      "credit": "כרטיס אשראי",
+      "bank_transfer": "העברה בנקאית",
+      "check": "צ׳ק",
+      "bit": "ביט",
+      "paybox": "PayBox",
+      "other": "אחר"
+    }
   },
   "paymentConfirmation": {
     "loading": "טוען בקשת תשלום…",
-    "language": "בחירת שפה",
     "language": "בחירת שפה",
     "title": "אישור העברה בנקאית",
     "subtitle": "דווחו על תשלום שבוצע עבור החשבונית. העסק יבדוק את הדיווח לפני שייחשב כתשלום.",
@@ -214,7 +270,7 @@
     "alreadyProcessed": "דיווח התשלום כבר טופל",
     "alreadyProcessedDescription": "הדיווח כבר טופל. ניתן לפנות לבית העסק לקבלת מידע נוסף.",
     "reportedAmount": "הסכום שדווח",
-    "unavailable": "הקישור אינו זמין. ייתכן שפג תוקפו או שאינו פעיל יותר. ניתן לפנות לבית העסק לקבלת קישור חדש.",
+    "unavailable": "הקישור אינו זמין. ייתכן שפג תוקף ההתחברות או שאינו פעיל יותר. ניתן לפנות לבית העסק לקבלת קישור חדש.",
     "submitError": "שליחת הדיווח נכשלה. נסו שוב.",
     "invalidAmount": "יש להזין סכום גדול מאפס.",
     "amountExceedsRemaining": "הסכום המדווח לא יכול להיות גבוה מהיתרה הנוכחית.",
@@ -256,7 +312,7 @@
     "sourceConfirmationLink": "קישור אישור תשלום",
     "confirmReject": "לדחות את דיווח התשלום? הוא לא ייחשב בסכום ששולם.",
     "verifyError": "אימות התשלום נכשל. בדקו את יתרת החשבונית הנוכחית ונסו שוב.",
-    "rejectError": "דחיית התשלום נכשלה. נסו שוב.",
+    "rejectError": "דחיית התשלום נכשלה. נסה שוב.",
     "status": {
       "Active": "קישור פעיל",
       "Submitted": "נשלח לבדיקה",
@@ -282,18 +338,18 @@
     "service": "שירות",
     "client": "לקוח",
     "time": "שעה",
-     "activity": {
-        "time": "זמן",
-        "action": "פעולה",
-        "entity": "ישות",
-        "performedBy": "בוצע על ידי",
-        "appointmentCreated": "תור נוצר",
-        "clientCreated": "לקוח נוצר",
-        "staffCreated": "איש צוות נוסף",
-        "staffDeleted": "איש צוות נמחק"
-      }
+    "activity": {
+      "time": "זמן",
+      "action": "פעולה",
+      "entity": "ישות",
+      "performedBy": "בוצע על ידי",
+      "appointmentCreated": "תור נוצר",
+      "clientCreated": "לקוח נוצר",
+      "staffCreated": "איש צוות נוסף",
+      "staffDeleted": "איש צוות נמחק"
+    }
   },
-  "waitingCount": "ממתין בתור:",
+  "waitingCount": "ממתינים בתור:",
   "nextPatient": "המטופל הבא",
   "currentPatient": "המטופל הנוכחי",
   "none": "אין",
@@ -303,6 +359,44 @@
     "deleteLogo": "מחק לוגו",
     "uploadLogo": "העלה לוגו חדש",
     "noLogo": "אין לוגו",
+    "rivhit": {
+      "title": "אינטגרציות — רבחית",
+      "description": "אינטגרציית הנהלת חשבונות אופציונלית. חשבוניות ותשלומים ב-CLIENTA אינם משתנים.",
+      "enabled": "אינטגרציית רבחית",
+      "statusLabel": "סטטוס",
+      "status": {
+        "notConfigured": "לא הוגדר",
+        "disabled": "מושבת",
+        "notTested": "לא נבדק",
+        "connected": "מחובר",
+        "failed": "החיבור נכשל"
+      },
+      "lastTest": "בדיקה אחרונה: {{date}}",
+      "apiToken": "טוקן API",
+      "tokenSavedPlaceholder": "הטוקן נשמר — הזן טוקן חדש כדי להחליף",
+      "tokenPlaceholder": "הדבק את טוקן ה-API של רבחית",
+      "saveToken": "שמור טוקן",
+      "testConnection": "בדיקת חיבור",
+      "testing": "בודק...",
+      "accounting": "הנהלת חשבונות",
+      "documents": "מסמכים",
+      "payments": "תשלומים",
+      "comingSoon": "בקרוב",
+      "disconnect": "נתק",
+      "disconnectConfirm": "להסיר את הטוקן השמור של רבחית ולכבות את האינטגרציה? רשומות רבחית קיימות יישמרו.",
+      "saved": "נשמר.",
+      "testOk": "רבחית אישרה את החיבור.",
+      "loadError": "לא ניתן לטעון את אינטגרציית רבחית.",
+      "saveError": "לא ניתן לשמור את הגדרות רבחית.",
+      "errors": {
+        "InvalidCredentials": "רבחית דחתה את טוקן ה-API.",
+        "ProviderUnavailable": "רבחית אינה זמינה. נסה שוב מאוחר יותר.",
+        "Timeout": "רבחית לא הגיבה בזמן.",
+        "InvalidResponse": "רבחית החזירה תגובה לא צפויה.",
+        "CredentialUnreadable": "לא ניתן לקרוא את הטוקן השמור. הזן אותו מחדש.",
+        "generic": "בדיקת החיבור נכשלה."
+      }
+    },
     "autoDeleteTitle": "מחיקה אוטומטית של לקוחות לא מתועדים",
     "enableAutoDelete": "אפשר מחיקה אוטומטית",
     "autoDeleteOff": "מחיקה אוטומטית כבויה",
@@ -380,6 +474,8 @@
     "currentPatientHint": "נא להתקדם כאשר שמך ומספר התור מופיעים.",
     "currentPatient": "מטופל נוכחי",
     "nextPatient": "הבא בתור",
+    "nextQueueAndRoom": "מספר תור: {{queueNumber}} | חדר: {{roomNumber}}",
+    "nextQueueNumber": "מספר תור: {{queueNumber}}",
     "upNext": "מיד אחריו",
     "waiting": "ממתינים",
     "waitingCount": "ממתינים",
@@ -451,6 +547,10 @@
     "imageXOfY": "תמונה {{current}} מתוך {{total}}",
     "viewImage": "הצג תמונה",
     "viewImages": "הצג תמונות",
+    "downloadStudy": "הורד בדיקה",
+    "studyDownloadPreparing": "מכין הורדה...",
+    "studyDownloadUnavailable": "הבדיקה המלאה אינה זמינה כרגע להורדה.",
+    "studyDownloadFailed": "לא ניתן להוריד את הבדיקה. נסה שוב.",
     "availableForViewing": "זמין לצפייה",
     "notAvailableForViewing": "עדיין לא זמין לצפייה",
     "viewable": "זמין לצפייה",
@@ -513,21 +613,19 @@
     "perMonth": "לחודש",
     "yearly": "או 460€ לשנה (חסוך חודשיים)",
     "upgrade": "שדרג",
-    "redirect": "מעביר לתשלום...",    
+    "redirect": "מעביר לתשלום...",
     "footer": "ניתן לבטל בכל עת",
-      "features": {
+    "features": {
       "clients": "✔ לקוחות ללא הגבלה",
       "appointments": "✔ ניהול תורים",
       "staff": "✔ ניהול עובדים",
       "full": "✔ תיעוד רפואי וטפסים דיגיטליים"
     }
   },
-
   "validation": {
-  "required": "שדה חובה",
-  "dateTimeRequired": "תאריך ושעה נדרשים"
+    "required": "שדה חובה",
+    "dateTimeRequired": "תאריך ושעה נדרשים"
   },
-  
   "consent": {
     "title": "מסמך הסכמה",
     "clientSignature": "חתימת לקוח",
@@ -585,7 +683,7 @@
     "title": "התראות",
     "empty": "אין התראות",
     "markAllRead": "סמן הכל כנקרא",
-    "viewAll": "צפה בכל ההתראות",
+    "viewAll": "צפה בכל התראות",
     "delete": "מחק התראה",
     "justNow": "זה עתה",
     "minutesAgo": "לפני {{count}} דקות",
@@ -605,7 +703,7 @@
       "viewDescription": "נהל את כל הלקוחות בעסק שלך. לשאלות מנהליות, פנה למנהל שלך.",
       "emptyState": {
         "title": "אין לקוחות עדיין",
-        "description": "התחל ביצירת הלקוח הראשון שלך. שאל את המנהל שלך אם אתה זקוק לעזרה."  
+        "description": "התחל ביצירת הלקוח הראשון שלך. שאל את המנהל שלך אם אתה זקוק לעזרה."
       }
     },
     "appointments": {
@@ -692,7 +790,7 @@
     "createTitle": "צור פגישה",
     "editTitle": "ערוך פגישה",
     "update": "עדכן פגישה",
-    "past":"הסתיים",
+    "past": "הסתיים",
     "searchPlaceholder": "חפש פגישות...",
     "filters": {
       "all": "כל הסטטוסים"
@@ -716,7 +814,7 @@
       "waiting": "ממתין",
       "noshow": "לא הגיע",
       "arrived": "הגיע",
-      "start": "התחל טיפול", 
+      "start": "התחל טיפול",
       "complete": "הושלם",
       "urgent": "דחוף"
     },
@@ -734,6 +832,8 @@
       "date": "תאריך",
       "time": "שעה",
       "staff": "חבר צוות מטפל",
+      "roomNumber": "מספר חדר",
+      "roomUnassigned": "ללא חדר",
       "staffPlaceholder": "למשל, יוחנן סמית'",
       "duration": "משך",
       "description": "תיאור",
@@ -741,13 +841,13 @@
       "descriptionPlaceholder": "הוסף הערות נוספות..."
     },
     "status": {
-        "scheduled": "מתוזמן",
-        "completed": "הושלם",
-        "cancelled": "בוטל",
-        "noshow": "לא הגיע",
-        "inprogress": "בטיפול",
-        "waiting": "ממתין"
-      },
+      "scheduled": "מתוזמן",
+      "completed": "הושלם",
+      "cancelled": "בוטל",
+      "noshow": "לא הגיע",
+      "inprogress": "בטיפול",
+      "waiting": "ממתין"
+    },
     "services": {
       "consulting": "ייעוץ",
       "projectManagement": "ניהול פרויקטים",
@@ -756,7 +856,7 @@
       "support": "תמיכה",
       "training": "הכשרה"
     },
-  "duration": "{{minutes}} דקות",
+    "duration": "{{minutes}} דקות",
     "validation": {
       "requiredFields": "אנא מלא את כל השדות הנדרשים"
     },
@@ -1066,7 +1166,7 @@
         "phone": "מספר טלפון",
         "phonePlaceholder": "הזן את מספר הטלפון של הלקוח",
         "dateOfBirth": "תאריך לידה",
-        "address": "כתובת", 
+        "address": "כתובת",
         "addressPlaceholder": "הזן את כתובת הלקוח",
         "notePlaceholder": "הוסף הערה פנימית",
         "checkingIdNumber": "בודק אם מספר הזהות כבר קיים...",
@@ -1075,8 +1175,8 @@
         "duplicateIdNumberClientName": "שם הלקוח: {{clientName}}",
         "duplicateIdNumberInline": "מספר תעודת זהות זה כבר קיים במערכת.",
         "submit": "הוסף לקוח",
-        "update": "עדכן לקוח"
-        ,"internalNote": "הערה פנימית",
+        "update": "עדכן לקוח",
+        "internalNote": "הערה פנימית",
         "internalNotePlaceholder": "הערות או תובנות על הלקוח הזה (לא יראו ללקוח)"
       },
       "createSuccess": "הלקוח נוצר בהצלחה",
@@ -1218,6 +1318,45 @@
       "filter": "סנן",
       "download": "PDF",
       "viewInvoice": "צפייה בחשבונית",
+      "accounting": {
+        "title": "הנהלת חשבונות / רבחית",
+        "status": {
+          "NotIssued": "לא הונפק",
+          "Issuing": "מנפיק",
+          "Issued": "הונפק",
+          "Rejected": "נדחה",
+          "ReconciliationRequired": "נדרש בירור"
+        },
+        "issueAction": "הנפק באמצעות רבחית",
+        "confirmTitle": "להנפיק חשבונית מס רשמית ברבחית?",
+        "confirmWarning": "פעולה זו תיצור מסמך חשבונאי רשמי ברבחית. היא לא תשנה את חשבונית CLIENTA או את רישומי התשלומים.",
+        "documentType": "סוג מסמך",
+        "taxInvoice": "חשבונית מס",
+        "documentNumber": "מספר מסמך ברבחית",
+        "issuedAt": "הונפק בתאריך",
+        "amount": "סכום ברבחית",
+        "issuing": "מנפיק...",
+        "confirmIssue": "אישור והנפקה",
+        "issued": "חשבונית המס הופקה בהצלחה בריווחית.",
+        "reconciliationWarning": "תוצאת הבקשה אינה ודאית. אין להנפיק שוב עד לבירור.",
+        "rejected": "רבחית דחתה את הבקשה. בדוק את החשבונית לפני פנייה לתמיכה.",
+        "errors": {
+          "invalidIdentifier": "לא ניתן להפיק חשבונית מס: מספר ת.ז./ח.פ. של הלקוח אינו תקין. יש לעדכן את פרטי הלקוח ולנסות שוב.",
+          "missingIdentifier": "לא ניתן להפיק חשבונית מס: חסר מספר ת.ז./ח.פ. ללקוח.",
+          "reconciliationRequired": "נדרש בירור מול ריווחית. אין להפיק את המסמך מחדש עד לסיום הבירור.",
+          "CurrencyUnsupported": "כרגע ניתן להנפיק ברבחית חשבוניות בשקלים בלבד.",
+          "CustomerIdentifierRequired": "נדרש מספר חברה תקין או מיפוי לקוח קיים ברבחית.",
+          "CustomerIdentifierInvalid": "מספר החברה/עוסק של הלקוח אינו תקין עבור רבחית. בדוק ותקן את ה-ח.פ. בכרטיס הלקוח.",
+          "VatMismatch": "שיעור המע\"מ בחשבונית אינו תואם לשיעור המע\"מ הנוכחי ברבחית.",
+          "InvoiceStateUnsupported": "ניתן להנפיק ברבחית רק חשבוניות ממתינות.",
+          "InvoiceDataInvalid": "החשבונית אינה עומדת בכללי ההנפקה הנוכחיים של רבחית.",
+          "ReconciliationRequired": "נדרש בירור מול ריווחית. אין להפיק את המסמך מחדש עד לסיום הבירור.",
+          "deleteAccountingBlocked": "לא ניתן למחוק את החשבונית מכיוון שקיים עבורה מסמך חשבונאי בריווחית.",
+          "deleteReconciliationBlocked": "לא ניתן למחוק את החשבונית כל עוד נדרש בירור מול ריווחית לגבי המסמך החשבונאי.",
+          "deleteFailed": "מחיקת החשבונית נכשלה. יש לנסות שוב.",
+          "generic": "לא ניתן להנפיק את חשבונית המס ברבחית."
+        }
+      },
       "table": {
         "number": "חשבונית #",
         "client": "לקוח",
@@ -1335,11 +1474,11 @@
         "quantity": "כמות",
         "unitPrice": "מחיר יחידה",
         "discount": "הנחה",
-        "vat": "מע״מ",
-        "total": "סה״כ",
+        "vat": "מע\"מ",
+        "total": "סה\"כ",
         "financialSummary": "סיכום פיננסי",
         "subtotal": "סכום ביניים",
-        "grandTotal": "סה״כ לתשלום",
+        "grandTotal": "סה\"כ לתשלום",
         "notes": "הערות",
         "notesPlaceholder": "הוסף הערות",
         "termsAndConditions": "תנאי הצעת מחיר",
@@ -1383,7 +1522,7 @@
       "addNew": "הוסף חבר צוות",
       "owner": "בעלים",
       "ownerProtected": "לא ניתן להשבית, למחוק או לשנות את סוג המשתמש של בעל העסק.",
-       "permissionsLabel": "הרשאות",
+      "permissionsLabel": "הרשאות",
       "searchPlaceholder": "חפש לפי שם, ת.ז או דוא\"ל...",
       "noResults": "לא נמצאו חברי צוות",
       "table": {
@@ -1433,7 +1572,7 @@
         "noDepartments": "אין עדיין מחלקות זמינות",
         "menuVisibility": "נראות בתפריט",
         "menuVisibilityHint": "בחר אילו פריטי תפריט נראים",
-         "password": "סיסמה",
+        "password": "סיסמה",
         "passwordPlaceholder": "הזן סיסמה לחבר הצוות הזה"
       },
       "permissions": {
@@ -1493,39 +1632,32 @@
     "name": "שם",
     "dosage": "מינון"
   },
-    "features": {
+  "features": {
     "title": "הגדרות תכונות",
     "subtitle": "הפעל או בטל תכונות מערכת",
     "activeModules": "מודולים פעילים",
     "description": "שינויים יכנסו לתוקף מיד לכל המשתמשים",
-
     "reports": "דוחות",
     "reportsDesc": "הצג את עמוד הדוחות בתפריט הניווט",
-
     "invoices": "חשבוניות",
     "invoicesDesc": "הצג את עמוד החשבוניות בתפריט הניווט",
-
     "quotes": "הצעות מחיר",
     "quotesDesc": "הצג את עמוד הצעות המחיר בתפריט הניווט",
-
     "prescriptions": "מרשמים",
     "prescriptionsDesc": "הצג את אפשרות כתיבת מרשם בפרופיל הלקוח",
-
     "drugs": "מאגר תרופות",
     "drugsDesc": "הצג את מאגר התרופות במערכת",
-
     "beforeAfterPhotos": "תמונות לפני/אחרי",
     "beforeAfterPhotosDesc": "הצג העלאת תמונות לפני ואחרי בפרופיל הלקוח",
     "visitSummaries": "סיכומי ביקור",
     "visitSummariesDesc": "הצג את אפשרות סיכומי ביקור בפרופיל הלקוח"
   },
-
-    "services": {
+  "services": {
     "title": "שירותים עסקיים",
     "add": "הוסף",
     "serviceName": "שם השירות",
     "department": "מחלקה",
-      "imagingType": "סוג דימות",
+    "imagingType": "סוג דימות",
     "departmentUnassigned": "ללא מחלקה",
     "noDepartments": "אין מחלקות פעילות זמינות",
     "actions": "פעולות",
@@ -1533,12 +1665,12 @@
     "name": "שם",
     "empty": "לא נמצאו שירותים",
     "confirmDelete": "למחוק את השירות?",
-      "imagingOptions": {
-        "none": "ללא דימות",
-        "us": "US - אולטרסאונד",
-        "dx": "DX - רנטגן דיגיטלי",
-        "cr": "CR - רנטגן ממוחשב"
-      },
+    "imagingOptions": {
+      "none": "ללא דימות",
+      "us": "US - אולטרסאונד",
+      "dx": "DX - רנטגן דיגיטלי",
+      "cr": "CR - רנטגן ממוחשב"
+    },
     "validation": {
       "nameRequired": "יש להזין שם שירות.",
       "departmentRequired": "יש לבחור מחלקה לשירות.",
@@ -1559,7 +1691,11 @@
     "emptyTitle": "אין כרגע בדיקות הממתינות לפענוח",
     "emptyDescription": "בדיקות שיוקצו אליך על ידי המרפאה יופיעו כאן.",
     "tryAgain": "נסה שוב",
-    "status": { "pending": "ממתין לפענוח", "inProgress": "בתהליך פענוח", "completed": "הושלם" },
+    "status": {
+      "pending": "ממתין לפענוח",
+      "inProgress": "בתהליך פענוח",
+      "completed": "הושלם"
+    },
     "statusLabel": "סטטוס פענוח",
     "completedAt": "הושלם בתאריך",
     "received": "התקבל",
@@ -1603,7 +1739,7 @@
     "profileSubtitle": "ניהול פרטי הזיהוי והחותמת שיוכלו לשמש במסמכים עתידיים.",
     "personalDetails": "פרטים אישיים",
     "fullName": "שם מלא",
-    "email": "דוא״ל",
+    "email": "דוא\"ל",
     "phone": "טלפון",
     "licenseNumber": "מספר רישיון / מספר מקצועי",
     "saveChanges": "שמירת שינויים",
@@ -1624,10 +1760,88 @@
     "stampRemoveError": "הסרת החותמת נכשלה.",
     "invalidStamp": "יש לבחור קובץ PNG או JPG.",
     "stampTooLarge": "גודל החותמת לא יכול לעלות על 2MB."
-  }
-,
+  },
   "businessShell": {
     "appName": "CLIENTA Business",
+    "accounting": {
+      "title": "הנהלת חשבונות",
+      "description": "הפקת מסמכים חשבונאיים רשמיים באמצעות ריווחית",
+      "documentNumber": "מספר מסמך",
+      "issuedAt": "תאריך הפקה",
+      "receiptNumber": "מספר קבלה",
+      "receiptAmount": "סכום קבלה",
+      "reconciliationTitle": "נדרש בירור מול ריווחית",
+      "reconciliationWarning": "נדרש בירור מול ריווחית. אין להפיק את המסמך מחדש עד לסיום הבירור.",
+      "reconciliationRequired": "נדרש בירור מול ריווחית. אין להפיק את המסמך מחדש עד לסיום הבירור.",
+      "actionFailed": "הפעולה מול ריווחית נכשלה. יש לבדוק את מצב המסמך ולנסות שוב במידת הצורך.",
+      "reconciliationCheck": "בדיקת סטטוס מול ריווחית",
+      "reconciliationChecking": "בודק...",
+      "reconciliationResolved": "הסטטוס נבדק והמסמך אושר וקושר.",
+      "reconciliationRejected": "ריווחית דחתה או שלא נמצא מסמך. ההזמנה שוחררה וניתן להנפיק מחדש.",
+      "reconciliationStillPending": "הסטטוס עדיין אינו ודאי. נדרש בירור נוסף.",
+      "adminOnly": "פעולה זו זמינה למנהל המערכת בלבד",
+      "taxInvoice": {
+        "issue": "הפק חשבונית מס",
+        "issued": "חשבונית המס הופקה בהצלחה בריווחית."
+      },
+      "receipts": {
+        "issue": "הפק קבלה",
+        "title": "הפקת קבלה",
+        "description": "הפק קבלה רשמית בריווחית עבור תשלום לחשבונית",
+        "amount": "סכום לתשלום",
+        "paymentMethod": "אמצעי תשלום",
+        "remainingBefore": "יתרה לתשלום לפני הקבלה",
+        "partialSupported": "ניתן להפיק קבלה גם עבור תשלום חלקי",
+        "review": "בדיקת פרטים",
+        "confirmTitle": "אישור הפקת קבלה",
+        "confirmDescription": "בדוק את פרטי התשלום לפני הפקת הקבלה בריווחית.",
+        "confirmIssue": "אישור והפקת קבלה",
+        "issuing": "מפיק קבלה...",
+        "success": "הקבלה הופקה בהצלחה בריווחית.",
+        "error": "הפקת הקבלה נכשלה. לא בוצע ניסיון נוסף באופן אוטומטי.",
+        "amountUnavailable": "לא ניתן להפיק קבלה: אין יתרה זמינה לקבלה. יש לרענן את החשבונית ולבדוק את התשלומים.",
+        "invalidIdentifier": "לא ניתן להפיק מסמך חשבונאי: מספר ת.ז./ח.פ. של הלקוח אינו תקין. יש לעדכן את פרטי הלקוח ולנסות שוב.",
+        "missingIdentifier": "לא ניתן להפיק מסמך חשבונאי: חסר מספר ת.ז./ח.פ. ללקוח.",
+        "providerRejected": "ריווחית דחתה את בקשת הפקת הקבלה",
+        "reconciliationRequired": "נדרש בירור מול ריווחית. אין להפיק את המסמך מחדש עד לסיום הבירור.",
+        "customerIdentifierInvalid": "מספר החברה/עוסק של הלקוח אינו תקין עבור ריווחית. בדוק ותקן את ה-ח.פ. בכרטיס הלקוח.",
+        "paymentNotFound": "התשלום לא נמצא או אינו מאומת.",
+        "unsupportedPaymentMethod": "לא ניתן לייצג בבטחה את אמצעי התשלום הזה בריווחית כרגע. לא הופקה קבלה.",
+        "sourceLabel": "מקור התשלום",
+        "sourceNew": "תשלום חדש",
+        "sourceExisting": "תשלום קיים {{amount}} ({{date}})",
+        "noExistingPayments": "אין תשלומים מאומתים לחשבונית זו.",
+        "allPaymentsReceipted": "לכל התשלומים המאומתים כבר קיימת קבלה בריווחית.",
+        "receiptLabel": "קבלה",
+        "provider": "ריווחית"
+      },
+      "delivery": {
+        "label": "אופן מסירה בריווחית",
+        "none": "ללא שליחה",
+        "email": "שליחה בדוא\"ל"
+      },
+      "archive": {
+        "view": "צפייה ב-PDF רשמי",
+        "download": "הורדת PDF",
+        "notArchived": "המסמך טרם נשמר בארכיון",
+        "retry": "ארכוב / ניסיון חוזר לארכוב",
+        "archiving": "מאכסן...",
+        "success": "ה-PDF הרשמי נשמר בארכיון.",
+        "issueSucceededButSaveFailed": "המסמך החשבונאי הונפק בהצלחה בריווחית, אך שמירת ה-PDF הרשמי ב-CLIENTA נכשלה. ניתן לנסות שוב באמצעות „ארכוב / ניסיון חוזר לארכוב”.",
+        "delete": "מחיקה מהארכיון",
+        "deleting": "מוחק...",
+        "deleted": "הקובץ הוסר מהארכיון. ניתן לאכסן שוב.",
+        "errors": {
+          "DocumentNotIssued": "ניתן לאכסן רק מסמך שהונפק.",
+          "CopyUnavailable": "לא ניתן לאחזר את עותק ה-PDF מריווחית כרגע.",
+          "DownloadRejected": "הורדת ה-PDF נדחתה.",
+          "StorageFailed": "שמירת ה-PDF נכשלה.",
+          "IntegrationUnavailable": "חיבור ריווחית אינו זמין.",
+          "deleteFailed": "לא ניתן למחוק את הקובץ כרגע.",
+          "generic": "לא ניתן לאכסן את ה-PDF כרגע."
+        }
+      }
+    },
     "nav": {
       "dashboard": "לוח בקרה",
       "clients": "לקוחות / CRM",
@@ -1670,15 +1884,20 @@
       "title": "תשלומים",
       "subtitle": "צפייה ביתרות החשבוניות, רישום תשלומים וניהול אישורי תשלום.",
       "invoiceAmount": "סכום החשבונית",
+      "project": "פרויקט",
+      "projectEndDate": "תאריך סיום הפרויקט",
+      "projectEndDateOverdue": "תאריך סיום הפרויקט עבר",
+      "projectEndDateWithin30Days": "הפרויקט מסתיים בתוך 30 ימים",
+      "projectEndDateWithin60Days": "הפרויקט מסתיים בתוך 60 ימים",
       "openInvoice": "צפייה בחשבונית",
-      "loadError": "לא ניתן לטעון את התשלומים. נסו שוב.",
+      "loadError": "לא ניתן לטעון את התשלומים. נסה שוב.",
       "empty": "אין עדיין חשבוניות זמינות."
     },
     "dashboard": {
       "title": "לוח בקרה עסקי",
       "subtitle": "סקירה של הפרויקטים, החיוב והגבייה שלך.",
       "notAvailable": "לא זמין",
-      "error": "לא הצלחנו לטעון את לוח הבקרה. נסו שוב.",
+      "error": "לא הצלחנו לטעון את לוח הבקרה. נסה שוב.",
       "unavailable": "לוח הבקרה הפיננסי אינו זמין עבור החשבון שלך.",
       "retry": "נסו שוב",
       "kpi": {
@@ -1714,6 +1933,10 @@
         "noContact": "לא הוגדר איש קשר לחיוב עבור הלקוח.",
         "openPlan": "פתיחת תוכנית חיוב"
       },
+      "projectEndings": {
+        "title": "פרויקטים שמסתיימים בקרוב",
+        "empty": "אין פרויקטים פעילים או מושהים שמועד סיומם נמצא בטווח האזהרה."
+      },
       "quick": {
         "title": "פעולות מהירות",
         "projects": "פרויקטים",
@@ -1729,5 +1952,92 @@
     },
     "openMenu": "פתיחת תפריט",
     "closeMenu": "סגירת תפריט"
+  },
+  "business": {
+    "accounting": {
+      "title": "הנהלת חשבונות",
+      "summary": {
+        "Issued": "הופק",
+        "ReconciliationRequired": "נדרש בירור",
+        "Rejected": "נדחה",
+        "Issuing": "מנפיק",
+        "NotIssued": "הפק מסמך"
+      },
+      "description": "הפקת מסמכים חשבונאיים רשמיים באמצעות ריווחית",
+      "documentNumber": "מספר מסמך",
+      "issuedAt": "תאריך הפקה",
+      "receiptNumber": "מספר קבלה",
+      "receiptAmount": "סכום קבלה",
+      "reconciliationTitle": "נדרש בירור מול ריווחית",
+      "reconciliationWarning": "נדרש בירור מול ריווחית. אין להפיק את המסמך מחדש עד לסיום הבירור.",
+      "reconciliationRequired": "נדרש בירור מול ריווחית. אין להפיק את המסמך מחדש עד לסיום הבירור.",
+      "actionFailed": "הפעולה מול ריווחית נכשלה. יש לבדוק את מצב המסמך ולנסות שוב במידת הצורך.",
+      "reconciliationCheck": "בדיקת סטטוס מול ריווחית",
+      "reconciliationChecking": "בודק...",
+      "reconciliationResolved": "הסטטוס נבדק והמסמך אושר וקושר.",
+      "reconciliationRejected": "ריווחית דחתה או שלא נמצא מסמך. ההזמנה שוחררה וניתן להנפיק מחדש.",
+      "reconciliationStillPending": "הסטטוס עדיין אינו ודאי. נדרש בירור נוסף.",
+      "adminOnly": "פעולה זו זמינה למנהל המערכת בלבד",
+      "taxInvoice": {
+        "issue": "הפק חשבונית מס",
+        "issued": "חשבונית המס הופקה בהצלחה בריווחית."
+      },
+      "receipts": {
+        "issue": "הפק קבלה",
+        "title": "הפקת קבלה",
+        "description": "הפק קבלה רשמית בריווחית עבור תשלום לחשבונית",
+        "amount": "סכום לתשלום",
+        "paymentMethod": "אמצעי תשלום",
+        "remainingBefore": "יתרה לתשלום לפני הקבלה",
+        "partialSupported": "ניתן להפיק קבלה גם עבור תשלום חלקי",
+        "review": "בדיקת פרטים",
+        "confirmTitle": "אישור הפקת קבלה",
+        "confirmDescription": "בדוק את פרטי התשלום לפני הפקת הקבלה בריווחית.",
+        "confirmIssue": "אישור והפקת קבלה",
+        "issuing": "מפיק קבלה...",
+        "success": "הקבלה הופקה בהצלחה בריווחית.",
+        "error": "הפקת הקבלה נכשלה. לא בוצע ניסיון נוסף באופן אוטומטי.",
+        "amountUnavailable": "לא ניתן להפיק קבלה: אין יתרה זמינה לקבלה. יש לרענן את החשבונית ולבדוק את התשלומים.",
+        "invalidIdentifier": "לא ניתן להפיק מסמך חשבונאי: מספר ת.ז./ח.פ. של הלקוח אינו תקין. יש לעדכן את פרטי הלקוח ולנסות שוב.",
+        "missingIdentifier": "לא ניתן להפיק מסמך חשבונאי: חסר מספר ת.ז./ח.פ. ללקוח.",
+        "providerRejected": "ריווחית דחתה את בקשת הפקת הקבלה",
+        "reconciliationRequired": "נדרש בירור מול ריווחית. אין להפיק את המסמך מחדש עד לסיום הבירור.",
+        "customerIdentifierInvalid": "מספר החברה/עוסק של הלקוח אינו תקין עבור ריווחית. בדוק ותקן את ה-ח.פ. בכרטיס הלקוח.",
+        "paymentNotFound": "התשלום לא נמצא או אינו מאומת.",
+        "sourceLabel": "מקור התשלום",
+        "sourceNew": "תשלום חדש",
+        "sourceExisting": "תשלום קיים {{amount}} ({{date}})",
+        "noExistingPayments": "אין תשלומים מאומתים לחשבונית זו.",
+        "allPaymentsReceipted": "לכל התשלומים המאומתים כבר קיימת קבלה בריווחית.",
+        "receiptLabel": "קבלה",
+        "provider": "ריווחית"
+      },
+      "delivery": {
+        "label": "אופן מסירה בריווחית",
+        "none": "ללא שליחה",
+        "email": "שליחה בדוא\"ל"
+      },
+      "archive": {
+        "view": "צפייה ב-PDF רשמי",
+        "download": "הורדת PDF",
+        "notArchived": "המסמך טרם נשמר בארכיון",
+        "retry": "ארכוב / ניסיון חוזר לארכוב",
+        "archiving": "מאכסן...",
+        "success": "ה-PDF הרשמי נשמר בארכיון.",
+        "issueSucceededButSaveFailed": "המסמך החשבונאי הונפק בהצלחה בריווחית, אך שמירת ה-PDF הרשמי ב-CLIENTA נכשלה. ניתן לנסות שוב באמצעות „ארכוב / ניסיון חוזר לארכוב”.",
+        "delete": "מחיקה מהארכיון",
+        "deleting": "מוחק...",
+        "deleted": "הקובץ הוסר מהארכיון. ניתן לאכסן שוב.",
+        "errors": {
+          "DocumentNotIssued": "ניתן לאכסן רק מסמך שהונפק.",
+          "CopyUnavailable": "לא ניתן לאחזר את עותק ה-PDF מריווחית כרגע.",
+          "DownloadRejected": "הורדת ה-PDF נדחתה.",
+          "StorageFailed": "שמירת ה-PDF נכשלה.",
+          "IntegrationUnavailable": "חיבור ריווחית אינו זמין.",
+          "deleteFailed": "לא ניתן למחוק את הקובץ כרגע.",
+          "generic": "לא ניתן לאכסן את ה-PDF כרגע."
+        }
+      }
+    }
   }
 }

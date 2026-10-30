@@ -30,6 +30,7 @@ export interface Appointment {
   staffName?: string | null
   status: string
   queueNumber?: number | null
+  roomNumber?: string | null
   isDocumented: boolean
   hasSignedConsent?: boolean
   imagingOrderId?: string | null
@@ -65,6 +66,7 @@ export const appointmentsService = {
     serviceId?: string | null
     staffId?: string | null
     referringDoctorName?: string | null
+    roomNumber?: string | null
   }): Promise<Appointment> {
     return await post<Appointment>('/api/appointments', payload)
   },
@@ -80,6 +82,7 @@ export const appointmentsService = {
       serviceId?: string | null
       isDocumented?: boolean
       queueNumber?: number | null
+      roomNumber?: string | null
     }>
   ): Promise<void> {
     return await put<void>(`/api/appointments/${id}`, payload)

@@ -16,6 +16,7 @@ import type {
 let cornerstoneCoreModule: any = null
 let cornerstoneLoaderModule: any = null
 let cornerstoneToolsModule: any = null
+let sideMarkerToolClasses: any[] = []
 let cornerstoneReady = false
 let cornerstoneToolsInitialized = false
 let cornerstoneToolsRegistered = false
@@ -31,7 +32,123 @@ const optionalToolNames = [
   'ArrowAnnotateTool',
 ] as const
 
-const persistedToolNames = new Set(optionalToolNames.map((name) => name.replace('Tool', '')))
+const sideMarkerLabels = ['L', 'R', 'AP', 'PA', 'LAT'] as const
+type SideMarkerLabel = typeof sideMarkerLabels[number]
+const sideMarkerToolNames = sideMarkerLabels.map((label) => `${label}Marker`)
+const persistedToolNames = new Set([...optionalToolNames.map((name) => name.replace('Tool', '')), ...sideMarkerToolNames])
+const isSideMarkerToolName = (toolName: string | undefined): boolean => !!toolName && sideMarkerToolNames.includes(toolName)
+
+const createSideMarkerTools = (core: any, tools: any) => {
+  return sideMarkerLabels.map((label) => {
+    const toolName = `${label}Marker`
+    return class SideMarkerTool extends tools.AnnotationTool {
+      static toolName = toolName
+
+      constructor(props: any = {}, defaults: any = {}) {
+        super(props, { supportedInteractionTypes: ['Mouse', 'Touch'], ...defaults })
+        this._dragCallback = (event: any) => {
+          if (!this.editData) return
+          const annotation = this.editData.annotation
+          const delta = event.detail.deltaPoints.world
+          const point = annotation.data.handles.points[0]
+          point[0] += delta[0]
+          point[1] += delta[1]
+          point[2] += delta[2]
+          annotation.invalidated = true
+          tools.annotation.state.triggerAnnotationModified(annotation, event.detail.element, tools.Enums.ChangeTypes.HandlesUpdated)
+          core.getEnabledElement(event.detail.element)?.viewport?.render?.()
+        }
+        this._endCallback = (event: any) => {
+          if (!this.editData) return
+          const annotation = this.editData.annotation
+          const element = event.detail.element
+          annotation.highlighted = false
+          annotation.data.handles.activeHandleIndex = null
+          this._deactivateModify(element)
+          tools.annotation.state.triggerAnnotationModified(annotation, element, tools.Enums.ChangeTypes.HandlesUpdated)
+          this.editData = null
+          core.getEnabledElement(element)?.viewport?.render?.()
+        }
+      }
+
+      addNewAnnotation(event: any) {
+        const { element, currentPoints } = event.detail
+        const enabledElement = core.getEnabledElement(element)
+        if (!enabledElement?.viewport) return null
+        const viewport = enabledElement.viewport
+        const annotation = {
+          annotationUID: crypto.randomUUID(),
+          metadata: {
+            toolName,
+            FrameOfReferenceUID: viewport.getFrameOfReferenceUID?.(),
+            referencedImageId: viewport.getCurrentImageId?.(),
+            viewPlaneNormal: viewport.getCamera?.().viewPlaneNormal,
+            viewUp: viewport.getCamera?.().viewUp,
+          },
+          data: { label, handles: { points: [[...currentPoints.world]], activeHandleIndex: null } },
+          highlighted: false,
+          isLocked: false,
+          isVisible: true,
+          invalidated: true,
+          isSelected: false,
+        }
+        tools.annotation.state.addAnnotation(annotation, element)
+        tools.annotation.state.triggerAnnotationCompleted(annotation)
+        viewport.render?.()
+        event.preventDefault?.()
+        return annotation
+      }
+
+      isPointNearTool(element: HTMLDivElement, annotation: any, canvasPoint: number[], proximity: number) {
+        const viewport = core.getEnabledElement(element)?.viewport
+        const anchor = annotation.data?.handles?.points?.[0]
+        if (!viewport || !anchor) return false
+        const [x, y] = viewport.worldToCanvas(anchor)
+        return Math.hypot(x - canvasPoint[0], y - canvasPoint[1]) <= Math.max(proximity, 18)
+      }
+
+      toolSelectedCallback(event: any, annotation: any) {
+        const element = event.detail.element
+        annotation.highlighted = true
+        this.editData = { annotation, viewportIdsToRender: [core.getEnabledElement(element)?.viewportId].filter(Boolean) }
+        this._activateModify(element)
+        event.preventDefault?.()
+      }
+
+      handleSelectedCallback(event: any, annotation: any) {
+        this.toolSelectedCallback(event, annotation)
+      }
+
+      cancel(element: HTMLDivElement) {
+        if (!this.editData) return
+        this._deactivateModify(element)
+        const annotationUid = this.editData.annotation.annotationUID
+        this.editData = null
+        return annotationUid
+      }
+
+      renderAnnotation(enabledElement: any, svgDrawingHelper: any) {
+        const viewport = enabledElement.viewport
+        const annotations = tools.annotation.state.getAnnotations(toolName, viewport.element) ?? []
+        annotations.forEach((annotation: any) => {
+          const anchor = annotation.data?.handles?.points?.[0]
+          if (!anchor) return
+          tools.drawing.drawTextBox(svgDrawingHelper, annotation.annotationUID, 'side-marker', [annotation.data.label || label], viewport.worldToCanvas(anchor), {
+            padding: 5,
+            centerX: true,
+            centerY: true,
+            fontSize: '20px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#fef08a',
+            background: 'rgba(15, 23, 42, 0.9)',
+            textBoxBorderRadius: 4,
+          })
+        })
+        return annotations.length > 0
+      }
+    }
+  })
+}
 
 const toDatabaseFrameNumber = (frameIndex: number): number => Math.max(1, frameIndex + 1)
 
@@ -138,9 +255,10 @@ const ensureCornerstoneReady = () => {
       cornerstoneToolsModule.StackScrollTool,
       ...optionalToolNames.map((name) => cornerstoneToolsModule[name]).filter(Boolean),
     ]
+    sideMarkerToolClasses = createSideMarkerTools(coreModule, cornerstoneToolsModule)
 
     if (!cornerstoneToolsRegistered) {
-      toolClasses.forEach((toolClass) => cornerstoneToolsModule.addTool(toolClass))
+      ;[...toolClasses, ...sideMarkerToolClasses].forEach((toolClass) => cornerstoneToolsModule.addTool(toolClass))
       cornerstoneToolsRegistered = true
     }
 
@@ -172,6 +290,9 @@ interface DicomViewerProps {
   instances: ImagingInstanceDetail[]
   loadInstanceFile?: (instanceId: string) => Promise<Blob>
   loadInstanceAnnotations?: (instanceId: string, frameNumber: number) => Promise<ImagingAnnotation[]>
+  createMarkerAnnotation?: (request: CreateImagingAnnotationRequest) => Promise<ImagingAnnotation>
+  updateMarkerAnnotation?: (annotationId: string, request: UpdateImagingAnnotationRequest) => Promise<ImagingAnnotation>
+  deleteMarkerAnnotation?: (annotationId: string) => Promise<void>
   readOnly?: boolean
   canViewAnnotations?: boolean
   allowLocalAnnotations?: boolean
@@ -194,6 +315,9 @@ const DicomViewer = ({
   instances,
   loadInstanceFile,
   loadInstanceAnnotations,
+  createMarkerAnnotation,
+  updateMarkerAnnotation,
+  deleteMarkerAnnotation,
   readOnly = false,
   canViewAnnotations = false,
   allowLocalAnnotations = false,
@@ -266,6 +390,7 @@ const DicomViewer = ({
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isAnnotationsExpanded, setIsAnnotationsExpanded] = useState(true)
   const [activeTool, setActiveTool] = useState('WindowLevel')
+  const [activeSideMarker, setActiveSideMarker] = useState<'L' | 'R' | 'AP' | 'PA' | 'LAT' | null>(null)
   const [cineFps, setCineFps] = useState(15)
   const [cinePlaying, setCinePlaying] = useState(false)
   const [layout, setLayout] = useState<'1x1' | '1x2' | '2x2'>('1x1')
@@ -479,8 +604,14 @@ const DicomViewer = ({
       console.log('[DicomViewer] D rendering engine ready')
       const toolGroup = tools.ToolGroupManager.createToolGroup('dicom-viewer-tools')
       if (!toolGroup) throw new Error('Unable to create DICOM viewer ToolGroup')
-      const toolClasses = [tools.WindowLevelTool, tools.PanTool, tools.ZoomTool, tools.StackScrollTool, ...optionalToolNames.map((name) => tools[name]).filter(Boolean)]
+      const toolClasses = [tools.WindowLevelTool, tools.PanTool, tools.ZoomTool, tools.StackScrollTool, ...optionalToolNames.map((name) => tools[name]).filter(Boolean), ...sideMarkerToolClasses]
       toolClasses.forEach((toolClass: any) => toolGroup.addTool(toolClass.toolName))
+      console.log(
+        '[DicomViewer][Markers] ToolGroup registration complete',
+        {
+          markerTools: ['LMarker', 'RMarker', 'APMarker', 'PAMarker', 'LATMarker'],
+        }
+      )
       toolGroup.setToolActive(tools.WindowLevelTool.toolName, { bindings: [{ mouseButton: tools.Enums.MouseBindings.Primary }] })
       toolGroup.setToolActive(tools.PanTool.toolName, { bindings: [{ mouseButton: tools.Enums.MouseBindings.Auxiliary }] })
       toolGroup.setToolPassive(tools.StackScrollTool.toolName, { removeAllBindings: true })
@@ -488,6 +619,7 @@ const DicomViewer = ({
         .map((name) => tools[name])
         .filter(Boolean)
         .map((toolClass: any) => toolClass.toolName)
+      annotationToolNames.push(...sideMarkerToolNames)
       annotationToolNames.forEach((toolName: string) => toolGroup.setToolPassive(toolName, { removeAllBindings: true }))
       console.log('[DicomViewer][Tools] ANNOTATION MODES', Object.fromEntries(
         annotationToolNames.map((toolName: string) => [toolName, toolGroup.getToolOptions(toolName)?.mode])
@@ -790,9 +922,10 @@ const DicomViewer = ({
   }
 
   const persistCompletedAnnotation = async (annotation: any) => {
-    if (readOnly || disposedRef.current) return
-    const annotationUid = annotation?.annotationUID
     const toolName = annotation?.metadata?.toolName
+    const isMarker = isSideMarkerToolName(toolName)
+    if ((readOnly && !(isMarker && createMarkerAnnotation)) || disposedRef.current) return
+    const annotationUid = annotation?.annotationUID
     if (!annotationUid || !toolName || !persistedToolNames.has(toolName)) return
     if (persistedAnnotationUidsRef.current.has(annotationUid) || savingAnnotationUidsRef.current.has(annotationUid)) return
 
@@ -811,7 +944,9 @@ const DicomViewer = ({
       console.log('[DicomViewer][Annotations] LIVE LENGTH', getAnnotationDiagnostics(annotation))
       console.log('[DicomViewer][Annotations] COMPLETE', { annotationUid, toolName, imagingInstanceId: request.imagingInstanceId, frameNumber: request.frameNumber })
       console.log('[DicomViewer][Annotations] SAVE START', { annotationUid, toolName, imagingInstanceId: request.imagingInstanceId, frameNumber: request.frameNumber })
-      const createdAnnotation = await imagingService.createImagingAnnotation(request)
+      const createdAnnotation = isMarker && createMarkerAnnotation
+        ? await createMarkerAnnotation(request)
+        : await imagingService.createImagingAnnotation(request)
       if (disposedRef.current) return
       annotationIdsByUidRef.current.set(annotationUid, createdAnnotation.id)
       persistedAnnotationUidsRef.current.add(annotationUid)
@@ -825,7 +960,9 @@ const DicomViewer = ({
   }
 
   const updateAnnotation = async (annotation: any) => {
-    if (readOnly || disposedRef.current) return
+    const toolName = annotation?.metadata?.toolName
+    const isInterpreterMarker = readOnly && isSideMarkerToolName(toolName) && !!updateMarkerAnnotation
+    if ((readOnly && !isInterpreterMarker) || disposedRef.current) return
     const annotationUid = annotation?.annotationUID
     const annotationId = annotationUid ? annotationIdsByUidRef.current.get(annotationUid) : undefined
     if (!annotationUid || !annotationId || deletingAnnotationUidsRef.current.has(annotationUid)) return
@@ -844,7 +981,8 @@ const DicomViewer = ({
         label: typeof annotation.data?.label === 'string' ? annotation.data.label : null,
       }
       console.log('[DicomViewer][Annotations] UPDATE START', { annotationUid, annotationId })
-      await imagingService.updateImagingAnnotation(annotationId, request)
+      if (isInterpreterMarker && updateMarkerAnnotation) await updateMarkerAnnotation(annotationId, request)
+      else await imagingService.updateImagingAnnotation(annotationId, request)
       if (!disposedRef.current) lastObservedAnnotationSnapshotRef.current = createAnnotationHistorySnapshot()
       console.log('[DicomViewer][Annotations] UPDATE SUCCESS', { annotationUid, annotationId })
     } catch (error) {
@@ -862,7 +1000,8 @@ const DicomViewer = ({
 
   const scheduleAnnotationUpdate = (annotation: any) => {
     const annotationUid = annotation?.annotationUID
-    if (disposedRef.current || !annotationUid || restoringAnnotationsRef.current || !annotationIdsByUidRef.current.has(annotationUid)) return
+    const isInterpreterMarker = readOnly && isSideMarkerToolName(annotation?.metadata?.toolName) && !!updateMarkerAnnotation
+    if (disposedRef.current || (readOnly && !isInterpreterMarker) || !annotationUid || restoringAnnotationsRef.current || !annotationIdsByUidRef.current.has(annotationUid)) return
     pendingAnnotationUpdatesRef.current.set(annotationUid, annotation)
     const existingTimer = annotationUpdateTimersRef.current.get(annotationUid)
     if (existingTimer !== undefined) window.clearTimeout(existingTimer)
@@ -886,7 +1025,8 @@ const DicomViewer = ({
   const handleAnnotationCompleted = (event: Event) => {
     const annotation = (event as CustomEvent<{ annotation?: any }>).detail?.annotation
     const annotationUid = annotation?.annotationUID
-    if (readOnly && allowLocalAnnotations && annotationUid) {
+    const isInterpreterMarker = readOnly && isSideMarkerToolName(annotation?.metadata?.toolName) && !!createMarkerAnnotation
+    if (readOnly && allowLocalAnnotations && annotationUid && !isInterpreterMarker) {
       localAnnotationUidsRef.current.add(annotationUid)
       setAnnotationPanelRevision((revision) => revision + 1)
       return
@@ -925,6 +1065,7 @@ const DicomViewer = ({
       try {
         annotations.forEach((stored: ImagingAnnotation) => {
         try {
+            if (!persistedToolNames.has(stored.toolName)) return
           annotationIdsByUidRef.current.set(stored.annotationUid, stored.id)
           persistedAnnotationUidsRef.current.add(stored.annotationUid)
           if (localUids.has(stored.annotationUid)) return
@@ -957,7 +1098,7 @@ const DicomViewer = ({
               ...(stored.label !== null && stored.label !== undefined ? { label: stored.label } : {}),
             },
             highlighted: false,
-            isLocked: readOnly,
+            isLocked: readOnly && !isSideMarkerToolName(stored.toolName),
             isVisible: true,
             invalidated: true,
             isSelected: false,
@@ -1208,7 +1349,6 @@ const DicomViewer = ({
   }
 
   const handleDeleteAnnotation = () => {
-    if (readOnly) return
     const selection = cornerstoneToolsModule?.annotation?.selection
     const annotationState = getAnnotationState()
     const selectedUids = selection?.getAnnotationsSelected?.() ?? []
@@ -1216,6 +1356,30 @@ const DicomViewer = ({
       .map((annotationUid: string) => annotationState?.getAnnotation(annotationUid))
       .filter(Boolean)
     if (!annotationState || selected.length === 0) return
+
+    if (readOnly) {
+      const selectedMarkers = selected.filter((annotation: any) => isSideMarkerToolName(annotation.metadata?.toolName))
+      if (!deleteMarkerAnnotation || selectedMarkers.length === 0) return
+      void (async () => {
+        try {
+          for (const annotation of selectedMarkers) {
+            const annotationUid = annotation.annotationUID
+            const annotationId = annotationIdsByUidRef.current.get(annotationUid)
+            if (!annotationId) continue
+            await deleteMarkerAnnotation(annotationId)
+            annotationState.removeAnnotation(annotationUid)
+            annotationIdsByUidRef.current.delete(annotationUid)
+            persistedAnnotationUidsRef.current.delete(annotationUid)
+          }
+          renderingEngineRef.current?.render()
+          setAnnotationPanelRevision((revision) => revision + 1)
+        } catch (error) {
+          console.error('[DicomViewer][Markers] DELETE FAILED', error)
+          toast.error('Unable to delete the marker.')
+        }
+      })()
+      return
+    }
 
     saveAnnotationHistory()
     selected.forEach((annotation: any) => annotationState.removeAnnotation(annotation.annotationUID))
@@ -1526,6 +1690,14 @@ const DicomViewer = ({
             const Icon = tool.icon
             return <button key={tool.name} type="button" onClick={() => activateTool(tool.name)} title={tool.label} aria-pressed={activeTool === tool.name} className={`inline-flex h-8 w-8 items-center justify-center rounded border ${activeTool === tool.name ? 'border-violet-400 bg-violet-600 text-white' : 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'}`}><Icon size={14} /></button>
           })}
+          </div>
+          <span className="px-1 pt-1 text-[9px] font-semibold uppercase tracking-wide text-slate-500">{t('imaging.sideMarkers')}</span>
+          <div className="flex items-center gap-0.5">
+            {sideMarkerLabels.map((label) => {
+              const toolName = `${label}Marker`
+              return <button key={toolName} type="button" onClick={() => { setActiveSideMarker(label); activateTool(toolName) }} title={t('imaging.placeSideMarker', { marker: label })} aria-label={t('imaging.placeSideMarker', { marker: label })} aria-pressed={activeSideMarker === label} className={`inline-flex h-8 min-w-8 items-center justify-center rounded border px-1 text-xs font-bold ${activeSideMarker === label ? 'border-violet-400 bg-violet-600 text-white' : 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white'}`}>{label}</button>
+            })}
+            {readOnly && deleteMarkerAnnotation && <button type="button" onClick={handleDeleteAnnotation} title={t('imaging.deleteAnnotation')} aria-label={t('imaging.deleteAnnotation')} className="inline-flex h-8 w-8 items-center justify-center rounded border border-red-900 bg-red-950/40 text-red-400 hover:bg-red-950/70 hover:text-red-300"><Trash2 size={14} /></button>}
           </div>
         </div>}
         <div className="hidden h-6 w-px bg-slate-700 sm:block" />

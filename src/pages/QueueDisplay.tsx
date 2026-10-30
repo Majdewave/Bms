@@ -533,6 +533,16 @@ export default function QueueDisplayPage() {
                   >
                     {data.next.displayName}
                   </p>
+                  <p className={`mt-2 text-sm font-medium ${stylePack.mutedText}`}>
+                    {data.next.roomNumber?.trim()
+                      ? t('queueDisplay.nextQueueAndRoom', {
+                          queueNumber: data.next.queueNumber ?? '-',
+                          roomNumber: data.next.roomNumber,
+                        })
+                      : t('queueDisplay.nextQueueNumber', {
+                          queueNumber: data.next.queueNumber ?? '-',
+                        })}
+                  </p>
                 </div>
               ) : (
                 <div className="mt-8 flex items-center gap-3">

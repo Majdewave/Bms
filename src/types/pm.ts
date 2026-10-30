@@ -2,6 +2,7 @@
 // Isolated module: not imported by any existing page/component yet.
 
 export type ProjectStatus = 'Draft' | 'Active' | 'OnHold' | 'Completed' | 'Cancelled'
+export type ProjectPaymentType = 'Retainer' | 'Monthly' | 'Hourly' | 'Milestone'
 export type BillingMilestoneStatus = 'Planned' | 'ReadyToInvoice' | 'Invoiced' | 'Cancelled'
 
 export interface Project {
@@ -10,6 +11,7 @@ export interface Project {
   clientName: string
   name: string
   status: ProjectStatus
+  paymentType?: ProjectPaymentType | null
   value: number
   startDate?: string | null
   endDate?: string | null
@@ -22,6 +24,7 @@ export interface CreateProjectRequest {
   clientId: string
   name: string
   status: ProjectStatus
+  paymentType?: ProjectPaymentType | null
   value: number
   startDate?: string | null
   endDate?: string | null
@@ -31,6 +34,7 @@ export interface CreateProjectRequest {
 export interface UpdateProjectRequest {
   name: string
   status: ProjectStatus
+  paymentType?: ProjectPaymentType | null
   value: number
   startDate?: string | null
   endDate?: string | null

@@ -1,3 +1,4 @@
+import { formatInvoiceCalendarDate } from '@/utils/invoiceCalendarDate'
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { isBusinessPath } from '@/pm/utils/pmPaths'
@@ -106,7 +107,7 @@ export default function PmInvoicesTab({ clientId }: Props) {
             <div key={invoice.id} className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-semibold text-slate-800">{invoice.number}</p>
-                <p className="text-xs text-slate-500">{new Date(invoice.invoiceDate).toLocaleDateString()}</p>
+                <p className="text-xs text-slate-500">{formatInvoiceCalendarDate(invoice.invoiceDate)}</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-slate-700">{invoice.totalAmount.toFixed(2)}</span>

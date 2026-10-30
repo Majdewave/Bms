@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Container, PageHeader, Card, CardHeader, CardContent } from '@/components'
 import { clientsService, invoicesService } from '@/api'
@@ -7,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useFeatures } from '@/contexts/FeatureContext'
 import { getProjectsByClient } from '@/api/projects'
 import { getBillingMilestone, linkBillingMilestoneInvoice } from '@/api/billingMilestones'
+import { getAccountingDocuments, issueInvoiceWithRivhit, DELIVERY_EMAIL, DELIVERY_NONE, type AccountingDeliveryChannel, type ExternalAccountingDocument } from '@/api/rivhitAccountingDocuments'
 import type { Project } from '@/types/pm'
 import { usePmEnabled } from '@/pm/hooks/usePmEnabled'
 import type {
@@ -22,8 +24,12 @@ import {
   type InvoiceStatus,
 } from '@/api/invoices'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'react-toastify'
 import Autocomplete from '@/components/Autocomplete'
 import InvoicePaymentsPanel from '@/components/InvoicePaymentsPanel'
+import { getAccountingDocumentState, RivhitAccountingActions } from '@/components/RivhitAccountingActions'
+import { formatInvoiceCalendarDate, getLocalInvoiceCalendarDate, toInvoiceDateInput, toInvoiceDateRequest } from '@/utils/invoiceCalendarDate'
+import { getAccountingApiErrorDetails } from '@/utils/accountingApiError'
 import {
   Check,
   ChevronDown,
@@ -70,6 +76,14 @@ const STATUS_META: Record<InvoiceStatus, { label: string; badgeClass: string }> 
   paid: { label: 'שולם', badgeClass: 'bg-green-100 text-green-800' },
   partially_paid: { label: 'שולם חלקית', badgeClass: 'bg-orange-100 text-orange-800' },
   cancelled: { label: 'בוטל', badgeClass: 'bg-red-100 text-red-800' },
+}
+
+const ACCOUNTING_SUMMARY_STATUS_CLASS: Record<string, string> = {
+  Issued: 'border-emerald-300 bg-emerald-50 text-emerald-800',
+  ReconciliationRequired: 'border-amber-300 bg-amber-50 text-amber-800',
+  Rejected: 'border-red-300 bg-red-50 text-red-800',
+  Issuing: 'border-blue-300 bg-blue-50 text-blue-800',
+  NotIssued: 'border-slate-300 bg-slate-50 text-slate-700',
 }
 
 const PAYMENT_METHOD_OPTIONS: Array<{ value: InvoicePaymentMethod; label: string }> = [
@@ -132,7 +146,7 @@ const createDefaultInvoiceForm = (tenant?: {
   clientId: '',
   projectId: '',
   invoiceNumber: `${tenant?.invoicePrefix ?? 'INV-'}${tenant?.nextInvoiceNumber ?? Date.now()}`,
-  invoiceDate: new Date().toISOString().split('T')[0],
+  invoiceDate: getLocalInvoiceCalendarDate(),
   dueDate: '',
   allocationNumber: '',
   status: normalizeInvoiceStatus(tenant?.defaultInvoiceStatus),
@@ -162,12 +176,11 @@ const toCurrency = (value: number) => {
 }
 
 const toIsoDate = (date: string) => new Date(`${date}T00:00:00`).toISOString()
-
 export default function AdminInvoices() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { t, i18n } = useTranslation()
-  const { hasPermission } = useAuth()
+  const { hasPermission, user } = useAuth()
   const { features } = useFeatures()
   const { pmEnabled, loading: pmLoading } = usePmEnabled()
   const { tenant, productType } = useTenant()
@@ -184,11 +197,20 @@ export default function AdminInvoices() {
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(() => createDefaultInvoiceForm(tenant))
   const [clientQuery, setClientQuery] = useState('')
   const [openMobileCards, setOpenMobileCards] = useState<Record<string, boolean>>({})
+  const [expandedAccountingInvoiceId, setExpandedAccountingInvoiceId] = useState<string | null>(null)
+  const [accountingRowOpen, setAccountingRowOpen] = useState(false)
+  const [pendingAccountingInvoiceId, setPendingAccountingInvoiceId] = useState<string | null>(null)
+  const [accountingDocuments, setAccountingDocuments] = useState<Record<string, ExternalAccountingDocument[]>>({})
+  const [invoicePendingIssue, setInvoicePendingIssue] = useState<Invoice | null>(null)
+  const [issuingInvoiceId, setIssuingInvoiceId] = useState<string | null>(null)
+  const [accountingMessage, setAccountingMessage] = useState<string | null>(null)
+  const [invoiceDelivery, setInvoiceDelivery] = useState<AccountingDeliveryChannel>(DELIVERY_NONE)
   const projectPrefillHandledRef = useRef(false)
   const billingMilestoneHandledRef = useRef(false)
 
   const isRtl = isRtlLanguage(i18n.language)
   const canManageInvoices = hasPermission('manage_invoices')
+  const canIssueRivhit = isBusinessTenant && user?.role === 'admin'
   const canSelectProject = pmEnabled && features?.invoicesEnabled === true
 
   useEffect(() => {
@@ -218,10 +240,74 @@ export default function AdminInvoices() {
 
       setInvoices(Array.from(new Map(invoicesData.map((invoice) => [invoice.id, invoice])).values()))
       setClients(clientsData)
+      if (canManageInvoices && isBusinessTenant) {
+        try {
+          const documents = await getAccountingDocuments()
+          const grouped: Record<string, ExternalAccountingDocument[]> = {}
+          documents.forEach((doc) => {
+            if (!grouped[doc.invoiceId]) grouped[doc.invoiceId] = []
+            grouped[doc.invoiceId].push(doc)
+          })
+          setAccountingDocuments(grouped)
+        } catch {
+          setAccountingDocuments({})
+        }
+      }
     } catch (error) {
       console.error('Failed to load data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const issueInvoiceWithRivhitConfirmed = async () => {
+    if (!invoicePendingIssue) return
+    const invoice = invoicePendingIssue
+    setIssuingInvoiceId(invoice.id)
+    setAccountingMessage(null)
+    try {
+      const document = await issueInvoiceWithRivhit(invoice.id, invoiceDelivery)
+      setAccountingDocuments((current) => ({
+        ...current,
+        [invoice.id]: [...(current[invoice.id] ?? []), document],
+      }))
+      setInvoicePendingIssue(null)
+      setAccountingMessage(t('admin.invoices.accounting.issued'))
+    } catch (error) {
+      const { code, providerCode, status } = getAccountingApiErrorDetails(error)
+      const errorKey = code === 'ReconciliationRequired' || code === 'AccountingReconciliationRequired' || status === 409
+        ? 'reconciliationRequired'
+        : (code === 'ProviderRejected' && providerCode === 'INVALID_ID_NUMBER') || code === 'CustomerIdentifierInvalid'
+          ? 'invalidIdentifier'
+          : ['CustomerIdentifierRequired', 'MissingClientIdentifier', 'ClientIdentifierRequired'].includes(code ?? '')
+            ? 'missingIdentifier'
+            : 'generic'
+      const message = t(`admin.invoices.accounting.errors.${errorKey}`)
+      setAccountingMessage(message)
+      toast.error(message)
+    } finally {
+      setIssuingInvoiceId(null)
+    }
+  }
+
+  const handleIssueTaxInvoice = (invoice: Invoice) => {
+    setAccountingMessage(null)
+    setInvoiceDelivery(DELIVERY_NONE)
+    setInvoicePendingIssue(invoice)
+  }
+
+  const handleRefreshAccounting = async () => {
+    if (!canManageInvoices || !isBusinessTenant) return
+    try {
+      const documents = await getAccountingDocuments()
+      const grouped: Record<string, ExternalAccountingDocument[]> = {}
+      documents.forEach((doc) => {
+        if (!grouped[doc.invoiceId]) grouped[doc.invoiceId] = []
+        grouped[doc.invoiceId].push(doc)
+      })
+      setAccountingDocuments(grouped)
+    } catch {
+      setAccountingDocuments({})
     }
   }
 
@@ -367,8 +453,8 @@ export default function AdminInvoices() {
       ? (invoiceForm.projectId || null)
       : editingInvoiceId && invoiceForm.projectId ? invoiceForm.projectId : undefined,
     invoiceNumber: invoiceForm.invoiceNumber.trim(),
-    invoiceDate: toIsoDate(invoiceForm.invoiceDate),
-    dueDate: invoiceForm.dueDate ? toIsoDate(invoiceForm.dueDate) : undefined,
+    invoiceDate: toInvoiceDateRequest(invoiceForm.invoiceDate),
+    dueDate: invoiceForm.dueDate ? toInvoiceDateRequest(invoiceForm.dueDate) : undefined,
     allocationNumber: invoiceForm.allocationNumber.trim() || undefined,
     status: normalizeInvoiceStatus(invoiceForm.status),
     paymentMethod: normalizePaymentMethod(invoiceForm.paymentMethod),
@@ -472,8 +558,8 @@ export default function AdminInvoices() {
       clientId: invoice.clientId,
       projectId: invoice.projectId ?? '',
       invoiceNumber: invoice.number,
-      invoiceDate: invoice.invoiceDate ? invoice.invoiceDate.split('T')[0] : new Date().toISOString().split('T')[0],
-      dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : '',
+      invoiceDate: toInvoiceDateInput(invoice.invoiceDate) || getLocalInvoiceCalendarDate(),
+      dueDate: toInvoiceDateInput(invoice.dueDate),
       allocationNumber: invoice.allocationNumber ?? '',
       status: normalizeInvoiceStatus(invoice.status),
       paymentMethod: normalizePaymentMethod(invoice.paymentMethod ?? tenant?.defaultPaymentMethod),
@@ -511,7 +597,16 @@ export default function AdminInvoices() {
       await invoicesService.deleteInvoice(invoiceId)
       await loadData()
     } catch (error) {
-      console.error('Failed to delete invoice:', error)
+      const { code, status } = getAccountingApiErrorDetails(error)
+      const messageKey = code === 'AccountingReconciliationRequired' || code === 'ReconciliationRequired'
+        ? 'admin.invoices.accounting.errors.deleteReconciliationBlocked'
+        : code === 'AccountingDocumentExists' || code === 'AccountingDocumentDeleteBlocked'
+          || code === 'ExternalAccountingDocumentExists' || status === 409
+          ? 'admin.invoices.accounting.errors.deleteAccountingBlocked'
+          : 'admin.invoices.accounting.errors.deleteFailed'
+      const message = t(messageKey, { defaultValue: t('common.error', { defaultValue: 'The action could not be completed. Please try again.' }) })
+      setAccountingMessage(message)
+      toast.error(message)
     }
   }
 
@@ -526,6 +621,34 @@ export default function AdminInvoices() {
       ...current,
       [invoiceId]: !current[invoiceId],
     }))
+  }
+
+  const toggleAccountingRow = (invoiceId: string) => {
+    if (!expandedAccountingInvoiceId) {
+      setExpandedAccountingInvoiceId(invoiceId)
+      setPendingAccountingInvoiceId(null)
+      setAccountingRowOpen(false)
+      requestAnimationFrame(() => setAccountingRowOpen(true))
+      return
+    }
+
+    if (expandedAccountingInvoiceId === invoiceId) {
+      setPendingAccountingInvoiceId(null)
+      setAccountingRowOpen((isOpen) => !isOpen)
+      return
+    }
+
+    setPendingAccountingInvoiceId(invoiceId)
+    setAccountingRowOpen(false)
+  }
+
+  const handleAccountingRowTransitionEnd = (event: React.TransitionEvent<HTMLDivElement>) => {
+    if (event.propertyName !== 'grid-template-rows' || accountingRowOpen) return
+
+    const nextInvoiceId = pendingAccountingInvoiceId
+    setExpandedAccountingInvoiceId(nextInvoiceId)
+    setPendingAccountingInvoiceId(null)
+    if (nextInvoiceId) requestAnimationFrame(() => setAccountingRowOpen(true))
   }
 
   const paymentMethodLabelMap: Record<string, string> = Object.fromEntries(
@@ -544,279 +667,233 @@ export default function AdminInvoices() {
     }).format(amount)
   }
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) {
-      return '-'
-    }
+  const formatDate = (dateString: string) => formatInvoiceCalendarDate(dateString, 'en-US')
 
-    const date = new Date(dateString)
-    if (Number.isNaN(date.getTime())) {
-      return '-'
-    }
-
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
+  const renderAccountingPanel = (invoice: Invoice, defaultExpanded = false) => {
+    if (!isBusinessTenant) return null
+    const documents = accountingDocuments[invoice.id] ?? []
+    return (
+      <RivhitAccountingActions
+        invoice={invoice}
+        accountingDocuments={documents}
+        defaultExpanded={defaultExpanded}
+        canManageRivhit={canIssueRivhit}
+        isBusinessTenant={isBusinessTenant}
+        outstandingAmount={invoice.finalAmountToPay ?? invoice.totalAmount}
+        currency={tenant?.currency ?? 'ILS'}
+        onRefresh={handleRefreshAccounting}
+        onIssueTaxInvoice={handleIssueTaxInvoice}
+      />
+    )
   }
 
   if (features === null || pmLoading) {
-    return <Container><div className="p-6 text-center text-slate-500">{t('common.loading')}</div></Container>
+    return <Container maxWidth={isBusinessTenant ? '2xl' : 'lg'}><div className="p-6 text-center text-slate-500">{t('common.loading')}</div></Container>
   }
 
   if (!features.invoicesEnabled) {
-    return <Container><div dir={isRtl ? 'rtl' : 'ltr'} className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{t('pm.featureUnavailable')}</div></Container>
+    return <Container maxWidth={isBusinessTenant ? '2xl' : 'lg'}><div dir={isRtl ? 'rtl' : 'ltr'} className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{t('pm.featureUnavailable')}</div></Container>
   }
 
   return (
-    <Container>
-      <div dir={isRtl ? 'rtl' : 'ltr'}>
-        <PageHeader
-          title={t('admin.invoices.title')}
-          description={t('admin.invoices.description')}
-          action={
-            canManageInvoices ? (
-              <button
-                onClick={() => {
-                  setEditingInvoiceId(null)
-                  setInvoiceForm(createDefaultInvoiceForm(tenant))
-                  setClientQuery('')
-                  setShowCreateModal(true)
-                }}
-                className="inline-flex max-[540px]:hidden items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                {t('admin.invoices.create')}
-              </button>
-            ) : null
-          }
-        />
-
-        <div dir="ltr" className={`mb-6 ${canManageInvoices ? 'hidden max-[540px]:flex' : 'hidden'}`}>
-          <button
-            onClick={() => {
-              setEditingInvoiceId(null)
-              setInvoiceForm(createDefaultInvoiceForm(tenant))
-              setClientQuery('')
-              setShowCreateModal(true)
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t('admin.invoices.create')}
-          </button>
-        </div>
-
-        <Card>
-          <CardHeader title={t('admin.invoices.list')} />
-          <CardContent>
-            <div className="flex gap-4 mb-6 max-[540px]:flex-col">
-              <div className="flex-1 relative">
-                <Search className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
-                <input
-                  type="text"
-                  placeholder={t('admin.invoices.search')}
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  className={`w-full py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all ${isRtl ? 'pr-10 pl-4 text-right' : 'pl-10 pr-4'}`}
-                />
-              </div>
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors max-[540px]:w-full max-[540px]:justify-center"
-              >
-                <Filter className="w-4 h-4" />
-                {t('admin.invoices.filter')}
-              </button>
+    <Container maxWidth={isBusinessTenant ? '2xl' : 'lg'}>
+      {invoicePendingIssue && createPortal((
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4" role="presentation">
+          <div role="dialog" aria-modal="true" aria-labelledby="rivhit-issue-title" className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl" dir={isRtl ? 'rtl' : 'ltr'}>
+            <h2 id="rivhit-issue-title" className="text-lg font-semibold text-slate-900">{t('admin.invoices.accounting.confirmTitle')}</h2>
+            <p className="mt-2 text-sm text-slate-600">{t('admin.invoices.accounting.confirmWarning')}</p>
+            <dl className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-sm">
+              <dt className="text-slate-500">{t('admin.invoices.table.number')}</dt><dd className="font-medium text-slate-900">{invoicePendingIssue.number}</dd>
+              <dt className="text-slate-500">{t('admin.invoices.table.client')}</dt><dd className="font-medium text-slate-900">{invoicePendingIssue.clientName}</dd>
+              <dt className="text-slate-500">{t('admin.invoices.table.amount')}</dt><dd className="font-medium text-slate-900">{formatCurrency(invoicePendingIssue.totalAmount)}</dd>
+              <dt className="text-slate-500">{t('admin.invoices.accounting.documentType')}</dt><dd className="font-medium text-slate-900">{t('admin.invoices.accounting.taxInvoice')}</dd>
+            </dl>
+            <label className="mt-4 block space-y-1.5 text-sm font-medium text-slate-700">
+              <span>{t('business.accounting.delivery.label')}</span>
+              <select value={invoiceDelivery} onChange={(event) => setInvoiceDelivery(Number(event.target.value) as AccountingDeliveryChannel)} className="input w-full">
+                <option value={DELIVERY_NONE}>{t('business.accounting.delivery.none')}</option>
+                <option value={DELIVERY_EMAIL}>{t('business.accounting.delivery.email')}</option>
+              </select>
+            </label>
+            {accountingMessage && <p role="alert" className="mt-3 text-sm text-red-700">{accountingMessage}</p>}
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" disabled={!!issuingInvoiceId} onClick={() => setInvoicePendingIssue(null)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:opacity-50">{t('common.cancel')}</button>
+              <button type="button" disabled={!!issuingInvoiceId} onClick={() => void issueInvoiceWithRivhitConfirmed()} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{issuingInvoiceId ? t('admin.invoices.accounting.issuing') : t('admin.invoices.accounting.confirmIssue')}</button>
             </div>
+          </div>
+        </div>
+      ), document.body)}
+      {accountingMessage && !invoicePendingIssue && <div role="status" className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{accountingMessage}</div>}
+      <PageHeader
+        title={t('admin.invoices.title')}
+        description={t('admin.invoices.description')}
+        action={
+          canManageInvoices ? (
+            <button
+              onClick={() => {
+                setEditingInvoiceId(null)
+                setInvoiceForm(createDefaultInvoiceForm(tenant))
+                setClientQuery('')
+                setShowCreateModal(true)
+              }}
+              className="inline-flex max-[540px]:hidden items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {t('admin.invoices.create')}
+            </button>
+          ) : null
+        }
+      />
 
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-              </div>
-            ) : (
-              <>
-                <div className="hidden max-[540px]:block space-y-4">
-                  {filteredInvoices.map((invoice) => {
-                    const isOpen = Boolean(openMobileCards[invoice.id])
-                    const paymentMethod = invoice.paymentMethod ? paymentMethodLabelMap[invoice.paymentMethod] ?? invoice.paymentMethod : null
-                    const withholdingTax = typeof invoice.withholdingTaxRate === 'number' && invoice.withholdingTaxRate > 0
-                      ? `${invoice.withholdingTaxRate}%`
-                      : null
+      <div dir="ltr" className={`mb-6 ${canManageInvoices ? 'hidden max-[540px]:flex' : 'hidden'}`}>
+        <button
+          onClick={() => {
+            setEditingInvoiceId(null)
+            setInvoiceForm(createDefaultInvoiceForm(tenant))
+            setClientQuery('')
+            setShowCreateModal(true)
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-sm transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          {t('admin.invoices.create')}
+        </button>
+      </div>
 
-                    return (
-                      <div key={invoice.id} className="rounded-xl border border-slate-200 shadow-md overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => toggleMobileCard(invoice.id)}
-                          className="w-full px-4 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white flex items-center justify-between hover:from-blue-600 hover:to-indigo-600 transition-colors"
-                        >
-                          <div className="text-start">
-                            <p className="font-mono text-sm font-semibold">{invoice.number}</p>
-                            <p className="text-sm text-blue-100 mt-1">{invoice.clientName}</p>
+      <Card>
+        <CardHeader title={t('admin.invoices.list')} />
+        <CardContent>
+          <div className="flex gap-4 mb-6 max-[540px]:flex-col">
+            <div className="flex-1 relative">
+              <Search className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 ${isRtl ? 'right-3' : 'left-3'}`} />
+              <input
+                type="text"
+                placeholder={t('admin.invoices.search')}
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className={`w-full py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all ${isRtl ? 'pr-10 pl-4 text-right' : 'pl-10 pr-4'}`}
+              />
+            </div>
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors max-[540px]:w-full max-[540px]:justify-center"
+            >
+              <Filter className="w-4 h-4" />
+              {t('admin.invoices.filter')}
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+            </div>
+          ) : (
+            <>
+              <div className="hidden max-[540px]:block space-y-4">
+                {filteredInvoices.map((invoice, index) => {
+                  const isOpen = Boolean(openMobileCards[invoice.id])
+                  const paymentMethod = invoice.paymentMethod ? paymentMethodLabelMap[invoice.paymentMethod] ?? invoice.paymentMethod : null
+                  const withholdingTax = typeof invoice.withholdingTaxRate === 'number' && invoice.withholdingTaxRate > 0
+                    ? `${invoice.withholdingTaxRate}%`
+                    : null
+
+                  return (
+                    <div key={invoice.id} className="rounded-xl border border-slate-200 shadow-md overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => toggleMobileCard(invoice.id)}
+                        className="w-full px-4 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white flex items-center justify-between hover:from-blue-600 hover:to-indigo-600 transition-colors"
+                      >
+                        <div className="text-start">
+                          <p className="font-mono text-sm font-semibold">{invoice.number}</p>
+                          <p className="text-sm text-blue-100 mt-1">{invoice.clientName}</p>
+                        </div>
+                        <span className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                          {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                        </span>
+                      </button>
+
+                      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[520px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <div className="p-4 bg-white space-y-3">
+                          {canManageInvoices && <InvoicePaymentsPanel invoice={invoice} canManage={canManageInvoices} />}
+                          <div className="border-b border-slate-100 pb-2">
+                            <p className="text-xs text-slate-500">תאריך חשבונית:</p>
+                            <p className="text-sm font-medium text-slate-900">{formatDate(invoice.invoiceDate)}</p>
                           </div>
-                          <span className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
-                            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                          </span>
-                        </button>
+                          <div className="border-b border-slate-100 pb-2">
+                            <p className="text-xs text-slate-500">תאריך יעד:</p>
+                            <p className="text-sm font-medium text-slate-900">{formatDate(invoice.dueDate)}</p>
+                          </div>
+                          <div className="border-b border-slate-100 pb-2">
+                            <p className="text-xs text-slate-500">סכום:</p>
+                            <p className="text-sm font-semibold text-slate-900">{formatCurrency(invoice.totalAmount)}</p>
+                          </div>
+                          <div className="border-b border-slate-100 pb-2">
+                            <p className="text-xs text-slate-500">סטטוס:</p>
+                            <span
+                              className={`inline-flex px-2.5 py-1 mt-1 rounded-full text-xs font-semibold ${STATUS_META[normalizeInvoiceStatus(invoice.status)].badgeClass}`}
+                            >
+                              {STATUS_META[normalizeInvoiceStatus(invoice.status)].label}
+                            </span>
+                          </div>
+                            {renderAccountingPanel(invoice, index === 0)}
 
-                        <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[520px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                          <div className="p-4 bg-white space-y-3">
-                            {canManageInvoices && <InvoicePaymentsPanel invoice={invoice} canManage={canManageInvoices} />}
+                          {paymentMethod && (
                             <div className="border-b border-slate-100 pb-2">
-                              <p className="text-xs text-slate-500">תאריך חשבונית:</p>
-                              <p className="text-sm font-medium text-slate-900">{formatDate(invoice.invoiceDate)}</p>
+                              <p className="text-xs text-slate-500">אופן תשלום:</p>
+                              <p className="text-sm font-medium text-slate-900">{paymentMethod}</p>
                             </div>
+                          )}
+
+                          {withholdingTax && (
                             <div className="border-b border-slate-100 pb-2">
-                              <p className="text-xs text-slate-500">תאריך יעד:</p>
-                              <p className="text-sm font-medium text-slate-900">{formatDate(invoice.dueDate)}</p>
+                              <p className="text-xs text-slate-500">ניכוי מס:</p>
+                              <p className="text-sm font-medium text-slate-900">{withholdingTax}</p>
                             </div>
-                            <div className="border-b border-slate-100 pb-2">
-                              <p className="text-xs text-slate-500">סכום:</p>
-                              <p className="text-sm font-semibold text-slate-900">{formatCurrency(invoice.totalAmount)}</p>
-                            </div>
-                            <div className="border-b border-slate-100 pb-2">
-                              <p className="text-xs text-slate-500">סטטוס:</p>
-                              <span
-                                className={`inline-flex px-2.5 py-1 mt-1 rounded-full text-xs font-semibold ${STATUS_META[normalizeInvoiceStatus(invoice.status)].badgeClass}`}
+                          )}
+
+                          {canManageInvoices ? (
+                            <div className="pt-1 flex items-center justify-between gap-2">
+                              {isBusinessTenant && <button
+                                type="button"
+                                onClick={() => void handleViewInvoice(invoice)}
+                                title={t('admin.invoices.viewInvoice')}
+                                aria-label={t('admin.invoices.viewInvoice')}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700"
                               >
-                                {STATUS_META[normalizeInvoiceStatus(invoice.status)].label}
-                              </span>
+                                <Eye className="w-3.5 h-3.5" />{t('admin.invoices.viewInvoice')}
+                              </button>}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteInvoice(invoice.id)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-red-700 bg-red-50 rounded-lg"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                מחיקה
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(invoice)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                עריכה
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadInvoice(invoice)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 rounded-lg"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                הורדת PDF
+                              </button>
                             </div>
-
-                            {paymentMethod && (
-                              <div className="border-b border-slate-100 pb-2">
-                                <p className="text-xs text-slate-500">אופן תשלום:</p>
-                                <p className="text-sm font-medium text-slate-900">{paymentMethod}</p>
-                              </div>
-                            )}
-
-                            {withholdingTax && (
-                              <div className="border-b border-slate-100 pb-2">
-                                <p className="text-xs text-slate-500">ניכוי מס:</p>
-                                <p className="text-sm font-medium text-slate-900">{withholdingTax}</p>
-                              </div>
-                            )}
-
-                            {canManageInvoices ? (
-                              <div className="pt-1 flex items-center justify-between gap-2">
-                                {isBusinessTenant && <button
-                                  type="button"
-                                  onClick={() => void handleViewInvoice(invoice)}
-                                  title={t('admin.invoices.viewInvoice')}
-                                  aria-label={t('admin.invoices.viewInvoice')}
-                                  className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />{t('admin.invoices.viewInvoice')}
-                                </button>}
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteInvoice(invoice.id)}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-red-700 bg-red-50 rounded-lg"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  מחיקה
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleEdit(invoice)}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg"
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                  עריכה
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDownloadInvoice(invoice)}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 rounded-lg"
-                                >
-                                  <Download className="w-3.5 h-3.5" />
-                                  הורדת PDF
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
+                          ) : null}
                         </div>
                       </div>
-                    )
-                  })}
-
-                  {filteredInvoices.length === 0 && (
-                    <div className="text-center py-12">
-                      <p className="text-slate-500">{t('common.noResults')}</p>
                     </div>
-                  )}
-                </div>
-
-                <div className="overflow-x-auto max-[540px]:hidden">
-                <table className="w-full">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.number')}</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.client')}</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.amount')}</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.date')}</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.dueDate')}</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('admin.invoices.table.status')}</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">{t('common.actions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredInvoices.map((invoice) => {
-                      const statusMeta = STATUS_META[normalizeInvoiceStatus(invoice.status)]
-
-                      return (
-                        <tr key={invoice.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="py-4 px-4">
-                            <span className="font-mono text-sm font-semibold text-slate-900">{invoice.number}</span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div>
-                              <p className="font-medium text-slate-900">{invoice.clientName}</p>
-                              <p className="text-sm text-slate-500">{invoice.clientEmail}</p>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="font-semibold text-slate-900">{formatCurrency(invoice.totalAmount)}</span>
-                          </td>
-                          <td className="py-4 px-4 text-sm text-slate-600">{formatDate(invoice.invoiceDate)}</td>
-                          <td className="py-4 px-4 text-sm text-slate-600">{formatDate(invoice.dueDate)}</td>
-                          <td className="py-4 px-4">
-                            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${statusMeta.badgeClass}`}>
-                              {statusMeta.label}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4">
-                            {canManageInvoices ? (
-                              <div className="flex items-center gap-3">
-                                <InvoicePaymentsPanel invoice={invoice} canManage={canManageInvoices} />
-                                {isBusinessTenant && <button
-                                  type="button"
-                                  title={t('admin.invoices.viewInvoice')}
-                                  aria-label={t('admin.invoices.viewInvoice')}
-                                  onClick={() => void handleViewInvoice(invoice)}
-                                  className="inline-flex items-center justify-center rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>}
-                                <button type="button" onClick={() => handleDownloadInvoice(invoice)}>
-                                  <Download className="w-4 h-4 text-blue-600" />
-                                </button>
-                                <button type="button" onClick={() => handleEdit(invoice)}>
-                                  <Pencil className="w-4 h-4 text-green-600" />
-                                </button>
-                                <button type="button" onClick={() => handleDeleteInvoice(invoice.id)}>
-                                  <Trash2 className="w-4 h-4 text-red-600" />
-                                </button>
-                              </div>
-                            ) : null}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                  )
+                })}
 
                 {filteredInvoices.length === 0 && (
                   <div className="text-center py-12">
@@ -824,192 +901,326 @@ export default function AdminInvoices() {
                   </div>
                 )}
               </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
 
-        {canManageInvoices && showCreateModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto" dir={isRtl ? 'rtl' : 'ltr'}>
-            <div className="flex min-h-screen items-center justify-center p-4">
-              <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={closeModal}></div>
+              <div className="w-full max-[540px]:hidden">
+              <table dir={isRtl ? 'rtl' : 'ltr'} className={`w-full ${isBusinessTenant ? 'table-fixed' : ''}`}>
+                {isBusinessTenant && (
+                  <colgroup>
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '17%' }} />
+                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '13%' }} />
+                    <col style={{ width: '18%' }} />
+                  </colgroup>
+                )}
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className={`${isBusinessTenant ? 'px-2 text-xs whitespace-nowrap' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('admin.invoices.table.number')}</th>
+                    <th className={`${isBusinessTenant ? 'px-2 text-xs' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('admin.invoices.table.client')}</th>
+                    <th className={`${isBusinessTenant ? 'px-2 text-xs whitespace-nowrap' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('admin.invoices.table.amount')}</th>
+                    <th className={`${isBusinessTenant ? 'px-2 text-xs whitespace-nowrap' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('admin.invoices.table.date')}</th>
+                    <th className={`${isBusinessTenant ? 'px-2 text-xs whitespace-nowrap' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('admin.invoices.table.dueDate')}</th>
+                    <th className={`${isBusinessTenant ? 'px-2 text-xs whitespace-nowrap' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('admin.invoices.table.status')}</th>
+                    {isBusinessTenant && <th className="px-2 py-3 text-start text-xs font-semibold text-slate-900">{t('business.accounting.title')}</th>}
+                    <th className={`${isBusinessTenant ? 'px-2 text-xs whitespace-nowrap' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('common.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredInvoices.map((invoice) => {
+                    const statusMeta = STATUS_META[normalizeInvoiceStatus(invoice.status)]
+                    const invoiceAccountingDocuments = accountingDocuments[invoice.id] ?? []
+                    const accountingState = getAccountingDocumentState(invoiceAccountingDocuments)
+                    const accountingDocumentStatuses = [accountingState.invoice, ...accountingState.receipts]
+                      .filter((document): document is ExternalAccountingDocument => Boolean(document))
+                    const accountingSummaryStatus = accountingState.reconciliation
+                      ? 'ReconciliationRequired'
+                      : accountingDocumentStatuses.some((document) => document.status === 'Issuing')
+                        ? 'Issuing'
+                        : accountingDocumentStatuses.some((document) => document.status === 'Issued')
+                          ? 'Issued'
+                          : accountingDocumentStatuses.some((document) => document.status === 'Rejected')
+                            ? 'Rejected'
+                            : 'NotIssued'
+                    const accountingIsExpanded = expandedAccountingInvoiceId === invoice.id
 
-              <div className="relative bg-white rounded-xl shadow-xl max-w-6xl w-full p-6 z-10 max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-slate-900">
-                    {editingInvoiceId ? t('admin.invoices.editTitle') : t('admin.invoices.createNew')}
-                  </h2>
-                  <button type="button" onClick={closeModal} className="text-slate-400 hover:text-slate-600 transition-colors">
-                    <X className="w-6 h-6" />
-                  </button>
+                    return (
+                      <Fragment key={invoice.id}>
+                      <tr className="hover:bg-slate-50 transition-colors">
+                        <td className="min-w-0 py-3 px-2">
+                          <span title={invoice.number} className="block truncate font-mono text-xs font-semibold text-slate-900">{invoice.number}</span>
+                        </td>
+                        <td className="min-w-0 py-3 px-2">
+                          <div className="min-w-0">
+                            <p className="break-words text-sm font-medium text-slate-900">{invoice.clientName}</p>
+                            <p className="break-all text-xs text-slate-500">{invoice.clientEmail}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-2">
+                          <bdi dir="ltr" className="whitespace-nowrap text-xs font-semibold tabular-nums text-slate-900">{formatCurrency(invoice.totalAmount)}</bdi>
+                        </td>
+                        <td className="whitespace-nowrap py-3 px-2 text-xs text-slate-600"><bdi dir="ltr">{formatDate(invoice.invoiceDate)}</bdi></td>
+                        <td className="whitespace-nowrap py-3 px-2 text-xs text-slate-600"><bdi dir="ltr">{formatDate(invoice.dueDate)}</bdi></td>
+                        <td className="py-3 px-2 align-top">
+                          <span className={`inline-flex max-w-full break-words px-2 py-1 text-center rounded-full text-xs font-semibold ${statusMeta.badgeClass}`}>
+                            {statusMeta.label}
+                          </span>
+                        </td>
+                        {isBusinessTenant && (
+                          <td className="min-w-0 py-3 px-2 align-top">
+                            <button
+                              type="button"
+                              aria-expanded={accountingIsExpanded}
+                              aria-controls={`invoice-accounting-details-${invoice.id}`}
+                              aria-label={`${t(`business.accounting.summary.${accountingSummaryStatus}`)} — ${invoice.number}`}
+                              onClick={() => toggleAccountingRow(invoice.id)}
+                              className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-1 text-start text-xs font-semibold leading-tight transition-colors hover:brightness-95 ${ACCOUNTING_SUMMARY_STATUS_CLASS[accountingSummaryStatus]}`}
+                            >
+                              <span>{t(`business.accounting.summary.${accountingSummaryStatus}`)}</span>
+                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ease-out ${accountingIsExpanded && accountingRowOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                            </button>
+                          </td>
+                        )}
+                        <td className="py-3 px-2">
+                          {canManageInvoices ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <InvoicePaymentsPanel invoice={invoice} canManage={canManageInvoices} />
+                              {isBusinessTenant && <button
+                                type="button"
+                                title={t('admin.invoices.viewInvoice')}
+                                aria-label={t('admin.invoices.viewInvoice')}
+                                onClick={() => void handleViewInvoice(invoice)}
+                                className="inline-flex items-center justify-center rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>}
+                              <button type="button" onClick={() => handleDownloadInvoice(invoice)}>
+                                <Download className="w-4 h-4 text-blue-600" />
+                              </button>
+                              <button type="button" onClick={() => handleEdit(invoice)}>
+                                <Pencil className="w-4 h-4 text-green-600" />
+                              </button>
+                              <button type="button" onClick={() => handleDeleteInvoice(invoice.id)}>
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </button>
+                            </div>
+                          ) : null}
+                        </td>
+                      </tr>
+                      {isBusinessTenant && accountingIsExpanded && (
+                        <tr id={`invoice-accounting-details-${invoice.id}`} className="bg-slate-50/70">
+                          <td colSpan={8} className="p-0">
+                            <div
+                              onTransitionEnd={handleAccountingRowTransitionEnd}
+                              className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-[220ms] ease-out ${accountingRowOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+                            >
+                              <div aria-hidden={!accountingRowOpen} inert={!accountingRowOpen} className={`min-h-0 overflow-hidden transition-transform duration-[220ms] ease-out ${accountingRowOpen ? 'translate-y-0' : '-translate-y-1'}`}>
+                                <div className="w-full min-w-0 p-3 sm:p-4">{renderAccountingPanel(invoice, true)}</div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
+                    )
+                  })}
+                </tbody>
+              </table>
+
+              {filteredInvoices.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-slate-500">{t('common.noResults')}</p>
                 </div>
+              )}
+            </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
-                <form onSubmit={handleCreateInvoice} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {canManageInvoices && showCreateModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" dir={isRtl ? 'rtl' : 'ltr'}>
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={closeModal}></div>
+
+            <div className="relative bg-white rounded-xl shadow-xl max-w-6xl w-full p-6 z-10 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-slate-900">
+                  {editingInvoiceId ? t('admin.invoices.editTitle') : t('admin.invoices.createNew')}
+                </h2>
+                <button type="button" onClick={closeModal} className="text-slate-400 hover:text-slate-600 transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateInvoice} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.client')} *</label>
+                    <Autocomplete
+                      items={clients}
+                      query={clientQuery}
+                      onQueryChange={(value) => {
+                        setClientQuery(value)
+                        updateInvoiceField('clientId', '')
+                        updateInvoiceField('projectId', '')
+                      }}
+                      onSelect={(client) => {
+                        setClientQuery(client.fullName || client.email || '')
+                        updateInvoiceField('clientId', client.id)
+                        updateInvoiceField('projectId', '')
+                      }}
+                      getItemId={(client) => client.id}
+                      getItemLabel={(client) => client.fullName || client.email || ''}
+                      getItemSecondaryText={(client) => client.email || undefined}
+                      getItemSearchText={(client) => `${client.fullName || ''} ${client.email || ''} ${client.phone || ''}`}
+                      placeholder={t('admin.invoices.form.selectClient')}
+                      inputClassName="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                      noResultsText="לא נמצאו לקוחות"
+                      minQueryLength={0}
+                      emptyQueryShowsAll={true}
+                      maxResults={30}
+                    />
+                  </div>
+
+                  {canSelectProject && invoiceForm.clientId && (
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.client')} *</label>
-                      <Autocomplete
-                        items={clients}
-                        query={clientQuery}
-                        onQueryChange={(value) => {
-                          setClientQuery(value)
-                          updateInvoiceField('clientId', '')
-                          updateInvoiceField('projectId', '')
-                        }}
-                        onSelect={(client) => {
-                          setClientQuery(client.fullName || client.email || '')
-                          updateInvoiceField('clientId', client.id)
-                          updateInvoiceField('projectId', '')
-                        }}
-                        getItemId={(client) => client.id}
-                        getItemLabel={(client) => client.fullName || client.email || ''}
-                        getItemSecondaryText={(client) => client.email || undefined}
-                        getItemSearchText={(client) => `${client.fullName || ''} ${client.email || ''} ${client.phone || ''}`}
-                        placeholder={t('admin.invoices.form.selectClient')}
-                        inputClassName="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                        noResultsText="לא נמצאו לקוחות"
-                        minQueryLength={0}
-                        emptyQueryShowsAll={true}
-                        maxResults={30}
-                      />
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">{t('pm.project')}</label>
+                      <select
+                        value={invoiceForm.projectId}
+                        onChange={(event) => updateInvoiceField('projectId', event.target.value)}
+                        disabled={projectsLoading}
+                        className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      >
+                        <option value="">{t('pm.noProject')}</option>
+                        {clientProjects.map((project) => (
+                          <option key={project.id} value={project.id}>{project.name}</option>
+                        ))}
+                      </select>
                     </div>
+                  )}
 
-                    {canSelectProject && invoiceForm.clientId && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.invoiceNumber')} *</label>
+                    <input
+                      type="text"
+                      required
+                      value={invoiceForm.invoiceNumber}
+                      onChange={(event) => updateInvoiceField('invoiceNumber', event.target.value)}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.date')} *</label>
+                    <input
+                      type="date"
+                      required
+                      value={invoiceForm.invoiceDate}
+                      onChange={(event) => updateInvoiceField('invoiceDate', event.target.value)}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.dueDate')}</label>
+                    <input
+                      type="date"
+                      value={invoiceForm.dueDate}
+                      onChange={(event) => updateInvoiceField('dueDate', event.target.value)}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">מספר הקצאה (אופציונלי)</label>
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={invoiceForm.allocationNumber}
+                      onChange={(event) => updateInvoiceField('allocationNumber', event.target.value)}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50/80">
+                    <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-orange-600" />
+                      פרטי תשלום
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="mb-2 block text-sm font-semibold text-slate-700">{t('pm.project')}</label>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                          <CircleDollarSign className="w-4 h-4 text-green-700" />
+                          סטטוס חשבונית
+                        </label>
                         <select
-                          value={invoiceForm.projectId}
-                          onChange={(event) => updateInvoiceField('projectId', event.target.value)}
-                          disabled={projectsLoading}
-                          className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          value={invoiceForm.status}
+                          onChange={(event) => updateInvoiceField('status', normalizeInvoiceStatus(event.target.value))}
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                         >
-                          <option value="">{t('pm.noProject')}</option>
-                          {clientProjects.map((project) => (
-                            <option key={project.id} value={project.id}>{project.name}</option>
+                          <option value="pending">ממתין לתשלום</option>
+                          <option value="paid">שולם</option>
+                          <option value="partially_paid">שולם חלקית</option>
+                          <option value="cancelled">בוטל</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                          <Wallet className="w-4 h-4 text-green-600" />
+                          אופן תשלום
+                        </label>
+                        <select
+                          value={invoiceForm.paymentMethod}
+                          onChange={(event) => updateInvoiceField('paymentMethod', normalizePaymentMethod(event.target.value))}
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                        >
+                          {PAYMENT_METHOD_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
                           ))}
                         </select>
                       </div>
-                    )}
 
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.invoiceNumber')} *</label>
-                      <input
-                        type="text"
-                        required
-                        value={invoiceForm.invoiceNumber}
-                        onChange={(event) => updateInvoiceField('invoiceNumber', event.target.value)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.date')} *</label>
-                      <input
-                        type="date"
-                        required
-                        value={invoiceForm.invoiceDate}
-                        onChange={(event) => updateInvoiceField('invoiceDate', event.target.value)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">{t('admin.invoices.form.dueDate')}</label>
-                      <input
-                        type="date"
-                        value={invoiceForm.dueDate}
-                        onChange={(event) => updateInvoiceField('dueDate', event.target.value)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">מספר הקצאה (אופציונלי)</label>
-                      <input
-                        type="text"
-                        maxLength={100}
-                        value={invoiceForm.allocationNumber}
-                        onChange={(event) => updateInvoiceField('allocationNumber', event.target.value)}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50/80">
-                      <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-orange-600" />
-                        פרטי תשלום
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {invoiceForm.paymentMethod === 'credit' && (
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                            <CircleDollarSign className="w-4 h-4 text-green-700" />
-                            סטטוס חשבונית
-                          </label>
-                          <select
-                            value={invoiceForm.status}
-                            onChange={(event) => updateInvoiceField('status', normalizeInvoiceStatus(event.target.value))}
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                          >
-                            <option value="pending">ממתין לתשלום</option>
-                            <option value="paid">שולם</option>
-                            <option value="partially_paid">שולם חלקית</option>
-                            <option value="cancelled">בוטל</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                            <Wallet className="w-4 h-4 text-green-600" />
-                            אופן תשלום
-                          </label>
-                          <select
-                            value={invoiceForm.paymentMethod}
-                            onChange={(event) => updateInvoiceField('paymentMethod', normalizePaymentMethod(event.target.value))}
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                          >
-                            {PAYMENT_METHOD_OPTIONS.map((option) => (
-                              <option key={option.value} value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {invoiceForm.paymentMethod === 'credit' && (
-                          <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                              <CreditCard className="w-4 h-4 text-purple-600" />
-                              מספר תשלומים
-                            </label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="36"
-                              value={invoiceForm.installments}
-                              onChange={(event) => updateInvoiceField('installments', event.target.value)}
-                              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                            />
-                          </div>
-                        )}
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                            <Percent className="w-4 h-4 text-orange-500" />
-                            ניכוי מס במקור (%)
+                            <CreditCard className="w-4 h-4 text-purple-600" />
+                            מספר תשלומים
                           </label>
                           <input
                             type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            value={invoiceForm.withholdingTaxRate}
-                            onChange={(event) => updateInvoiceField('withholdingTaxRate', event.target.value)}
+                            min="1"
+                            max="36"
+                            value={invoiceForm.installments}
+                            onChange={(event) => updateInvoiceField('installments', event.target.value)}
                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                           />
                         </div>
+                      )}
+
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                          <Percent className="w-4 h-4 text-orange-500" />
+                          ניכוי מס במקור (%)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={invoiceForm.withholdingTaxRate}
+                          onChange={(event) => updateInvoiceField('withholdingTaxRate', event.target.value)}
+                          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                        />
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
                     <div className="border border-slate-200 rounded-xl overflow-hidden">
                       <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200 max-[540px]:rounded-t-2xl">
                         <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
@@ -1293,7 +1504,6 @@ export default function AdminInvoices() {
             </div>
           </div>
         )}
-      </div>
     </Container>
   )
 }

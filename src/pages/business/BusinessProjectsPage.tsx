@@ -5,6 +5,7 @@ import { FolderKanban } from 'lucide-react'
 import { getProjects } from '@/api/projects'
 import type { Project } from '@/types/pm'
 import { pmClientPath } from '@/pm/utils/pmPaths'
+import { ProjectPaymentTypeBadge, ProjectSchedule, ProjectStatusBadge } from '@/pm/components/ProjectCardMeta'
 
 export default function BusinessProjectsPage() {
   const { t, i18n } = useTranslation()
@@ -40,9 +41,10 @@ export default function BusinessProjectsPage() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold text-slate-900">{project.name}</span>
                   <span className="mt-1 block truncate text-sm text-slate-600">{project.clientName}</span>
-                  <span className="mt-3 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{t(`pm.status.${project.status}`)}</span>
+                  <span className="mt-3 flex flex-wrap gap-2"><ProjectStatusBadge status={project.status} /><ProjectPaymentTypeBadge paymentType={project.paymentType} /></span>
                 </span>
               </div>
+              <ProjectSchedule project={project} />
             </button>
           ))}
         </div>

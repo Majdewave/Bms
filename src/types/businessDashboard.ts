@@ -21,6 +21,16 @@ export interface BusinessNextBilling {
   billingContact: BusinessBillingContact | null
 }
 
+export type BusinessProjectStatus = 'Draft' | 'Active' | 'OnHold' | 'Completed' | 'Cancelled'
+
+export interface BusinessProjectEnding {
+  projectId: string
+  projectName: string
+  endDate: string
+  daysRemaining: number
+  status: BusinessProjectStatus
+}
+
 export interface BusinessDashboard {
   currency: string
   projectCount: number
@@ -34,4 +44,5 @@ export interface BusinessDashboard {
   // Plan-based (open billing milestones), before VAT.
   notYetInvoiced: number
   nextBilling: BusinessNextBilling | null
+  projectsEndingSoon: BusinessProjectEnding[]
 }

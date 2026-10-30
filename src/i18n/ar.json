@@ -38,7 +38,12 @@
     "editMilestoneAction": "تعديل",
     "deleteMilestoneAction": "حذف",
     "linkedMilestoneDeleteBlocked": "لا يمكن حذف مرحلة مرتبطة بفاتورة.",
-    "milestoneStatus": { "Planned": "مخطط", "ReadyToInvoice": "جاهز للفوترة", "Invoiced": "تمت فوترته", "Cancelled": "ملغى" },
+    "milestoneStatus": {
+      "Planned": "مخطط",
+      "ReadyToInvoice": "جاهز للفوترة",
+      "Invoiced": "تمت فوترته",
+      "Cancelled": "ملغى"
+    },
     "featureUnavailable": "هذه الميزة غير متاحة لهذه المنشأة أو لحسابك.",
     "projectQuotes": "عروض أسعار المشروع",
     "projectInvoices": "فواتير المشروع",
@@ -55,7 +60,7 @@
     "status": {
       "Draft": "مسودة",
       "Active": "نشط",
-      "OnHold": "معلق",
+      "OnHold": "قيد الانتظار",
       "Completed": "مكتمل",
       "Cancelled": "ملغي"
     },
@@ -75,15 +80,27 @@
       "empty": "لا توجد مشاريع بعد",
       "name": "الاسم",
       "status": "الحالة",
+      "paymentType": "نوع دفع المشروع",
+      "paymentTypeNotSet": "غير محدد",
       "value": "قيمة المشروع",
       "startDate": "تاريخ البدء",
       "endDate": "تاريخ الانتهاء",
+      "notSet": "غير محدد",
+      "endDateWarningTwoMonths": "ينتهي المشروع خلال أقل من شهرين — {{endDate}}",
+      "endDateWarningOneMonth": "ينتهي المشروع خلال أقل من شهر — {{endDate}}",
+      "endDateWarningOverdue": "انتهى المشروع منذ {{count}} يومًا — {{endDate}}",
       "description": "الوصف",
       "confirmDelete": "حذف المشروع \"{{name}}\"؟",
       "financialSummary": "المستندات المالية المرتبطة"
     },
+    "paymentTypes": {
+      "Retainer": "دفعة مقدمة دورية",
+      "Monthly": "شهري",
+      "Hourly": "بالساعة",
+      "Milestone": "حسب المرحلة"
+    },
     "quotes": {
-      "general": "عرض سعر تجاري عام"
+      "empty": "لا توجد عروض أسعار لهذا العميل"
     },
     "contacts": {
       "new": "إضافة جهة اتصال",
@@ -97,9 +114,6 @@
       "primary": "جهة الاتصال الرئيسية",
       "billing": "جهة اتصال الفوترة",
       "confirmDelete": "حذف جهة الاتصال \"{{name}}\"؟"
-    },
-    "quotes": {
-      "empty": "لا توجد عروض أسعار لهذا العميل"
     },
     "invoices": {
       "empty": "لا توجد فواتير لهذا العميل"
@@ -144,13 +158,43 @@
         "notFound": "لم يتم العثور على المستند أو المشروع.",
         "conflict": "يتعارض هذا الإجراء مع الحالة الحالية للمشروع."
       }
+    },
+    "projectProposals": {
+      "title": "مقترح المشروع",
+      "titleInput": "عنوان المقترح",
+      "titlePlaceholder": "أدخل عنوان المقترح",
+      "chooseFile": "اختيار ملف المقترح",
+      "upload": "رفع المقترح",
+      "uploading": "جارٍ رفع المقترح...",
+      "uploadSuccess": "تم رفع مقترح المشروع.",
+      "originalFilename": "اسم الملف الأصلي",
+      "empty": "لم يتم رفع مقترحات لهذا المشروع بعد.",
+      "loadError": "تعذر تحميل مقترحات المشروع.",
+      "view": "عرض PDF",
+      "viewBlocked": "اسمح بالنوافذ المنبثقة لعرض PDF أو استخدم التنزيل.",
+      "download": "تنزيل",
+      "editTitle": " تعديل العنوان",
+      "save": "حفظ العنوان",
+      "cancel": "إلغاء",
+      "renameSuccess": "تم تحديث عنوان المقترح.",
+      "delete": "حذف المقترح",
+      "confirmDelete": "حذف مقترح المشروع \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+      "deleteSuccess": "تم حذف مقترح المشروع.",
+      "invalidFileType": "اختر ملف PDF أو DOC أو DOCX أو XLS أو XLSX.",
+      "invalidUpload": "الملف غير صالح أو يتجاوز حد 10 ميغابايت. الأنواع المسموحة: PDF وDOC وDOCX وXLS وXLSX.",
+      "invalidTitle": "أدخل عنوانًا للمقترح لا يتجاوز 200 حرف."
     }
   },
   "payments": {
     "title": "المدفوعات",
     "invoiceHeader": "المدفوعات",
     "paymentState": "حالة الدفع",
-    "paymentStates": { "pending": "معلق", "partially_paid": "مدفوع جزئياً", "paid": "مدفوع" },
+    "paymentStates": {
+      "pending": "معلق",
+      "partially_paid": "مدفوع جزئياً",
+      "paid": "مدفوع",
+      "overdue": "متأخر"
+    },
     "saveError": "تعذر حفظ الدفعة. يرجى المحاولة مرة أخرى.",
     "cancelError": "تعذر إلغاء الدفعة. يرجى المحاولة مرة أخرى.",
     "record": "تسجيل دفعة",
@@ -183,12 +227,24 @@
     "noPayments": "لا توجد دفعات بعد",
     "currentRemaining": "الرصيد الحالي المتبقي للدفع",
     "pendingPayment": "دفعة معلّقة",
-    "status": { "Verified": "تم التحقق", "PendingVerification": "بانتظار التحقق", "Rejected": "مرفوض", "Cancelled": "ملغى" },
-    "methods": { "cash": "نقداً", "credit": "بطاقة ائتمان", "bank_transfer": "تحويل بنكي", "check": "شيك", "bit": "Bit", "paybox": "PayBox", "other": "أخرى" }
+    "status": {
+      "Verified": "تم التحقق",
+      "PendingVerification": "بانتظار التحقق",
+      "Rejected": "مرفوض",
+      "Cancelled": "ملغى"
+    },
+    "methods": {
+      "cash": "نقداً",
+      "credit": "بطاقة ائتمان",
+      "bank_transfer": "تحويل بنكي",
+      "check": "شيك",
+      "bit": "Bit",
+      "paybox": "PayBox",
+      "other": "أخرى"
+    }
   },
   "paymentConfirmation": {
     "loading": "جارٍ تحميل طلب الدفع…",
-    "language": "اختيار اللغة",
     "language": "اختيار اللغة",
     "title": "تأكيد تحويل بنكي",
     "subtitle": "أبلغ عن دفعة لهذه الفاتورة. ستراجعها الشركة قبل احتسابها كمدفوعة.",
@@ -303,6 +359,44 @@
     "deleteLogo": "حذف الشعار",
     "uploadLogo": "رفع شعار جديد",
     "noLogo": "لا يوجد شعار",
+    "rivhit": {
+      "title": "التكاملات — ريفحيت",
+      "description": "تكامل محاسبي اختياري. فواتير ومدفوعات CLIENTA لا تتغير.",
+      "enabled": "تكامل ريفحيت",
+      "statusLabel": "الحالة",
+      "status": {
+        "notConfigured": "غير مُعدّ",
+        "disabled": "معطّل",
+        "notTested": "لم يتم الاختبار",
+        "connected": "متصل",
+        "failed": "فشل الاتصال"
+      },
+      "lastTest": "آخر اختبار: {{date}}",
+      "apiToken": "رمز API",
+      "tokenSavedPlaceholder": "تم حفظ الرمز — أدخل رمزًا جديدًا لاستبداله",
+      "tokenPlaceholder": "الصق رمز API الخاص بريفحيت",
+      "saveToken": "حفظ الرمز",
+      "testConnection": "اختبار الاتصال",
+      "testing": "جارٍ الاختبار...",
+      "accounting": "المحاسبة",
+      "documents": "المستندات",
+      "payments": "المدفوعات",
+      "comingSoon": "قريبًا",
+      "disconnect": "فصل",
+      "disconnectConfirm": "إزالة رمز ريفحيت المحفوظ وإيقاف التكامل؟ سجلات ريفحيت الحالية ستبقى.",
+      "saved": "تم الحفظ.",
+      "testOk": "قبلت ريفحيت الاتصال.",
+      "loadError": "تعذر تحميل تكامل ريفحيت.",
+      "saveError": "تعذر حفظ إعدادات ريفحيت.",
+      "errors": {
+        "InvalidCredentials": "رفضت ريفحيت رمز API.",
+        "ProviderUnavailable": "ريفحيت غير متاحة. حاول لاحقًا.",
+        "Timeout": "لم تستجب ريفحيت في الوقت المناسب.",
+        "InvalidResponse": "أعادت ريفحيت استجابة غير متوقعة.",
+        "CredentialUnreadable": "تعذر قراءة الرمز المحفوظ. يرجى إدخاله مرة أخرى.",
+        "generic": "فشل اختبار الاتصال."
+      }
+    },
     "autoDeleteTitle": "حذف العملاء غير الموثقين تلقائياً",
     "enableAutoDelete": "تفعيل الحذف التلقائي",
     "autoDeleteOff": "الحذف التلقائي معطل",
@@ -380,8 +474,10 @@
     "currentPatientHint": "يرجى التقدم عندما يظهر اسمك ورقم طابورك.",
     "currentPatient": "المريض الحالي",
     "nextPatient": "المريض التالي",
+    "nextQueueAndRoom": "رقم الطابور: {{queueNumber}} | الغرفة: {{roomNumber}}",
+    "nextQueueNumber": "رقم الطابور: {{queueNumber}}",
     "upNext": "التالي مباشرة",
-    "waiting": "المنتظرون",
+    "waiting": "المنتظرين",
     "waitingCount": "في الانتظار",
     "waitingFooterLabel": "عدد المنتظرين في الطابور:",
     "waitingList": "قائمة الانتظار",
@@ -451,6 +547,10 @@
     "imageXOfY": "الصورة {{current}} من {{total}}",
     "viewImage": "عرض الصورة",
     "viewImages": "عرض الصور",
+    "downloadStudy": "تنزيل الفحص",
+    "studyDownloadPreparing": "جارٍ تجهيز التنزيل...",
+    "studyDownloadUnavailable": "الفحص الكامل غير متاح للتنزيل حاليًا.",
+    "studyDownloadFailed": "تعذر تنزيل الفحص. يُرجى المحاولة مرة أخرى.",
     "availableForViewing": "متاح للعرض",
     "notAvailableForViewing": "غير متاح للعرض بعد",
     "viewable": "متاح للعرض",
@@ -505,7 +605,7 @@
     "modalityIo": "صور الأسنان (IO)",
     "modalityEcg": "ECG"
   },
-"billing": {
+  "billing": {
     "trial": {
       "title": "بقي {{days}} يومًا على انتهاء الفترة التجريبية",
       "subtitle": "لا تفقد الوصول إلى عملائك ومواعيدك.",
@@ -528,36 +628,34 @@
       "note": "لا حاجة لبطاقة ائتمان • يمكنك الإلغاء في أي وقت"
     }
   },
-
   "validation": {
-  "required": "حقل اجباري",
-  "dateTimeRequired": "التاريخ والوقت مطلوبان"
+    "required": "حقل اجباري",
+    "dateTimeRequired": "التاريخ والوقت مطلوبان"
   },
-
-    "consent": {
-      "title": "نموذج الموافقة",
-      "clientSignature": "توقيع العميل",
-      "preview": "معاينة",
-      "edit": "تعديل",
-      "signInstruction": "وقّع داخل الإطار ثم اضغط تأكيد التوقيع",
-      "confirmText": "أؤكد أنني فهمت الإجراء والنتائج المحتملة",
-      "signButton": "تأكيد التوقيع",
-      "cancelButton": "إلغاء",
-      "dynamicText": "في تاريخ {{date}}، يوافق {{clientName}} على تلقي خدمة {{serviceName}} ويقر بفهم الإجراء والنتائج المحتملة.",
-      "clear": "مسح",
-      "noTemplate": "لا يوجد نموذج موافقة مُعد لهذه الخدمة.",
-      "emptyContent": "محتوى الموافقة فارغ.",
-      "signatureRequired": "التوقيع مطلوب.",
-      "signing": "جارٍ التوقيع...",
-      "signFailed": "فشل توقيع الموافقة."
-    },
-    "consents": "الموافقات",
-    "signed_on": "تم التوقيع بتاريخ",
-    "view": "عرض",
-    "download_pdf": "PDF",
-    "delete": "حذف",
-    "consent_document": "مستند الموافقة",
-    "are_you_sure": "هل أنت متأكد؟",
+  "consent": {
+    "title": "نموذج الموافقة",
+    "clientSignature": "توقيع العميل",
+    "preview": "معاينة",
+    "edit": "تعديل",
+    "signInstruction": "وقّع داخل الإطار ثم اضغط تأكيد التوقيع",
+    "confirmText": "أؤكد أنني فهمت الإجراء والنتائج المحتملة",
+    "signButton": "تأكيد التوقيع",
+    "cancelButton": "إلغاء",
+    "dynamicText": "في تاريخ {{date}}، يوافق {{clientName}} على تلقي خدمة {{serviceName}} ويقر بفهم الإجراء والنتائج المحتملة.",
+    "clear": "مسح",
+    "noTemplate": "لا يوجد نموذج موافقة مُعد لهذه الخدمة.",
+    "emptyContent": "محتوى الموافقة فارغ.",
+    "signatureRequired": "التوقيع مطلوب.",
+    "signing": "جارٍ التوقيع...",
+    "signFailed": "فشل توقيع الموافقة."
+  },
+  "consents": "الموافقات",
+  "signed_on": "تم التوقيع بتاريخ",
+  "view": "عرض",
+  "download_pdf": "PDF",
+  "delete": "حذف",
+  "consent_document": "مستند الموافقة",
+  "are_you_sure": "هل أنت متأكد؟",
   "common": {
     "edit": "تعديل",
     "delete": "حذف",
@@ -585,9 +683,7 @@
     "expand": "توسيع",
     "collapse": "طي",
     "dashboard": "لوحة التحكم",
-    "clients": "العملاء",
-    "cancel": "إلغاء",
-    "save": "حفظ"
+    "clients": "العملاء"
   },
   "notifications": {
     "title": "الإشعارات",
@@ -613,7 +709,7 @@
       "viewDescription": "قم بإدارة جميع العملاء في عملك. للأسئلة الإدارية، اتصل بمديرك.",
       "emptyState": {
         "title": "لا توجد عملاء بعد",
-        "description": "ابدأ بإنشاء عميلك الأول. اسأل مديرك إذا كنت بحاجة إلى مساعدة."  
+        "description": "ابدأ بإنشاء عميلك الأول. اسأل مديرك إذا كنت بحاجة إلى مساعدة."
       }
     },
     "appointments": {
@@ -665,7 +761,7 @@
     "he": "العبرية",
     "ar": "العربية"
   },
-   "header": {
+  "header": {
     "logout": "تسجيل الخروج"
   },
   "clientPhotos": {
@@ -694,19 +790,22 @@
   },
   "appointments": {
     "actions": {
+      "edit": "تعديل",
+      "cancel": "إلغاء",
+      "delete": "حذف",
+      "waiting": "في الانتظار",
+      "noshow": "لم يحضر",
       "arrived": "وصل",
       "start": "ابدأ العلاج",
       "complete": "تم",
-      "cancel": "إلغاء",
-      "noshow": "لم يحضر",
-      "past":"منتهي"
+      "urgent": "عاجل"
     },
     "title": "المواعيد",
     "new": "موعد جديد",
     "subtitle": "إدارة جميع مواعيد العملاء",
     "create": "إنشاء موعد",
     "createTitle": "إنشاء موعد",
-    "editTitle": "تعديل موعد",
+    "editTitle": " تعديل موعد",
     "update": "تحديث موعد",
     "searchPlaceholder": "بحث عن المواعيد...",
     "filters": {
@@ -721,18 +820,9 @@
       "appointment": "الموعد",
       "datetime": "التاريخ والوقت",
       "staff": "الفريق",
+      "roomNumber": "رقم الغرفة",
+      "roomUnassigned": "لم يتم اختيار غرفة",
       "status": "الحالة"
-    },
-    "actions": {
-      "edit": "تعديل",
-      "cancel": "إلغاء",
-      "delete": "حذف",
-      "waiting": "في الانتظار",
-      "noshow": "لم يحضر",
-      "arrived": "وصل",
-      "start": "ابدأ العلاج", 
-      "complete": "تم",
-      "urgent": "عاجل"
     },
     "form": {
       "client": "العميل",
@@ -1007,7 +1097,7 @@
       "searchPlaceholder": "ابحث بالاسم أو البريد الإلكتروني...",
       "filter": "تصفية",
       "view": "عرض",
-      "edit": "تعديل",
+      "edit": " تعديل",
       "delete": "حذف",
       "deleteButton": "حذف",
       "link": "رابط",
@@ -1066,10 +1156,10 @@
         "placeholder": "أضف ملاحظة عن هذا العميل...",
         "add": "أضف ملاحظة",
         "delete": "حذف الملاحظة",
-        "edit": "تعديل",
+        "edit": " تعديل",
         "save": "حفظ",
         "cancel": "إلغاء",
-        "editComment": "تعديل الملاحظة"
+        "editComment": " تعديل الملاحظة"
       },
       "form": {
         "name": "الاسم الكامل",
@@ -1091,8 +1181,8 @@
         "duplicateIdNumberClientName": "اسم العميل: {{clientName}}",
         "duplicateIdNumberInline": "رقم الهوية هذا موجود بالفعل في النظام.",
         "submit": "أضف عميل",
-        "update": "تحديث العميل"
-        ,"internalNote": "ملاحظة داخلية",
+        "update": "تحديث العميل",
+        "internalNote": "ملاحظة داخلية",
         "internalNotePlaceholder": "ملاحظات أو رؤى حول هذا العميل (لن يراها العميل)"
       },
       "createSuccess": "تم إنشاء العميل بنجاح",
@@ -1134,7 +1224,6 @@
       "invoicesTitle": "الفواتير",
       "filesTitle": "الملفات",
       "notesTitle": "الملاحظات الداخلية",
-
       "quotes": "عروض الأسعار",
       "quotesDesc": "إظهار صفحة عروض الأسعار في قائمة التنقل",
       "noAppointments": "لم يتم تحديد أي مواعيد بعد",
@@ -1179,7 +1268,7 @@
       "title": "أقسام العمل",
       "description": "إدارة الأقسام الداخلية وترتيب العرض والألوان الثابتة",
       "createTitle": "إضافة قسم جديد",
-      "editTitle": "تعديل القسم",
+      "editTitle": " تعديل القسم",
       "create": "إضافة قسم",
       "update": "تحديث القسم",
       "note": "الحقول المطلوبة مميزة بنجمة",
@@ -1231,12 +1320,51 @@
       "description": "إدارة الفواتير والمدفوعات لجميع العملاء",
       "create": "إنشاء فاتورة",
       "createNew": "إنشاء فاتورة جديدة",
-      "editTitle": "تعديل الفاتورة",
+      "editTitle": " تعديل الفاتورة",
       "list": "قائمة الفواتير",
       "search": "ابحث حسب رقم الفاتورة أو العميل...",
       "filter": "تصفية",
       "download": "PDF",
       "viewInvoice": "عرض الفاتورة",
+      "accounting": {
+        "title": "المحاسبة / ريفحيت",
+        "status": {
+          "NotIssued": "لم تصدر",
+          "Issuing": "جارٍ الإصدار",
+          "Issued": "صدرت",
+          "Rejected": "مرفوضة",
+          "ReconciliationRequired": "تتطلب مراجعة"
+        },
+        "issueAction": "إصدار عبر ريفحيت",
+        "confirmTitle": "إصدار فاتورة ضريبية رسمية في ريفحيت؟",
+        "confirmWarning": "سينشئ هذا الإجراء مستندًا محاسبيًا رسميًا في ريفحيت. لن يغيّر فاتورة CLIENTA أو سجلات المدفوعات.",
+        "documentType": "نوع المستند",
+        "taxInvoice": "فاتورة ضريبية (חשבונית מס)",
+        "documentNumber": "رقم مستند ريفحيت",
+        "issuedAt": "تاريخ الإصدار",
+        "amount": "مبلغ ريفحيت",
+        "issuing": "جارٍ الإصدار...",
+        "confirmIssue": "تأكيد الإصدار",
+        "issued": "تم إصدار الفاتورة الضريبية بنجاح في ريفحيت.",
+        "reconciliationWarning": "النتيجة غير مؤكدة. لا تُصدر مرة أخرى قبل التحقق.",
+        "rejected": "رفضت ريفحيت الطلب. راجع الفاتورة قبل التواصل مع الدعم.",
+        "errors": {
+          "invalidIdentifier": "تعذر إصدار الفاتورة الضريبية: رقم هوية العميل أو رقم الشركة غير صالح. حدّث بيانات العميل ثم حاول مرة أخرى.",
+          "missingIdentifier": "تعذر إصدار الفاتورة الضريبية: رقم هوية العميل أو رقم الشركة مفقود.",
+          "reconciliationRequired": "يلزم إجراء مراجعة مع ريفحيت. لا تُصدر مستند مرة أخرى حتى اكتمال المراجعة.",
+          "CurrencyUnsupported": "إصدار ريفحيت يدعم الفواتير بالشيكل فقط حاليًا.",
+          "CustomerIdentifierRequired": "يلزم رقم تسجيل صالح أو ربط عميل موجود في ريفحيت.",
+          "CustomerIdentifierInvalid": "رقم تسجيل العميل غير صالح لريفحيت. راجع رقم ח.פ. في سجل العميل.",
+          "VatMismatch": "معدل ضريبة الفاتورة لا يطابق المعدل الحالي في ريفحيت.",
+          "InvoiceStateUnsupported": "يمكن إصدار الفواتير المعلقة فقط عبر ريفحيت.",
+          "InvoiceDataInvalid": "لا تستوفي الفاتورة قواعد الإصدار الحالية في ريفحيت.",
+          "ReconciliationRequired": "يلزم إجراء مراجعة مع ريفحيت. لا تُصدر مستند مرة أخرى حتى اكتمال المراجعة.",
+          "deleteAccountingBlocked": "لا يمكن حذف الفاتورة لوجود مستند محاسبي مرتبط بها في ريفحيت.",
+          "deleteReconciliationBlocked": "لا يمكن حذف الفاتورة ما دامت مراجعة المستند المحاسبي مع ريفحيت مطلوبة.",
+          "deleteFailed": "تعذر حذف الفاتورة. يرجى المحاولة مرة أخرى.",
+          "generic": "تعذر إصدار الفاتورة الضريبية عبر ريفحيت."
+        }
+      },
       "table": {
         "number": "الفاتورة #",
         "client": "العميل",
@@ -1289,7 +1417,7 @@
       "totalCount": "{{count}} عروض أسعار",
       "create": "إنشاء عرض سعر",
       "createNew": "عرض سعر جديد",
-      "editTitle": "تعديل عرض سعر",
+      "editTitle": " تعديل عرض سعر",
       "search": "بحث برقم العرض أو العميل أو الحالة...",
       "empty": "لم يتم العثور على عروض أسعار.",
       "notFound": "لم يتم العثور على عرض السعر.",
@@ -1419,7 +1547,7 @@
         "blocked": "محظور"
       },
       "actions": {
-        "edit": "تعديل",
+        "edit": " تعديل",
         "block": "حظر",
         "unblock": "إلغاء الحظر",
         "delete": "حذف",
@@ -1467,11 +1595,11 @@
         },
         "manage_invoices": {
           "title": "إدارة الفواتير",
-          "description": "إنشاء وتعديل وحذف وتنزيل PDF للفواتير"
+          "description": "إنشاء و تعديل وحذف وتنزيل PDF للفواتير"
         },
         "manage_quotes": {
           "title": "إدارة عروض الأسعار",
-          "description": "إنشاء وتعديل ونسخ وتحويل عروض الأسعار إلى فواتير"
+          "description": "إنشاء و تعديل ونسخ وتحويل عروض الأسعار إلى فواتير"
         },
         "manage_projects": {
           "title": "إدارة المشاريع",
@@ -1513,25 +1641,21 @@
     "name": "الاسم",
     "dosage": "الجرعة"
   },
- "features": {
+  "features": {
     "title": "إعدادات الميزات",
     "subtitle": "تفعيل أو تعطيل ميزات النظام",
     "activeModules": "الوحدات النشطة",
     "description": "تسري التغييرات فورًا على جميع المستخدمين",
-
     "reports": "التقارير",
     "reportsDesc": "عرض صفحة التقارير في قائمة التنقل",
-
     "invoices": "الفواتير",
     "invoicesDesc": "عرض صفحة الفواتير في قائمة التنقل",
-
     "prescriptions": "الوصفات",
     "prescriptionsDesc": "إظهار زر الوصفة في ملف العميل",
-
     "drugs": "قاعدة بيانات الأدوية",
     "drugsDesc": "تفعيل قاعدة بيانات الأدوية والميزات المرتبطة بها"
   },
-    "services": {
+  "services": {
     "title": "الخدمات التجارية",
     "add": "إضافة",
     "serviceName": "اسم الخدمة",
@@ -1570,7 +1694,11 @@
     "emptyTitle": "لا توجد فحوصات بانتظار التفسير حالياً",
     "emptyDescription": "ستظهر هنا الفحوصات التي تخصصها العيادة لك.",
     "tryAgain": "حاول مرة أخرى",
-    "status": { "pending": "بانتظار التفسير", "inProgress": "التفسير قيد التنفيذ", "completed": "مكتمل" },
+    "status": {
+      "pending": "بانتظار التفسير",
+      "inProgress": "التفسير قيد التنفيذ",
+      "completed": "مكتمل"
+    },
     "statusLabel": "حالة التفسير",
     "completedAt": "اكتمل في",
     "received": "تم الاستلام",
@@ -1635,10 +1763,89 @@
     "stampRemoveError": "تعذرت إزالة الختم.",
     "invalidStamp": "اختر ملف PNG أو JPG.",
     "stampTooLarge": "يجب ألا يتجاوز حجم الختم 2 ميغابايت."
-  }
-,
+  },
   "businessShell": {
     "appName": "CLIENTA Business",
+    "accounting": {
+      "title": "הנהלת חשבונות",
+      "description": "הפקת מסמכים חשבונאיים רשמיים דרך ריווחית",
+      "documentNumber": "מספר מסמך",
+      "issuedAt": "תאריך הפקה",
+      "receiptNumber": "מספר קבלה",
+      "receiptAmount": "סכום קבלה",
+      "reconciliationTitle": "נדרש בירור מול ריווחית",
+      "reconciliationWarning": "يلزم إجراء مراجعة مع ריווחית. لا תُصدر مرة أخرىقبل التحقق.",
+      "reconciliationRequired": "يلزم إجراء مراجعة مع ריווחית. لا תُصدر مستנד مرة أخرى حتى اكتمال המراجعة.",
+      "actionFailed": "تعذر تنفيذ الإجراء في ריווחית. תحقق מ状ת המסמך قبل اتخاذ قرار بإعادة المحاولة.",
+      "reconciliationCheck": "בדיקת סטטוס מול ריווחית",
+      "reconciliationChecking": "בודק...",
+      "reconciliationResolved": "הסטטוס נבדק והמסמך אושר וקושר.",
+      "reconciliationRejected": "ריווחית דחתה או שלא נמצא מסמך. ההזמנה שוחררה וניתן להנפיק מחדש.",
+      "reconciliationStillPending": "הסטטוס עדיין אינו ודאי. נדרש בירור נוסף.",
+      "adminOnly": "פעולות חשבונאיות בריווחית זמינות למנהל המערכת בלבד",
+      "taxInvoice": {
+        "issue": "הפק חשבונית מס",
+        "issued": "تم إصدار الفاتورة الضريبية بنجاح في ريفحيت."
+      },
+      "receipts": {
+        "issue": "הפק קבלה",
+        "title": "הפקת קבלה",
+        "description": "הפק קבלה רשמית בריווחית עבור תשלום לחשבונית",
+        "amount": "סכום לתשלום",
+        "paymentMethod": "אמצעי תשלום",
+        "remainingBefore": "יתרה לתשלום לפני הקבלה",
+        "partialSupported": "ניתן להפיק קבלה גם עבור תשלום חלקי",
+        "review": "בדיקת פרטים",
+        "confirmTitle": "אישור הפקת קבלה",
+        "confirmDescription": "בדוק את פרטי התשלום לפני הפקת הקבלה בריווחית.",
+        "confirmIssue": "אישור והפקת קבלה",
+        "issuing": "מפיק קבלה...",
+        "success": "تم إصدار الإيصال بنجاح في ريفحيت.",
+        "error": "تعذر إصدار الإيصال في ריווחית. תحقق מ状ת התשלום וحاول مرة أخرى.",
+        "amountUnavailable": "تعذر إصدار الإيصال لعدم توفر رصيد مستحق. حدّث الفاتورة وراجع المدفوعات.",
+        "invalidIdentifier": "تعذر إصدار المستند المحاسبي: رقم هوية العميل أو رقم الشركة غير صالح. حدّث بيانات العميل ثم حاول مرة أخرى.",
+        "missingIdentifier": "تعذر إصدار المستند المحاسبي: رقم هوية العميل أو رقم الشركة مفقود.",
+        "providerRejected": "رفضت ריווחית طلب إصدار الإيصال.",
+        "reconciliationRequired": "يلزم إجراء مراجعة مع ריווחית. لا תُصدر مستנד مرة أخرى حتى اكتمال המراجعة.",
+        "customerIdentifierInvalid": "רقم تسجيل العميل غير صالح לريفحيت. רاجع رقم الشركة או التسجيل في ملف العميل.",
+        "paymentNotFound": "لم يتم العثور على الدفعة أو أنها غير موثقة.",
+        "unsupportedPaymentMethod": "لا يمكن تمثيل طريقة الدفع هذه بأمان في ريفحيت حاليًا. لم يتم إصدار إيصال.",
+        "sourceLabel": "مصدر الدفع",
+        "sourceNew": "دفعة جديدة",
+        "sourceExisting": "دفعة موجودة {{amount}} ({{date}})",
+        "noExistingPayments": "لا توجد دفعات موثقة لهذه الفاتورة.",
+        "allPaymentsReceipted": "לدى כל דفعة מوثقة إيصال بالفعل في ריווחית.",
+        "receiptLabel": "إيصال",
+        "provider": "ريفحيت"
+      },
+      "delivery": {
+        "label": "طريقة التسليم في ريفحيت",
+        "none": "بدون إرسال",
+        "email": "إرسال بالبريد الإلكتروني"
+      },
+      "archive": {
+        "view": "عرض ملف PDF الرسمي",
+        "download": "تنزيل PDF",
+        "openFailed": "تعذر فتح ملف PDF الرسمي أو تنزيله حاليًا. يرجى المحاولة مرة أخرى.",
+        "notArchived": "لم تتم أرشفة المستند بعد",
+        "retry": "أرشفة / إعادة محاولة الأرشفة",
+        "archiving": "جارٍ الأرشفة...",
+        "success": "تمت أرشفة ملف PDF الرسمي.",
+        "issueSucceededButSaveFailed": "تم إصدار المستند المحاسبي بنجاح في ريفحيت، لكن تعذر حفظ ملف PDF الرسمي في CLIENTA. يمكنك المحاولة مجددًا باستخدام أرشفة / إعادة المحاولة.",
+        "delete": "حذف من الأرشيف",
+        "deleting": "جارٍ الحذف...",
+        "deleted": "تمت إزالة الملف من الأرشيف. يمكنك أرشفته مجددًا.",
+        "errors": {
+          "DocumentNotIssued": "ניתן לאכסן רק מסמך שהונפק.",
+          "CopyUnavailable": "לא ניתן לאחזר את עותק ה-PDF מריווחית כרגע.",
+          "DownloadRejected": "הורדת ה-PDF נדחתה.",
+          "StorageFailed": "שמירת ה-PDF נכשלה.",
+          "IntegrationUnavailable": "חיבור ריווחית אינו זמין.",
+          "deleteFailed": "تعذر حذف الملف حاليًا.",
+          "generic": "تعذرت أرشفة ملف PDF حاليًا."
+        }
+      }
+    },
     "nav": {
       "dashboard": "لوحة التحكم",
       "clients": "العملاء / CRM",
@@ -1681,6 +1888,11 @@
       "title": "المدفوعات",
       "subtitle": "راجع أرصدة الفواتير وسجّل المدفوعات وأدر تأكيدات الدفع.",
       "invoiceAmount": "مبلغ الفاتورة",
+      "project": "المشروع",
+      "projectEndDate": "تاريخ انتهاء المشروع",
+      "projectEndDateOverdue": "تاريخ انتهاء المشروع قد مضى",
+      "projectEndDateWithin30Days": "ينتهي المشروع خلال 30 يومًا",
+      "projectEndDateWithin60Days": "ينتهي المشروع خلال 60 يومًا",
       "openInvoice": "عرض الفاتورة",
       "loadError": "تعذر تحميل المدفوعات. حاول مرة أخرى.",
       "empty": "لا توجد فواتير متاحة بعد."
@@ -1725,6 +1937,10 @@
         "noContact": "لم تُحدَّد جهة اتصال للفوترة لهذا العميل.",
         "openPlan": "فتح خطة الفوترة"
       },
+      "projectEndings": {
+        "title": "مشاريع تنتهي قريبًا",
+        "empty": "لا توجد مشاريع نشطة أو معلّقة تنتهي ضمن فترة التنبيه."
+      },
       "quick": {
         "title": "إجراءات سريعة",
         "projects": "المشاريع",
@@ -1740,5 +1956,86 @@
     },
     "openMenu": "فتح القائمة",
     "closeMenu": "إغلاق القائمة"
+  },
+    "business": {
+    "accounting": {
+      "title": "הנהלת חשבונות",
+      "description": "הפקת מסמכים חשבונאיים רשמיים דרך ריווחית",
+      "documentNumber": "מספר מסמך",
+      "issuedAt": "תאריך הפקה",
+      "receiptNumber": "מספר קבלה",
+      "receiptAmount": "סכום קבלה",
+      "reconciliationTitle": "נדרש בירור מול ריווחית",
+      "reconciliationWarning": "يلزم إجراء مراجعة مع ריווחית. لا תُصدر مرة أخرىقبل التحقق.",
+      "reconciliationRequired": "يلزم إجراء مراجعة مع ריווחית. لا תُصدر مستנד مرة أخرى حتى اكتمال המراجعة.",
+      "actionFailed": "تعذر تنفيذ الإجراء في ריווחית. תحقق מ状ת המסמך قبل اتخاذ قرار بإعادة المحاولة.",
+      "reconciliationCheck": "בדיקת סטטוס מול ריווחית",
+      "reconciliationChecking": "בודק...",
+      "reconciliationResolved": "הסטטוס נבדק והמסמך אושר וקושר.",
+      "reconciliationRejected": "ריווחית דחתה או שלא נמצא מסמך. ההזמנה שוחררה וניתן להנפיק מחדש.",
+      "reconciliationStillPending": "הסטטוס עדיין אינו ודאי. נדרש בירור נוסף.",
+      "adminOnly": "פעולות חשבונאיות בריווחית זמינות למנהל המערכת בלבד",
+      "taxInvoice": {
+        "issue": "הפק חשבונית מס",
+        "issued": "تم إصدار الفاتورة الضريبية بنجاح في ريفحيت."
+      },
+      "receipts": {
+        "issue": "הפק קבלה",
+        "title": "הפקת קבלה",
+        "description": "הפק קבלה רשמית בריווחית עבור תשלום לחשבונית",
+        "amount": "סכום לתשלום",
+        "paymentMethod": "אמצעי תשלום",
+        "remainingBefore": "יתרה לתשלום לפני הקבלה",
+        "partialSupported": "ניתן להפיק קבלה גם עבור תשלום חלקי",
+        "review": "בדיקת פרטים",
+        "confirmTitle": "אישור הפקת קבלה",
+        "confirmDescription": "בדוק את פרטי התשלום לפני הפקת הקבלה בריווחית.",
+        "confirmIssue": "אישור והפקת קבלה",
+        "issuing": "מפיק קבלה...",
+        "success": "تم إصدار الإيصال بنجاح في ريفحيت.",
+        "error": "تعذر إصدار الإيصال في ריווחית. תحقق מ状ת התשלום וحاول مرة أخرى.",
+        "amountUnavailable": "تعذر إصدار الإيصال لعدم توفر رصيد مستحق. حدّث الفاتورة وراجع المدفوعات.",
+        "invalidIdentifier": "تعذر إصدار المستند المحاسبي: رقم هوية العميل أو رقم الشركة غير صالح. حدّث بيانات العميل ثم حاول مرة أخرى.",
+        "missingIdentifier": "تعذر إصدار المستند المحاسبي: رقم هوية العميل أو رقم الشركة مفقود.",
+        "providerRejected": "رفضت ריווחית طلب إصدار الإيصال.",
+        "reconciliationRequired": "يلزم إجراء مراجعة مع ריווחית. لا תُصدر مستנד مرة أخرى حتى اكتمال המراجعة.",
+        "customerIdentifierInvalid": "רقم تسجيل العميل غير صالح לريفحيت. רاجع رقم الشركة או التسجيل في ملف العميل.",
+        "paymentNotFound": "لم يتم العثور على الدفعة أو أنها غير موثقة.",
+        "sourceLabel": "مصدر الدفع",
+        "sourceNew": "دفعة جديدة",
+        "sourceExisting": "دفعة موجودة {{amount}} ({{date}})",
+        "noExistingPayments": "لا توجد دفعات موثقة لهذه الفاتورة.",
+        "allPaymentsReceipted": "לدى כל דفعة מوثقة إيصال بالفعل في ריווחית.",
+        "receiptLabel": "إيصال",
+        "provider": "ريفحيت"
+      },
+      "delivery": {
+        "label": "طريقة التسليم في ريفحيت",
+        "none": "بدون إرسال",
+        "email": "إرسال بالبريد الإلكتروني"
+      },
+      "archive": {
+        "view": "عرض ملف PDF الرسمي",
+        "download": "تنزيل PDF",
+        "openFailed": "تعذر فتح ملف PDF الرسمي أو تنزيله حاليًا. يرجى المحاولة مرة أخرى.",
+        "notArchived": "لم تتم أرشفة المستند بعد",
+        "retry": "أرشفة / إعادة محاولة الأرشفة",
+        "archiving": "جارٍ الأرشفة...",
+        "success": "تمت أرشفة ملف PDF الرسمي.",
+        "issueSucceededButSaveFailed": "تم إصدار المستند المحاسبي بنجاح في ريفحيت، لكن تعذر حفظ ملف PDF الرسمي في CLIENTA. يمكنك المحاولة مجددًا باستخدام أرشفة / إعادة المحاولة.",
+        "delete": "حذف من الأرشيف",
+        "deleting": "جارٍ الحذف...",
+        "deleted": "تمت إزالة الملف من الأرشيف. يمكنك أرشفته مجددًا.",
+        "errors": {
+          "DocumentNotIssued": "ניתן לאכסן רק מסמך שהונפק.",
+          "CopyUnavailable": "לא ניתן לאחזר את עותק ה-PDF מריווחית כרגע.",
+          "DownloadRejected": "הורדת ה-PDF נדחתה.",
+          "StorageFailed": "שמירת ה-PDF נכשלה.",
+          "IntegrationUnavailable": "חיבור ריווחית אינו זמין.",
+          "deleteFailed": "تعذر حذف الملف حاليًا.",
+          "generic": "تعذرت أرشفة ملف PDF حاليًا."
+        }
+      }
+    }
   }
 }

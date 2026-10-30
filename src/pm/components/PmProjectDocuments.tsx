@@ -12,10 +12,11 @@ import type { QuoteListItem } from '@/api/quotes'
 import type { Invoice } from '@/api/invoices'
 import type { Project } from '@/types/pm'
 import PmProjectFilesSection from './PmProjectFilesSection'
+import PmProjectProposalsSection from './PmProjectProposalsSection'
 
-type Props = { project: Project }
+type Props = { project: Project; isBusiness: boolean }
 
-export default function PmProjectDocuments({ project }: Props) {
+export default function PmProjectDocuments({ project, isBusiness }: Props) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
@@ -161,6 +162,7 @@ export default function PmProjectDocuments({ project }: Props) {
             </div>
           )}
 
+          {isBusiness && <PmProjectProposalsSection project={project} />}
           <PmProjectFilesSection project={project} />
         </div>
       )}
