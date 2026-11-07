@@ -9,6 +9,7 @@ import { useFeatures } from '@/contexts/FeatureContext'
 import { getProjectsByClient } from '@/api/projects'
 import { getBillingMilestone, linkBillingMilestoneInvoice } from '@/api/billingMilestones'
 import { getAccountingDocuments, issueInvoiceWithRivhit, DELIVERY_EMAIL, DELIVERY_NONE, type AccountingDeliveryChannel, type ExternalAccountingDocument } from '@/api/rivhitAccountingDocuments'
+import { getRivhitIntegration } from '@/api/rivhitIntegration'
 import type { Project } from '@/types/pm'
 import { usePmEnabled } from '@/pm/hooks/usePmEnabled'
 import type {
@@ -185,6 +186,9 @@ export default function AdminInvoices() {
   const { pmEnabled, loading: pmLoading } = usePmEnabled()
   const { tenant, productType } = useTenant()
   const isBusinessTenant = productType === 'business'
+  const isClinicTenant = productType === 'clinic' || productType === 'legacy'
+  const hasRivhitAccounting = isBusinessTenant || isClinicTenant
+  const isAdmin = user?.role === 'admin'
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [clientProjects, setClientProjects] = useState<Project[]>([])
@@ -201,6 +205,7 @@ export default function AdminInvoices() {
   const [accountingRowOpen, setAccountingRowOpen] = useState(false)
   const [pendingAccountingInvoiceId, setPendingAccountingInvoiceId] = useState<string | null>(null)
   const [accountingDocuments, setAccountingDocuments] = useState<Record<string, ExternalAccountingDocument[]>>({})
+  const [clinicRivhitAccountingReady, setClinicRivhitAccountingReady] = useState(false)
   const [invoicePendingIssue, setInvoicePendingIssue] = useState<Invoice | null>(null)
   const [issuingInvoiceId, setIssuingInvoiceId] = useState<string | null>(null)
   const [accountingMessage, setAccountingMessage] = useState<string | null>(null)
@@ -210,7 +215,7 @@ export default function AdminInvoices() {
 
   const isRtl = isRtlLanguage(i18n.language)
   const canManageInvoices = hasPermission('manage_invoices')
-  const canIssueRivhit = isBusinessTenant && user?.role === 'admin'
+  const canIssueRivhit = hasRivhitAccounting && user?.role === 'admin'
   const canSelectProject = pmEnabled && features?.invoicesEnabled === true
 
   useEffect(() => {
@@ -229,7 +234,7 @@ export default function AdminInvoices() {
     }
 
     loadData()
-  }, [canManageInvoices, features, navigate])
+  }, [canManageInvoices, features, navigate, hasRivhitAccounting])
 
   const loadData = async () => {
     try {
@@ -240,7 +245,7 @@ export default function AdminInvoices() {
 
       setInvoices(Array.from(new Map(invoicesData.map((invoice) => [invoice.id, invoice])).values()))
       setClients(clientsData)
-      if (canManageInvoices && isBusinessTenant) {
+      if (canManageInvoices && hasRivhitAccounting) {
         try {
           const documents = await getAccountingDocuments()
           const grouped: Record<string, ExternalAccountingDocument[]> = {}
@@ -252,6 +257,16 @@ export default function AdminInvoices() {
         } catch {
           setAccountingDocuments({})
         }
+      }
+      if (isClinicTenant && canIssueRivhit) {
+        try {
+          const integration = await getRivhitIntegration()
+          setClinicRivhitAccountingReady(integration.isConfigured && integration.isEnabled && integration.accountingEnabled)
+        } catch {
+          setClinicRivhitAccountingReady(false)
+        }
+      } else {
+        setClinicRivhitAccountingReady(false)
       }
     } catch (error) {
       console.error('Failed to load data:', error)
@@ -297,7 +312,7 @@ export default function AdminInvoices() {
   }
 
   const handleRefreshAccounting = async () => {
-    if (!canManageInvoices || !isBusinessTenant) return
+    if (!canManageInvoices || !hasRivhitAccounting) return
     try {
       const documents = await getAccountingDocuments()
       const grouped: Record<string, ExternalAccountingDocument[]> = {}
@@ -669,16 +684,19 @@ export default function AdminInvoices() {
 
   const formatDate = (dateString: string) => formatInvoiceCalendarDate(dateString, 'en-US')
 
-  const renderAccountingPanel = (invoice: Invoice, defaultExpanded = false) => {
-    if (!isBusinessTenant) return null
+  const renderAccountingPanel = (invoice: Invoice, defaultExpanded = false, hideToggle = false) => {
+    if (!hasRivhitAccounting) return null
     const documents = accountingDocuments[invoice.id] ?? []
     return (
       <RivhitAccountingActions
         invoice={invoice}
         accountingDocuments={documents}
         defaultExpanded={defaultExpanded}
+        hideToggle={hideToggle}
         canManageRivhit={canIssueRivhit}
         isBusinessTenant={isBusinessTenant}
+        isClinicTenant={isClinicTenant}
+        isRivhitAccountingReady={!isClinicTenant || clinicRivhitAccountingReady}
         outstandingAmount={invoice.finalAmountToPay ?? invoice.totalAmount}
         currency={tenant?.currency ?? 'ILS'}
         onRefresh={handleRefreshAccounting}
@@ -813,9 +831,9 @@ export default function AdminInvoices() {
                         </span>
                       </button>
 
-                      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[520px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                      <div className={`transition-all duration-300 ${isOpen ? 'max-h-[85vh] overflow-y-auto opacity-100' : 'max-h-0 overflow-hidden opacity-0'}`}>
                         <div className="p-4 bg-white space-y-3">
-                          {canManageInvoices && <InvoicePaymentsPanel invoice={invoice} canManage={canManageInvoices} />}
+                          {canManageInvoices && !isClinicTenant && <InvoicePaymentsPanel invoice={invoice} canManage={canManageInvoices} />}
                           <div className="border-b border-slate-100 pb-2">
                             <p className="text-xs text-slate-500">תאריך חשבונית:</p>
                             <p className="text-sm font-medium text-slate-900">{formatDate(invoice.invoiceDate)}</p>
@@ -836,7 +854,7 @@ export default function AdminInvoices() {
                               {STATUS_META[normalizeInvoiceStatus(invoice.status)].label}
                             </span>
                           </div>
-                            {renderAccountingPanel(invoice, index === 0)}
+                            {renderAccountingPanel(invoice, isClinicTenant || index === 0)}
 
                           {paymentMethod && (
                             <div className="border-b border-slate-100 pb-2">
@@ -924,7 +942,7 @@ export default function AdminInvoices() {
                     <th className={`${isBusinessTenant ? 'px-2 text-xs whitespace-nowrap' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('admin.invoices.table.date')}</th>
                     <th className={`${isBusinessTenant ? 'px-2 text-xs whitespace-nowrap' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('admin.invoices.table.dueDate')}</th>
                     <th className={`${isBusinessTenant ? 'px-2 text-xs whitespace-nowrap' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('admin.invoices.table.status')}</th>
-                    {isBusinessTenant && <th className="px-2 py-3 text-start text-xs font-semibold text-slate-900">{t('business.accounting.title')}</th>}
+                    {hasRivhitAccounting && <th className="px-2 py-3 text-start text-xs font-semibold text-slate-900">{t('business.accounting.title')}</th>}
                     <th className={`${isBusinessTenant ? 'px-2 text-xs whitespace-nowrap' : 'px-4 text-sm'} py-3 text-start font-semibold text-slate-900`}>{t('common.actions')}</th>
                   </tr>
                 </thead>
@@ -968,7 +986,7 @@ export default function AdminInvoices() {
                             {statusMeta.label}
                           </span>
                         </td>
-                        {isBusinessTenant && (
+                        {hasRivhitAccounting && (
                           <td className="min-w-0 py-3 px-2 align-top">
                             <button
                               type="button"
@@ -976,17 +994,19 @@ export default function AdminInvoices() {
                               aria-controls={`invoice-accounting-details-${invoice.id}`}
                               aria-label={`${t(`business.accounting.summary.${accountingSummaryStatus}`)} — ${invoice.number}`}
                               onClick={() => toggleAccountingRow(invoice.id)}
-                              className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-1 text-start text-xs font-semibold leading-tight transition-colors hover:brightness-95 ${ACCOUNTING_SUMMARY_STATUS_CLASS[accountingSummaryStatus]}`}
+                              className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-2 py-1 text-start text-xs font-semibold leading-tight transition-colors hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${ACCOUNTING_SUMMARY_STATUS_CLASS[accountingSummaryStatus]}`}
                             >
-                              <span>{t(`business.accounting.summary.${accountingSummaryStatus}`)}</span>
-                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ease-out ${accountingIsExpanded && accountingRowOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                              <span className="whitespace-nowrap">{t('business.accounting.title')}</span>
+                              {accountingSummaryStatus === 'Issued'
+                                ? <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                : <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ease-out ${accountingIsExpanded && accountingRowOpen ? 'rotate-180' : ''}`} aria-hidden="true" />}
                             </button>
                           </td>
                         )}
                         <td className="py-3 px-2">
                           {canManageInvoices ? (
                             <div className="flex flex-wrap items-center gap-2">
-                              <InvoicePaymentsPanel invoice={invoice} canManage={canManageInvoices} />
+                              {!isClinicTenant && <InvoicePaymentsPanel invoice={invoice} canManage={canManageInvoices} />}
                               {isBusinessTenant && <button
                                 type="button"
                                 title={t('admin.invoices.viewInvoice')}
@@ -1009,15 +1029,15 @@ export default function AdminInvoices() {
                           ) : null}
                         </td>
                       </tr>
-                      {isBusinessTenant && accountingIsExpanded && (
+                      {hasRivhitAccounting && accountingIsExpanded && (
                         <tr id={`invoice-accounting-details-${invoice.id}`} className="bg-slate-50/70">
-                          <td colSpan={8} className="p-0">
+                          <td colSpan={hasRivhitAccounting ? 8 : 7} className="p-0">
                             <div
                               onTransitionEnd={handleAccountingRowTransitionEnd}
                               className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-[220ms] ease-out ${accountingRowOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
                             >
                               <div aria-hidden={!accountingRowOpen} inert={!accountingRowOpen} className={`min-h-0 overflow-hidden transition-transform duration-[220ms] ease-out ${accountingRowOpen ? 'translate-y-0' : '-translate-y-1'}`}>
-                                <div className="w-full min-w-0 p-3 sm:p-4">{renderAccountingPanel(invoice, true)}</div>
+                                <div className="w-full min-w-0 p-3 sm:p-4">{renderAccountingPanel(invoice, true, true)}</div>
                               </div>
                             </div>
                           </td>

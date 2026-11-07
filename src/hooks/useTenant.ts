@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 
 export type TenantInfo = {
   id: string;
+  productType?: string | null;
   plan: string;
   subscriptionStatus: string;
   trialEndsAt?: string;
   subscriptionEndsAt?: string;
+  scheduledPlan?: string | null;
+  scheduledPlanChangeAt?: string | null;
   isSuspended: boolean;
 };
 
@@ -13,6 +16,8 @@ type BillingStatus = {
   plan?: string;
   subscriptionStatus?: string;
   trialEndsAt?: string | null;
+  scheduledPlan?: string | null;
+  scheduledPlanChangeAt?: string | null;
   isSuspended?: boolean;
 };
 
@@ -62,6 +67,8 @@ export function useTenant() {
               typeof billingData.trialEndsAt === "string"
                 ? billingData.trialEndsAt
                 : tenantData.trialEndsAt,
+            scheduledPlan: billingData.scheduledPlan ?? null,
+            scheduledPlanChangeAt: billingData.scheduledPlanChangeAt ?? null,
             isSuspended:
               typeof billingData.isSuspended === "boolean"
                 ? billingData.isSuspended

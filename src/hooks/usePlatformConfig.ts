@@ -5,7 +5,7 @@ const fallbackLegacyTrialDays = 21
 
 const fallbackConfig: PlatformSettings = {
   id: '',
-  supportEmail: 'support@clienta.digitalpenpro.com',
+  supportEmail: 'support@digitalpenpro.com',
   supportPhone: null,
   websiteUrl: 'https://clienta.digitalpenpro.com',
   defaultTrialDays: fallbackLegacyTrialDays,

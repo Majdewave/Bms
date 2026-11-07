@@ -3,7 +3,9 @@ import { useState } from 'react'
 import { createBillingPortal } from '@/services/billingService'
 import { Alert } from '@/components/UI'
 import { useTranslation } from 'react-i18next'
-import { createCheckoutSession } from '@/services/billingService'
+import { changePlan, createCheckoutSession, PlanType } from '@/services/billingService'
+import ClinicSubscriptionPlans from '@/components/ClinicSubscriptionPlans'
+import ClinicPlanManagement from '@/components/ClinicPlanManagement'
 import { usePlatformConfig } from '@/hooks/usePlatformConfig'
 
 export default function BillingPage() {
@@ -15,9 +17,15 @@ export default function BillingPage() {
   new Date(tenant.subscriptionEndsAt) > new Date();
 
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
-  const [portalError, setPortalError] = useState<string | null>(null)
+  const [portalError] = useState<string | null>(null)
+  const [clinicPlanOverride, setClinicPlanOverride] = useState<string>()
+  const [clinicScheduledPlanOverride, setClinicScheduledPlanOverride] = useState<string | null>()
+  const [clinicScheduledDateOverride, setClinicScheduledDateOverride] = useState<string | null>()
+  const [clinicPlanError, setClinicPlanError] = useState<string | null>(null)
+  const [clinicPlanNotice, setClinicPlanNotice] = useState<string | null>(null)
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'he'
+  const isClinicTenant = tenant?.productType?.toLowerCase() === 'clinic'
 
   const [billingCycle, setBillingCycle] = useState<'Monthly' | 'Yearly'>('Monthly')
 
@@ -37,19 +45,42 @@ const handleManageSubscription = async () => {
 }
 
 
-const handleUpgrade = async () => {
+const handleUpgrade = async (planType: PlanType) => {
   try {
 
     setIsLoadingCheckout(true)
 
-    const res = await createCheckoutSession(
-      billingCycle
-    )
+    const res = await createCheckoutSession(planType, billingCycle)
 
     window.location.href = res.url
 
   } catch (err) {
     console.error(err)
+  } finally {
+    setIsLoadingCheckout(false)
+  }
+}
+
+const handleClinicPlanChange = async (planType: PlanType.Basic | PlanType.Enterprise) => {
+  try {
+    setIsLoadingCheckout(true)
+    setClinicPlanError(null)
+    setClinicPlanNotice(null)
+
+    const result = await changePlan(planType, 'Monthly')
+    if (result.effectiveImmediately) {
+      setClinicPlanOverride(result.newPlan ?? (planType === PlanType.Basic ? 'Basic' : 'Enterprise'))
+      setClinicScheduledPlanOverride(null)
+      setClinicScheduledDateOverride(null)
+      setClinicPlanNotice(t('billing.clinicPlans.changeComplete'))
+    } else {
+      setClinicScheduledPlanOverride(result.scheduledPlan ?? (planType === PlanType.Basic ? 'Basic' : 'Enterprise'))
+      setClinicScheduledDateOverride(result.scheduledDate ?? null)
+      setClinicPlanNotice(t('billing.clinicPlans.changeScheduled'))
+    }
+  } catch (error) {
+    const responseError = (error as { response?: { data?: { error?: string } } }).response?.data?.error
+    setClinicPlanError(responseError ?? t('billing.clinicPlans.changeFailed'))
   } finally {
     setIsLoadingCheckout(false)
   }
@@ -76,7 +107,7 @@ const handleUpgrade = async () => {
   }
 
 
-    if (tenant.subscriptionStatus === 'Active') {
+    if (tenant.subscriptionStatus === 'Active' && !isClinicTenant) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-[#f7f9fc] px-6">
           <div className="bg-white rounded-2xl shadow-lg p-10 text-center max-w-md w-full">
@@ -169,7 +200,24 @@ const handleUpgrade = async () => {
         </div>
       )}
 
-      {/* PLAN */}
+      {isClinicTenant ? (
+        tenant.subscriptionStatus === 'Active' ? (
+          <ClinicPlanManagement
+            currentPlan={clinicPlanOverride ?? tenant.plan}
+            scheduledPlan={clinicScheduledPlanOverride !== undefined ? clinicScheduledPlanOverride : tenant.scheduledPlan}
+            scheduledPlanChangeAt={clinicScheduledDateOverride !== undefined ? clinicScheduledDateOverride : tenant.scheduledPlanChangeAt}
+            isLoading={isLoadingCheckout}
+            error={clinicPlanError}
+            notice={clinicPlanNotice}
+            onChangePlan={(planType) => void handleClinicPlanChange(planType)}
+          />
+        ) : (
+          <ClinicSubscriptionPlans
+            isLoading={isLoadingCheckout}
+            onChoosePlan={(planType) => void handleUpgrade(planType)}
+          />
+        )
+      ) : (
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center">
         <div className="mb-3">
           <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
@@ -233,7 +281,7 @@ const handleUpgrade = async () => {
 
         {/* Stripe Billing Portal Button */}
         <button
-          onClick={handleUpgrade}
+          onClick={() => void handleUpgrade(PlanType.Pro)}
           disabled={isLoadingCheckout}
           className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-medium transition ${isLoadingCheckout ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
@@ -250,6 +298,8 @@ const handleUpgrade = async () => {
           {t('billing.footer')}
         </p>
       </div>
+      )}
     </div>
   )
 }
+

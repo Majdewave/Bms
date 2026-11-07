@@ -1,18 +1,3 @@
-// Returns translated label for activity action type
-  const getActionLabel = (type: string, t: any) => {
-    switch (type) {
-      case 'appointment_created':
-        return t('dashboard.activity.appointmentCreated');
-      case 'client_created':
-        return t('dashboard.activity.clientCreated');
-      case 'staff_created':
-        return t('dashboard.activity.staffCreated');
-      case 'staff_deleted':
-        return t('dashboard.activity.staffDeleted', 'Staff deleted');
-      default:
-        return type;
-    }
-  };
 import { useState, useEffect } from 'react'
 import { useTenant } from '@/hooks/useTenant'
 import { toast } from 'react-toastify';
@@ -29,8 +14,10 @@ import {
   CheckCircle,
   AlertCircle,
   Trash2,
+  FileText,
 } from 'lucide-react'
 import BillingBanner from '@/components/BillingBanner'
+import DashboardUpcomingAppointments from '@/components/DashboardUpcomingAppointments'
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -38,18 +25,36 @@ export default function AdminDashboard() {
   const { user } = useAuth()
   const { t, i18n } = useTranslation()
   const dir = i18n.dir()
-  const isRTL = dir === 'rtl'
+  const locale = i18n.language === 'he' ? 'he-IL' : i18n.language === 'ar' ? 'ar-EG' : 'en-US'
   const [stats, setStats] = useState<any>(null)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
-  const [selectedActivity, setSelectedActivity] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(new Date())
 
   const activityConfig: Record<string, { icon: any; color: string }> = {
     staff_created: { icon: UserPlus, color: 'text-primary-700' },
     staff_deleted: { icon: Trash2, color: 'text-red-600' },
+    user_deleted: { icon: Trash2, color: 'text-red-600' },
+    client_deleted: { icon: Trash2, color: 'text-red-600' },
     client_created: { icon: Users, color: 'text-primary-700' },
     appointment_created: { icon: Calendar, color: 'text-primary-700' },
+    appointment_completed: { icon: CheckCircle, color: 'text-emerald-600' },
+    visit_summary_created: { icon: FileText, color: 'text-violet-600' },
+  }
+
+  const getActionLabel = (type: string) => {
+    const keys: Record<string, string> = {
+      appointment_created: 'appointmentCreated',
+      appointment_completed: 'appointmentCompleted',
+      visit_summary_created: 'visitSummaryCreated',
+      client_created: 'clientCreated',
+      staff_created: 'staffCreated',
+      staff_deleted: 'staffDeleted',
+      user_deleted: 'userDeleted',
+      client_deleted: 'clientDeleted',
+    }
+    const key = keys[type]
+    return key ? t(`dashboard.activity.${key}`) : t('dashboard.activity.unknown')
   }
 
   useEffect(() => {
@@ -95,29 +100,18 @@ export default function AdminDashboard() {
       )
     }
 
-    switch (type) {
-      case 'appointment_created':
-        return <Calendar className="w-5 h-5" />;
-      case 'client_created':
-        return <UserPlus className="w-5 h-5 text-blue-600" />;
-      case 'staff_created':
-        return <Users className="w-5 h-5 text-purple-600" />;
-      default:
-        return <Calendar className="w-5 h-5 text-slate-400" />;
-    }
+    return <Calendar className="h-4 w-4 text-slate-500" />
   }
 
   const formatRelativeTime = (timestamp: string) => {
     const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
+    const diffSeconds = (date.getTime() - now.getTime()) / 1000
+    const relativeTime = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
 
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    return `${diffDays}d ago`
+    if (Math.abs(diffSeconds) < 60) return relativeTime.format(0, 'second')
+    if (Math.abs(diffSeconds) < 3600) return relativeTime.format(Math.round(diffSeconds / 60), 'minute')
+    if (Math.abs(diffSeconds) < 86400) return relativeTime.format(Math.round(diffSeconds / 3600), 'hour')
+    return relativeTime.format(Math.round(diffSeconds / 86400), 'day')
   }
 
 
@@ -141,7 +135,6 @@ export default function AdminDashboard() {
     );
   }
 
-  const locale = i18n.language === 'he' ? 'he-IL' : i18n.language === 'ar' ? 'ar-EG' : 'en-US'
   const dayLabel = now.toLocaleDateString(locale, { weekday: 'long' })
   const dateLabel = now.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })
   const timeLabel = now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })
@@ -292,78 +285,11 @@ export default function AdminDashboard() {
       <Card className="mb-8 rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <CardHeader title={t('dashboard.upcomingAppointments')} />
         <CardContent>
-          {(!stats?.upcomingAppointmentsList || stats.upcomingAppointmentsList.length === 0) ? (
-            <div className="text-slate-400 py-4 text-center">No upcoming appointments</div>
-          ) : (
-            <>
-              {/* Mobile: cards */}
-              <div className="flex flex-col gap-2.5 md:hidden" dir={dir}>
-                {stats.upcomingAppointmentsList.slice(0, 5).map((apt: any, idx: number) => {
-                  const time = new Date(apt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  return (
-                    <div
-                      key={`m-${apt.id}-${idx}`}
-                      className={`flex flex-col gap-1.5 rounded-xl border px-4 py-3 ${
-                        idx % 2 === 0 ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'
-                      }`}
-                    >
-                      <div className="text-sm text-slate-700">
-                        <span className="text-slate-500">{t('dashboard.client')}:</span> {apt.clientName}
-                      </div>
-                      <div className="text-sm text-slate-700 font-mono">
-                        <span className="text-slate-500">{t('dashboard.time')}:</span> {time}
-                      </div>
-                      <div className="text-sm text-slate-700">
-                        <span className="text-slate-500">{t('dashboard.service')}:</span> {apt.serviceName}
-                      </div>
-                      {apt.staffName && (
-                        <div className="text-sm text-slate-700">
-                          <span className="text-slate-500">{t('dashboard.staff')}:</span> {apt.staffName}
-                        </div>
-                      )}
-                      <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
-                        <span className="text-slate-500">{t('dashboard.status')}:</span>
-                        <span className="inline-block rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-sm font-semibold text-slate-700 capitalize">
-                          {apt.status}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Desktop: original table */}
-              <div className="hidden md:block overflow-x-auto" dir={dir}>
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="bg-slate-50">
-                      <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.time')}</th>
-                      <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.client')}</th>
-                      <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.service')}</th>
-                      <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.staff')}</th>
-                      <th className={`px-4 py-2 font-semibold text-slate-700 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{t('dashboard.status')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.upcomingAppointmentsList.slice(0, 5).map((apt: any, idx: number) => {
-                      const time = new Date(apt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                      return (
-                        <tr key={`d-${apt.id}-${idx}`} className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} transition-colors hover:bg-slate-100`}>
-                          <td className={`px-4 py-2 font-mono ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{time}</td>
-                          <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.clientName}</td>
-                          <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.serviceName}</td>
-                          <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>{apt.staffName}</td>
-                          <td className={`px-4 py-2 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
-                            <span className="inline-block rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 capitalize">{apt.status}</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+          <DashboardUpcomingAppointments
+            appointments={stats?.upcomingAppointmentsList}
+            direction={dir}
+            locale={locale}
+          />
         </CardContent>
       </Card>
 
@@ -374,207 +300,47 @@ export default function AdminDashboard() {
           description={t('admin.dashboard.activity.subtitle')}
         />
         <CardContent>
-          {/* Mobile: activity cards */}
-          <div className="flex flex-col gap-2.5 md:hidden">
-            {recentActivity.map((activity, idx) => {
-              const action = getActionLabel(activity.type, t);
-              let entity = '';
-              if (activity.type === 'appointment_created') {
-                entity = [activity.clientName, activity.serviceName].filter(Boolean).join(' • ');
-              } else if (activity.type === 'client_created') {
-                entity = activity.clientName || '';
-              } else if (activity.type === 'staff_created') {
-                entity = activity.staffName || '';
-              } else if (activity.type === 'staff_deleted') {
-                entity = activity.staffName || activity.deletedStaffName || activity.deletedUserName || activity.targetName || activity.entityName || '';
-              } else if (activity.type === 'client_deleted') {
-                entity = activity.clientName || activity.entityName || '';
-              } else if (activity.type === 'user_deleted') {
-                entity = activity.staffName || activity.entityName || '';
-              }
-              const performedBy = activity.performedBy || [activity.performedByName, activity.performedByEmail].filter(Boolean).join(' • ') || [activity.actorName, activity.actorEmail].filter(Boolean).join(' • ') || '';
-              const time = formatRelativeTime(activity.timestamp);
-              const activityTitle = activity.title || action;
-              const config = activityConfig[activity.type] || {};
-              return (
-                <div
-                  key={`m-${activity.id}-${idx}`}
-                  onClick={() => setSelectedActivity({ ...activity, title: activityTitle, performedBy })}
-                  className={`cursor-pointer rounded-xl border px-4 py-3 flex flex-col gap-1.5 ${
-                    idx % 2 === 0 ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white'
-                  }`}
-                >
-                  <div className="text-sm text-slate-700 flex items-center gap-2 flex-wrap">
-                    <span className="text-slate-500">{t('dashboard.activity.action')}:</span>
-                    {getActivityIcon(activity.type)}
-                    <span className={`text-base font-semibold ${config.color || 'text-slate-900'}`}>{activityTitle}</span>
-                  </div>
-                  {entity && (
-                    <div className="text-xs text-slate-700">
-                      <span className="text-slate-500">{t('dashboard.activity.entity')}:</span> {entity}
-                    </div>
-                  )}
-                  {performedBy && (
-                    <div className="text-xs text-slate-700">
-                      <span className="text-slate-500">{t('dashboard.activity.performedBy')}:</span> {performedBy}
-                    </div>
-                  )}
-                  <div className="text-xs text-slate-700">
-                    <span className="text-slate-500">{t('dashboard.activity.time')}:</span> <span className="text-slate-400">{time}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {recentActivity.length === 0 ? (
+            <p dir={dir} className="py-8 text-center text-sm text-slate-500">{t('dashboard.activity.empty')}</p>
+          ) : (
+            <ol dir={dir} className="relative space-y-3 before:absolute before:inset-y-5 before:start-5 before:w-px before:bg-slate-200">
+              {recentActivity.map((activity) => {
+                const entity = activity.type === 'appointment_created'
+                  ? [activity.clientName, activity.serviceName].filter(Boolean).join(' • ')
+                  : activity.type === 'client_created' || activity.type === 'client_deleted'
+                    ? activity.clientName || activity.entityName || ''
+                    : activity.type === 'staff_created'
+                      ? activity.staffName || ''
+                      : activity.type === 'staff_deleted' || activity.type === 'user_deleted'
+                        ? activity.staffName || activity.deletedStaffName || activity.deletedUserName || activity.targetName || activity.entityName || ''
+                        : ''
+                const performedBy = activity.performedBy || [activity.performedByName, activity.performedByEmail].filter(Boolean).join(' • ') || [activity.actorName, activity.actorEmail].filter(Boolean).join(' • ')
+                const config = activityConfig[activity.type] || { color: 'text-slate-500' }
 
-          {/* Desktop: original table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table dir={dir} className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50">
-                  {isRTL ? (
-                    <>
-                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.action')}</th>
-                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.entity')}</th>
-                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.performedBy')}</th>
-                      <th className="px-4 py-2 font-semibold text-slate-700 text-right">{t('dashboard.activity.time')}</th>
-                    </>
-                  ) : (
-                    <>
-                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.action')}</th>
-                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.entity')}</th>
-                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.performedBy')}</th>
-                      <th className="px-4 py-2 font-semibold text-slate-700 text-left">{t('dashboard.activity.time')}</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {recentActivity.map((activity, idx) => {
-                  // Action column
-                  const action = getActionLabel(activity.type, t);
-                  // Entity column
-                  let entity = '';
-                  if (activity.type === 'appointment_created') {
-                    entity = [activity.clientName, activity.serviceName].filter(Boolean).join(' • ');
-                  } else if (activity.type === 'client_created') {
-                    entity = activity.clientName || '';
-                  } else if (activity.type === 'staff_created') {
-                    entity = activity.staffName || '';
-                  } else if (activity.type === 'staff_deleted') {
-                    entity =
-                      activity.staffName ||
-                      activity.deletedStaffName ||
-                      activity.deletedUserName ||
-                      activity.targetName ||
-                      activity.entityName ||
-                      '';
-                  }
-                  else if (activity.type === 'client_deleted') {
-                  entity = activity.clientName || activity.entityName || '';
-                  }
-                  else if (activity.type === 'user_deleted') {
-                    entity = activity.staffName || activity.entityName || '';
-                  }
-                  // Performed By column
-                  const performedBy =
-                    activity.performedBy ||
-                    [activity.performedByName, activity.performedByEmail].filter(Boolean).join(' • ') ||
-                    [activity.actorName, activity.actorEmail].filter(Boolean).join(' • ') ||
-                    '';
-                  // Time column
-                  const time = formatRelativeTime(activity.timestamp);
-                  const activityTitle = activity.title || action;
-                  const config = activityConfig[activity.type] || {};
-                  return (
-                    <tr
-                      key={`${activity.id}-${idx}`}
-                      onClick={() => setSelectedActivity({ ...activity, title: activityTitle, performedBy })}
-                      className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} cursor-pointer transition-colors hover:bg-slate-100`}
-                    >
-                      {isRTL ? (
-                        <>
-                          <td className="px-4 py-2 text-right">
-                            <div className="flex items-center gap-2 justify-start">
-                              {getActivityIcon(activity.type)}
-                              <span className={config.color || 'text-slate-900'}>{activityTitle}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 text-right">{entity}</td>
-                          <td className="px-4 py-2 text-right">{performedBy}</td>
-                          <td className="px-4 py-2 text-sm text-slate-500 text-right">{time}</td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-4 py-2 text-left">
-                            <div className="flex items-center gap-2">
-                              {getActivityIcon(activity.type)}
-                              <span className={config.color || 'text-slate-900'}>{activityTitle}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 text-left">{entity}</td>
-                          <td className="px-4 py-2 text-left">{performedBy}</td>
-                          <td className="px-4 py-2 text-sm text-slate-500 text-left">{time}</td>
-                        </>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                return (
+                  <li key={activity.id} className="relative flex min-w-0 items-start gap-3 md:gap-4">
+                    <span className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm ${config.color}`} aria-hidden="true">
+                      {getActivityIcon(activity.type)}
+                    </span>
+                    <article className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300 hover:bg-slate-50/70">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <h3 className={`text-sm font-semibold leading-5 ${config.color}`}>{getActionLabel(activity.type)}</h3>
+                          {entity && <p className="mt-1 break-words text-sm text-slate-600"><bdi>{entity}</bdi></p>}
+                        </div>
+                        <time className="shrink-0 text-xs text-slate-500" dateTime={activity.timestamp}>{formatRelativeTime(activity.timestamp)}</time>
+                      </div>
+                      <p className="mt-2 text-xs text-slate-500">
+                        {t('dashboard.activity.performedBy')}: <span className="font-medium text-slate-700"><bdi>{performedBy || t('dashboard.activity.actorUnavailable')}</bdi></span>
+                      </p>
+                    </article>
+                  </li>
+                )
+              })}
+            </ol>
+          )}
         </CardContent>
       </Card>
-
-      {selectedActivity && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45" dir={dir}>
-          <div className="w-[400px] rounded-xl border border-slate-200 bg-white p-6 shadow-[0_12px_24px_rgba(15,23,42,0.12)]">
-            <h2 className="text-lg font-bold mb-4">
-              {selectedActivity.title}
-            </h2>
-
-            <div className="space-y-2 text-sm">
-              <div>
-                <strong>סוג פעולה:</strong> {selectedActivity.type}
-              </div>
-
-              <div>
-                <strong>בוצע על ידי:</strong> {selectedActivity.performedBy}
-              </div>
-
-              {selectedActivity.staffName && (
-                <div>
-                  <strong>איש צוות:</strong> {selectedActivity.staffName}
-                </div>
-              )}
-
-              {selectedActivity.clientName && (
-                <div>
-                  <strong>לקוח:</strong> {selectedActivity.clientName}
-                </div>
-              )}
-
-              {selectedActivity.serviceName && (
-                <div>
-                  <strong>שירות:</strong> {selectedActivity.serviceName}
-                </div>
-              )}
-
-              <div>
-                <strong>תאריך:</strong>{' '}
-                {new Date(selectedActivity.timestamp).toLocaleString()}
-              </div>
-            </div>
-
-            <button
-              onClick={() => setSelectedActivity(null)}
-              className="mt-4 w-full rounded-xl bg-primary-600 py-2 text-white transition-colors hover:bg-primary-700"
-            >
-              סגור
-            </button>
-          </div>
-        </div>
-      )}
     </Container>
   )
 }

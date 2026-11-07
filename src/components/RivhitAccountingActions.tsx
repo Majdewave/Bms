@@ -51,8 +51,11 @@ export type RivhitAccountingActionsProps = {
   invoice: Invoice
   accountingDocuments: ExternalAccountingDocument[]
   defaultExpanded?: boolean
+  hideToggle?: boolean
   canManageRivhit: boolean
   isBusinessTenant: boolean
+  isClinicTenant?: boolean
+  isRivhitAccountingReady?: boolean
   outstandingAmount: number
   currency: string
   onRefresh: () => Promise<void> | void
@@ -63,8 +66,11 @@ export function RivhitAccountingActions({
   invoice,
   accountingDocuments,
   defaultExpanded = false,
+  hideToggle = false,
   canManageRivhit,
   isBusinessTenant,
+  isClinicTenant = false,
+  isRivhitAccountingReady = true,
   outstandingAmount,
   currency,
   onRefresh,
@@ -101,11 +107,11 @@ export function RivhitAccountingActions({
     .map((document) => document.paymentId as string))
   const receiptablePayments = verifiedPayments.filter((payment) => !paymentIdsWithReceipts.has(payment.id))
   const selectedExistingPayment = form.paymentId ? verifiedPayments.find((payment) => payment.id === form.paymentId) : undefined
-  const firstVisibleDocumentId = taxInvoiceDocument?.status === 'Issued'
-    ? taxInvoiceDocument.id
-    : receipts[0]?.id
+  const visibleDocumentIds = [taxInvoiceDocument, ...receipts]
+    .filter((document): document is ExternalAccountingDocument => Boolean(document) && document!.status === 'Issued')
+    .map((document) => document.id)
   const [expandedAccountingDocumentIds, setExpandedAccountingDocumentIds] = useState<Set<string>>(
-    () => new Set(firstVisibleDocumentId ? [firstVisibleDocumentId] : []),
+    () => new Set(visibleDocumentIds),
   )
   const language = i18n.resolvedLanguage || i18n.language
   const isRtl = language.startsWith('he') || language.startsWith('ar')
@@ -114,20 +120,24 @@ export function RivhitAccountingActions({
   const formatDateTime = (value?: string | null) => value ? new Date(value).toLocaleString(locale) : '—'
   const reconciliationBlock = Boolean(reconciliation)
   const taxInvoiceStatus = taxInvoiceDocument?.status ?? 'NotIssued'
-  const showTaxInvoiceAction = isBusinessTenant && canManageRivhit && invoice.status === 'pending' && !taxInvoiceDocument
+  const canIssueAccountingDocuments = isBusinessTenant || isClinicTenant
+  const canManageAccountingActions = canManageRivhit && (!isClinicTenant || isRivhitAccountingReady)
+  const showTaxInvoiceAction = canIssueAccountingDocuments && canManageAccountingActions && invoice.status === 'pending' && !taxInvoiceDocument
   const hasReceiptBalance = outstandingAmount > 0
   // Fail closed until the server confirms there is no Issuing/Finalizing/ReconciliationRequired receipt.
-  const showReceiptAction = isBusinessTenant && canManageRivhit && !reconciliationBlock && !pendingReceiptLookupLoading
+  const showReceiptAction = canIssueAccountingDocuments && canManageAccountingActions && !reconciliationBlock && !pendingReceiptLookupLoading
     && !pendingReceiptLookupFailed && !pendingReceiptOpId && !loadingPayments && !paymentsLoadFailed
-    && (hasReceiptBalance || receiptablePayments.length > 0) && invoice.status !== 'cancelled'
+    && (isClinicTenant ? receiptablePayments.length > 0 : hasReceiptBalance || receiptablePayments.length > 0)
+    && invoice.status !== 'cancelled'
   const showReceiptReconciliation = reconciliationBlock || Boolean(pendingReceiptOpId) || pendingReceiptLookupFailed
   const accountingDocumentsKey = accountingDocuments.map((document) => `${document.id}:${document.status}`).join(',')
   const taxInvoiceNumber = taxInvoiceDocument?.externalDocumentNumber
   // Invoice-level ReconciliationRequired (no receipt op) — INV-8 case.
   const invoiceReconciliation = taxInvoiceDocument?.status === 'ReconciliationRequired' ? taxInvoiceDocument : undefined
+  const accountingBodyVisible = hideToggle || isExpanded
   useEffect(() => {
-    setExpandedAccountingDocumentIds(new Set(firstVisibleDocumentId ? [firstVisibleDocumentId] : []))
-  }, [firstVisibleDocumentId, accountingDocumentsKey])
+    setExpandedAccountingDocumentIds(new Set(visibleDocumentIds))
+  }, [accountingDocumentsKey])
 
   const toggleAccountingDocument = (documentId: string) => {
     setExpandedAccountingDocumentIds((current) => {
@@ -145,7 +155,7 @@ export function RivhitAccountingActions({
     .sort()
     .join(',')
   const loadRivhitFiles = () => {
-    if (!issuedDocumentIds || !invoice.clientId) { setRivhitFiles({}); return Promise.resolve() }
+    if (!issuedDocumentIds || !invoice.clientId) { setRivhitFiles({}); return Promise.resolve({}) }
     return getClientFiles(invoice.clientId)
       .then((files) => {
         const wanted = new Set(issuedDocumentIds.split(','))
@@ -154,10 +164,12 @@ export function RivhitAccountingActions({
           if (file.externalAccountingDocumentId && wanted.has(file.externalAccountingDocumentId)) map[file.externalAccountingDocumentId] = file
         }
         setRivhitFiles(map)
+        return map
       })
-      .catch(() => setRivhitFiles({}))
+      .catch(() => { setRivhitFiles({}); return {} })
   }
   useEffect(() => {
+    if (!issuedDocumentIds || !invoice.clientId) { setRivhitFiles({}); return }
     let cancelled = false
     getClientFiles(invoice.clientId)
       .then((files) => {
@@ -192,12 +204,14 @@ export function RivhitAccountingActions({
     return () => { cancelled = true }
   }, [invoice.id, accountingDocumentsKey])
 
-  const archiveDocument = async (documentId: string) => {
+  const archiveDocument = async (documentId: string, downloadAfterArchive = false) => {
     setArchivingId(documentId)
     setMessage(null)
     try {
-      await archiveRivhitDocument(documentId)
-      await loadRivhitFiles()
+      const result = await archiveRivhitDocument(documentId)
+      const files = await loadRivhitFiles()
+      const archivedFile = Object.values(files).find((file) => file.id === result.clientFileId)
+      if (downloadAfterArchive && archivedFile) await openRivhitPdf(documentId, true, archivedFile)
       setMessage({ tone: 'success', text: t('business.accounting.archive.success') })
     } catch (error) {
       const text = t('business.accounting.archive.issueSucceededButSaveFailed')
@@ -210,15 +224,20 @@ export function RivhitAccountingActions({
 
   const deleteArchivedPdf = async (documentId: string) => {
     const file = rivhitFiles[documentId]
-    if (!file) return
+    if (!file || !window.confirm('האם למחוק את קובץ ה-PDF השמור?\nהחשבונית/קבלה בריווחית לא תימחק.')) return
     setDeletingId(documentId)
     setMessage(null)
     try {
-      // Deletes ONLY the ClientFile/S3 object; the ExternalAccountingDocument/audit record is preserved
-      // and the backend resets ArchiveStatus to Pending so it can be archived again.
+      // Reuse the tenant/client-scoped file delete flow. It removes the S3 object and ClientFile,
+      // then resets archive metadata while preserving the Rivhit document and accounting history.
       await deleteClientFile(invoice.clientId, file.id)
-      await loadRivhitFiles()
+      setRivhitFiles((current) => {
+        const next = { ...current }
+        delete next[documentId]
+        return next
+      })
       await onRefresh()
+      await loadRivhitFiles()
       setMessage({ tone: 'success', text: t('business.accounting.archive.deleted') })
     } catch {
       const text = t('business.accounting.archive.errors.deleteFailed')
@@ -281,8 +300,8 @@ export function RivhitAccountingActions({
     }
   }
 
-  const openRivhitPdf = async (documentId: string, download: boolean) => {
-    const file = rivhitFiles[documentId]
+  const openRivhitPdf = async (documentId: string, download: boolean, archivedFile = rivhitFiles[documentId]) => {
+    const file = archivedFile
     if (!file) return
     setDownloadingId(documentId)
     try {
@@ -314,6 +333,16 @@ export function RivhitAccountingActions({
     if (!archived) {
       // Issued but not archived yet: offer a safe archive/retry (read-only Rivhit Copy + PDF -> S3/ClientFile).
       if (!canManageRivhit) return null
+      if (isClinicTenant) {
+        return (
+          <div className="mt-2">
+            <button type="button" onClick={() => void archiveDocument(documentId, true)} disabled={archivingId === documentId}
+              className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-white px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50">
+              <Download className="h-3 w-3" />{archivingId === documentId ? t('business.accounting.archive.archiving') : t('business.accounting.archive.download')}
+            </button>
+          </div>
+        )
+      }
       return (
         <div className="mt-2">
           <button type="button" onClick={() => void archiveDocument(documentId)} disabled={archivingId === documentId}
@@ -333,8 +362,9 @@ export function RivhitAccountingActions({
           className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-white px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50">
           <Download className="h-3 w-3" />{t('business.accounting.archive.download')}
         </button>
-        {canManageRivhit && (
+        {canManageAccountingActions && (
           <button type="button" onClick={() => void deleteArchivedPdf(documentId)} disabled={deletingId === documentId || downloadingId === documentId}
+            aria-label={t('business.accounting.archive.delete')}
             className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
             <Trash2 className="h-3 w-3" />{deletingId === documentId ? t('business.accounting.archive.deleting') : t('business.accounting.archive.delete')}
           </button>
@@ -347,7 +377,8 @@ export function RivhitAccountingActions({
     event.preventDefault()
     const amount = Number(form.amount)
     const isExisting = Boolean(form.paymentId)
-    if (!Number.isFinite(amount) || amount <= 0 || (!isExisting && (amount > outstandingAmount || !form.paymentMethod))) return
+    if (!Number.isFinite(amount) || amount <= 0 || (isClinicTenant && !isExisting)
+      || (!isExisting && (amount > outstandingAmount || !form.paymentMethod))) return
     setSubmitting(true)
     setMessage(null)
     try {
@@ -420,7 +451,7 @@ export function RivhitAccountingActions({
 
   // Load verified payments so existing-payment receipts remain available on fully paid invoices.
   useEffect(() => {
-    if (!isBusinessTenant || !canManageRivhit) {
+    if ((!isBusinessTenant && !isClinicTenant) || !canManageRivhit) {
       setVerifiedPayments([])
       setPaymentsLoadFailed(false)
       setLoadingPayments(false)
@@ -439,7 +470,7 @@ export function RivhitAccountingActions({
       })
       .finally(() => { if (!cancelled) setLoadingPayments(false) })
     return () => { cancelled = true }
-  }, [isBusinessTenant, canManageRivhit, invoice.id, accountingDocumentsKey])
+  }, [isBusinessTenant, isClinicTenant, canManageRivhit, invoice.id, accountingDocumentsKey])
 
   const receiptFormContent = (
     <form id="rivhit-receipt-form" onSubmit={submitReceipt} className="space-y-4">
@@ -470,7 +501,7 @@ export function RivhitAccountingActions({
           <div className="space-y-1.5">
             <span className="text-sm font-medium text-slate-700">{t('business.accounting.receipts.sourceLabel')}</span>
             <div className="flex flex-wrap gap-2">
-              {hasReceiptBalance && (
+              {!isClinicTenant && hasReceiptBalance && (
                 <button type="button" onClick={() => setForm((c) => ({ ...c, paymentId: '', paymentMethod: c.paymentMethod ?? 'cash' }))}
                   className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${!form.paymentId ? 'border-indigo-600 bg-indigo-50 text-indigo-800' : 'border-slate-300 bg-white text-slate-600'}`}>
                   {t('business.accounting.receipts.sourceNew')}
@@ -535,7 +566,7 @@ export function RivhitAccountingActions({
 
   return (
     <section className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3 sm:p-4" aria-label={t('business.accounting.title')} data-testid={`rivhit-accounting-${invoice.id}`}>
-      <button
+      {!hideToggle && <button
         type="button"
         aria-expanded={isExpanded}
         aria-controls={`rivhit-accounting-body-${invoice.id}`}
@@ -549,19 +580,22 @@ export function RivhitAccountingActions({
           </span>
           <ChevronDown className={`h-4 w-4 text-indigo-700 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} aria-hidden="true" />
         </span>
-      </button>
+      </button>}
 
       <div
         id={`rivhit-accounting-body-${invoice.id}`}
-        aria-hidden={!isExpanded}
-        inert={!isExpanded}
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+        aria-hidden={!accountingBodyVisible}
+        inert={!accountingBodyVisible}
+        className={hideToggle
+          ? 'block'
+          : `grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
       >
-        <div className="min-h-0 overflow-hidden pt-3">
+        <div className={`min-h-0 overflow-hidden ${hideToggle ? '' : 'pt-3'}`}>
           <p className="text-xs text-slate-600">{t('business.accounting.description')}</p>
 
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
       {taxInvoiceDocument && taxInvoiceDocument.status === 'Issued' && (
-        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
           <button
             type="button"
             aria-expanded={expandedAccountingDocumentIds.has(taxInvoiceDocument.id)}
@@ -580,52 +614,8 @@ export function RivhitAccountingActions({
         </div>
       )}
 
-      {showReceiptReconciliation && (
-        <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900" role="alert">
-          <p className="flex items-center gap-2 font-semibold"><AlertTriangle className="h-4 w-4" />{t('business.accounting.reconciliationTitle')}</p>
-          <p className="mt-1 leading-relaxed">{t('business.accounting.reconciliationWarning')}</p>
-          {canManageRivhit && pendingReceiptOpId && (
-            <button type="button" onClick={() => void checkReconciliation()} disabled={reconciling}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-amber-400 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50">
-              <RefreshCw className={`h-3 w-3 ${reconciling ? 'animate-spin' : ''}`} />{reconciling ? t('business.accounting.reconciliationChecking') : t('business.accounting.reconciliationCheck')}
-            </button>
-          )}
-          {canManageRivhit && !pendingReceiptOpId && invoiceReconciliation && (
-            <button type="button" onClick={() => void checkInvoiceReconciliation()} disabled={reconciling}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-amber-400 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50">
-              <RefreshCw className={`h-3 w-3 ${reconciling ? 'animate-spin' : ''}`} />{reconciling ? t('business.accounting.reconciliationChecking') : t('business.accounting.reconciliationCheck')}
-            </button>
-          )}
-          {pendingReceiptLookupLoading && <p className="mt-2">{t('business.accounting.reconciliationChecking')}</p>}
-        </div>
-      )}
-
-      {message && (
-        <div role={message.tone === 'error' ? 'alert' : 'status'} className={`mt-3 rounded-lg border p-3 text-xs ${message.tone === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : message.tone === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-red-200 bg-red-50 text-red-800'}`}>
-          {message.text}
-        </div>
-      )}
-
-      {isBusinessTenant && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {showTaxInvoiceAction && (
-            <button type="button" onClick={() => onIssueTaxInvoice(invoice)} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-800">
-              <Landmark className="h-3.5 w-3.5" />{t('business.accounting.taxInvoice.issue')}
-            </button>
-          )}
-          {showReceiptAction && (
-            <button type="button" onClick={beginReceipt} className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-50">
-              <Receipt className="h-3.5 w-3.5" />{t('business.accounting.receipts.issue')}
-            </button>
-          )}
-          {!canManageRivhit && (
-            <p className="text-xs text-slate-500">{t('business.accounting.adminOnly')}</p>
-          )}
-        </div>
-      )}
-
       {receipts.length > 0 && (
-        <div className="mt-3 space-y-2">
+        <div className="space-y-2">
           {receipts.map((receipt) => (
             <article key={receipt.id} className="rounded-lg border border-slate-200 bg-white p-3 text-xs">
               <button
@@ -656,6 +646,52 @@ export function RivhitAccountingActions({
           ))}
         </div>
       )}
+      </div>
+
+      {showReceiptReconciliation && (
+        <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900" role="alert">
+          <p className="flex items-center gap-2 font-semibold"><AlertTriangle className="h-4 w-4" />{t('business.accounting.reconciliationTitle')}</p>
+          <p className="mt-1 leading-relaxed">{t('business.accounting.reconciliationWarning')}</p>
+          {canManageAccountingActions && pendingReceiptOpId && (
+            <button type="button" onClick={() => void checkReconciliation()} disabled={reconciling}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-amber-400 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50">
+              <RefreshCw className={`h-3 w-3 ${reconciling ? 'animate-spin' : ''}`} />{reconciling ? t('business.accounting.reconciliationChecking') : t('business.accounting.reconciliationCheck')}
+            </button>
+          )}
+          {canManageAccountingActions && !pendingReceiptOpId && invoiceReconciliation && (
+            <button type="button" onClick={() => void checkInvoiceReconciliation()} disabled={reconciling}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-amber-400 bg-white px-2.5 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50">
+              <RefreshCw className={`h-3 w-3 ${reconciling ? 'animate-spin' : ''}`} />{reconciling ? t('business.accounting.reconciliationChecking') : t('business.accounting.reconciliationCheck')}
+            </button>
+          )}
+          {pendingReceiptLookupLoading && <p className="mt-2">{t('business.accounting.reconciliationChecking')}</p>}
+        </div>
+      )}
+
+      {message && (
+        <div role={message.tone === 'error' ? 'alert' : 'status'} className={`mt-3 rounded-lg border p-3 text-xs ${message.tone === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : message.tone === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-red-200 bg-red-50 text-red-800'}`}>
+          {message.text}
+        </div>
+      )}
+
+      {canIssueAccountingDocuments && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {showTaxInvoiceAction && (
+            <button type="button" onClick={() => onIssueTaxInvoice(invoice)} className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-800">
+              <Landmark className="h-3.5 w-3.5" />{t('business.accounting.taxInvoice.issue')}
+            </button>
+          )}
+          {showReceiptAction && (
+            <button type="button" onClick={beginReceipt} className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-xs font-semibold text-indigo-800 hover:bg-indigo-50">
+              <Receipt className="h-3.5 w-3.5" />{t('business.accounting.receipts.issue')}
+            </button>
+          )}
+          {!canManageRivhit && (
+            <p className="text-xs text-slate-500">{t('business.accounting.adminOnly')}</p>
+          )}
+        </div>
+      )}
+
         </div>
       </div>
 

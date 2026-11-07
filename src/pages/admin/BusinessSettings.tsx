@@ -118,7 +118,10 @@ export default function BusinessSettings() {
   const { reload: reloadDepartmentFeatures } = useDepartmentFeatures()
   const isAdmin = user?.role === 'admin'
   const isBusinessTenant = productType === 'business'
+  const isClinicTenant = productType === 'clinic' || productType === 'legacy'
   const canManageDepartments = hasPermission('manage_business_settings')
+  const canManageIntegrations = hasPermission('manage_integrations')
+  const shouldShowRivhit = isAdmin && isClinicTenant
   const isRTL = i18n.language === 'he' || i18n.language === 'ar'
   const [formData, setFormData] = useState<{
     name: string
@@ -1339,6 +1342,7 @@ export default function BusinessSettings() {
                   <p>ניכוי מס: {formData.defaultWithholdingTaxRate || '0'}%</p>
                 </div>
               </div>
+              {shouldShowRivhit && <RivhitIntegrationSection clinicMode />}
             </div>
             </div>
           </div>
@@ -1901,7 +1905,7 @@ export default function BusinessSettings() {
             </button>
           </div>
         </form>
-        {isBusinessTenant && isAdmin && <RivhitIntegrationSection />}
+        {isAdmin && isBusinessTenant && <RivhitIntegrationSection />}
       </div>
     </Container>
   )

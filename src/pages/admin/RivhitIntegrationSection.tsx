@@ -17,8 +17,8 @@ const statusStyles: Record<string, string> = {
   failed: 'bg-red-100 text-red-700',
 }
 
-// Rendered by the parent only for explicit Business tenants with the Admin role.
-export default function RivhitIntegrationSection() {
+// Rendered by the parent for Business tenants or Clinic/Legacy accounting configuration.
+export default function RivhitIntegrationSection({ clinicMode = false }: { clinicMode?: boolean }) {
   const { t, i18n } = useTranslation()
   const isRTL = i18n.language === 'he' || i18n.language === 'ar'
   const [state, setState] = useState<RivhitIntegrationState | null>(null)
@@ -60,6 +60,8 @@ export default function RivhitIntegrationSection() {
 
   const toggleEnabled = () => state && run('toggle', () => updateRivhitIntegration({ isEnabled: !state.isEnabled }))
 
+  const toggleAccounting = () => state && run('toggle', () => updateRivhitIntegration({ accountingEnabled: !state.accountingEnabled }))
+
   const test = () => run('test', async () => {
     if (token.trim()) {
       await updateRivhitIntegration({ apiToken: token.trim() })
@@ -81,13 +83,17 @@ export default function RivhitIntegrationSection() {
   const status = state?.connectionStatus ?? 'notConfigured'
 
   return (
-    <div dir={isRTL ? 'rtl' : 'ltr'} className="mt-6 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
-      <div className="px-6 py-4 flex items-center gap-3 bg-slate-700 text-white">
+    <div dir={isRTL ? 'rtl' : 'ltr'} className={clinicMode
+      ? 'rounded-lg border border-indigo-100 bg-indigo-50/40 overflow-hidden'
+      : 'mt-6 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden'}>
+      <div className={clinicMode
+        ? 'px-4 py-3 flex items-center gap-2 border-b border-indigo-100 text-indigo-950'
+        : 'px-6 py-4 flex items-center gap-3 bg-slate-700 text-white'}>
         <Plug className="w-5 h-5" />
-        <h2 className="text-lg font-semibold">{t('settings.rivhit.title')}</h2>
+        <h2 className={clinicMode ? 'text-sm font-semibold' : 'text-lg font-semibold'}>{t('settings.rivhit.title')}</h2>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className={clinicMode ? 'p-4 space-y-4' : 'p-6 space-y-5'}>
         <p className="text-sm text-slate-500">{t('settings.rivhit.description')}</p>
 
         <div className="flex items-center justify-between gap-3 border border-slate-200 rounded-lg p-3">
@@ -164,15 +170,23 @@ export default function RivhitIntegrationSection() {
           <div role="status" className={`text-sm ${message.kind === 'ok' ? 'text-green-700' : 'text-red-600'}`}>{message.text}</div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        {clinicMode && (
+          <label className="flex items-center justify-between gap-3 border border-slate-200 rounded-lg p-3">
+            <span className="text-sm font-medium text-slate-700">{t('settings.rivhit.accounting')}</span>
+            <input type="checkbox" checked={state?.accountingEnabled ?? false} disabled={isBusy || !state}
+              onChange={toggleAccounting} className="h-4 w-4" />
+          </label>
+        )}
+
+        <div className={`grid gap-3 ${clinicMode ? '' : 'sm:grid-cols-2'}`}>
           <div className="border border-slate-200 rounded-lg p-3">
             <div className="text-sm font-medium text-slate-700">{t('settings.rivhit.accounting')}</div>
             <div className="mt-1 text-sm text-slate-600">{t('settings.rivhit.documents')}</div>
           </div>
-          <div className="border border-slate-200 rounded-lg p-3 opacity-60">
+          {!clinicMode && <div className="border border-slate-200 rounded-lg p-3 opacity-60">
             <div className="text-sm font-medium text-slate-700">{t('settings.rivhit.payments')}</div>
             <div className="mt-1 text-sm text-slate-500">{t('settings.rivhit.comingSoon')}</div>
-          </div>
+          </div>}
         </div>
       </div>
     </div>
