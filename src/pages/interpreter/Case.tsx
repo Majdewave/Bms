@@ -31,6 +31,7 @@ import {
 } from '@/api/interpreterPortal'
 import type { ImagingInstanceDetail, ImagingSeriesDetail, ImagingStudyHierarchy } from '@/api/imaging'
 import PdfViewerModal from '@/components/PdfViewerModal'
+import InterpretationTemplateControls from '@/components/interpreter/InterpretationTemplateControls'
 import { getImagingModalityLabel } from '@/utils/imaging'
 
 const DicomViewer = lazy(() => import('@/components/imaging/DicomViewer'))
@@ -559,6 +560,11 @@ export default function InterpreterCase() {
                 <p className="mt-1 text-xs text-slate-500">{t('interpreter.reportSubtitle')}</p>
               </div>
               <div className="p-4">
+                <InterpretationTemplateControls
+                  modality={caseData.modality}
+                  reportContent={reportContent}
+                  onApply={(content) => { setReportContent(content); setReportMessage(null); setReportError(null) }}
+                />
                 <textarea
                   rows={viewerInstances.length > 0 ? 16 : 10}
                   value={reportContent}

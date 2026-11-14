@@ -20,7 +20,7 @@ const tabMeta: Record<SettingsTab, { label: string; icon: typeof Settings2 }> = 
 
 const defaultSettings: PlatformSettings = {
   id: '',
-  supportEmail: 'support@digitalpenpro.com',
+  supportEmail: 'Clienta-Support@digitalpenpro.com',
   supportPhone: null,
   websiteUrl: 'https://clienta.digitalpenpro.com',
   defaultTrialDays: fallbackLegacyTrialDays,

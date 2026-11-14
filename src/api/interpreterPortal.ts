@@ -82,6 +82,21 @@ export interface InterpreterCase {
   hasFinalPdf: boolean
 }
 
+export interface InterpretationReportTemplate {
+  id: string
+  name: string
+  modality: string | null
+  content: string
+  createdAt: string
+  updatedAt: string | null
+}
+
+export interface SaveInterpretationReportTemplateRequest {
+  name: string
+  modality: string | null
+  content: string
+}
+
 export function getInterpretationRequests() {
   return apiClient.get<InterpreterRequestListItem[]>(
     '/api/interpreter/interpretation-requests'
@@ -174,5 +189,41 @@ export function completeInterpretation(requestId: string) {
     `/api/interpreter/interpretation-requests/${requestId}/complete`,
     {}
   )
+}
+
+export function getInterpretationReportTemplates(modality?: string) {
+  const query = modality ? `?modality=${encodeURIComponent(modality)}` : ''
+  return apiClient.get<InterpretationReportTemplate[]>(
+    `/api/interpreter/report-templates${query}`
+  )
+}
+
+export function getInterpretationReportTemplate(templateId: string) {
+  return apiClient.get<InterpretationReportTemplate>(
+    `/api/interpreter/report-templates/${templateId}`
+  )
+}
+
+export function createInterpretationReportTemplate(
+  request: SaveInterpretationReportTemplateRequest
+) {
+  return apiClient.post<InterpretationReportTemplate>(
+    '/api/interpreter/report-templates',
+    request
+  )
+}
+
+export function updateInterpretationReportTemplate(
+  templateId: string,
+  request: SaveInterpretationReportTemplateRequest
+) {
+  return apiClient.put<InterpretationReportTemplate>(
+    `/api/interpreter/report-templates/${templateId}`,
+    request
+  )
+}
+
+export function deactivateInterpretationReportTemplate(templateId: string) {
+  return apiClient.delNoContent(`/api/interpreter/report-templates/${templateId}`)
 }
 
