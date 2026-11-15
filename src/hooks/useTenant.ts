@@ -9,6 +9,7 @@ export type TenantInfo = {
   subscriptionEndsAt?: string;
   scheduledPlan?: string | null;
   scheduledPlanChangeAt?: string | null;
+  hasStripeCustomer?: boolean;
   isSuspended: boolean;
 };
 
@@ -18,6 +19,7 @@ type BillingStatus = {
   trialEndsAt?: string | null;
   scheduledPlan?: string | null;
   scheduledPlanChangeAt?: string | null;
+  stripeCustomerId?: string | null;
   isSuspended?: boolean;
 };
 
@@ -69,6 +71,9 @@ export function useTenant() {
                 : tenantData.trialEndsAt,
             scheduledPlan: billingData.scheduledPlan ?? null,
             scheduledPlanChangeAt: billingData.scheduledPlanChangeAt ?? null,
+            hasStripeCustomer:
+              typeof billingData.stripeCustomerId === "string" &&
+              billingData.stripeCustomerId.trim().length > 0,
             isSuspended:
               typeof billingData.isSuspended === "boolean"
                 ? billingData.isSuspended

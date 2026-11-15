@@ -1,12 +1,19 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { useTenant } from "@/hooks/useTenant";
 
 export default function BillingBanner() {
   const navigate = useNavigate();
   const { tenant, daysLeft } = useTenant();
+  const { t, i18n } = useTranslation();
 
   if (!tenant) return null;
+
+  const rawPlanName = tenant.plan.trim();
+  const planName = i18n.language.startsWith("en")
+    ? `${rawPlanName.charAt(0).toUpperCase()}${rawPlanName.slice(1).toLowerCase()}`
+    : rawPlanName.toUpperCase();
 
   const isCanceling =
     tenant.subscriptionStatus === "Active" &&
@@ -31,7 +38,7 @@ export default function BillingBanner() {
             </span>
           </div>
         ) : (
-          <span>✅ Pro Plan Active</span>
+          <span>✅ {t("billing.activePlan", { plan: planName })}</span>
         )}
       </div>
     );

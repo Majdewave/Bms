@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { clientsService } from '@/api'
 import type { Client } from '@/api'
+import { HEALTH_FUND_CODES } from '@/api/clients'
 import { useTranslation } from 'react-i18next'
 import { useTenant } from '@/contexts/TenantContext'
 
@@ -24,6 +25,8 @@ export default function CreateClientModal({ onClose, onCreated, client = null, o
     idNumber: client?.idNumber ?? '',
     birthDate: client?.birthDate ?? '',
     internalNote: client?.internalNote ?? '',
+    healthFund: client?.healthFund ?? '',
+    healthFundOther: client?.healthFundOther ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -141,6 +144,8 @@ export default function CreateClientModal({ onClose, onCreated, client = null, o
         ...form,
         idNumber: form.idNumber?.trim() || null,
         birthDate: isBusiness ? null : form.birthDate ? form.birthDate : null,
+        healthFund: form.healthFund || null,
+        healthFundOther: form.healthFund === 'Other' ? form.healthFundOther.trim() || null : null,
       }
 
       if (client) {
@@ -152,6 +157,8 @@ export default function CreateClientModal({ onClose, onCreated, client = null, o
           idNumber: payload.idNumber,
           ...(isBusiness ? {} : { birthDate: payload.birthDate }),
           internalNote: payload.internalNote.trim() || null,
+          healthFund: payload.healthFund ?? '',
+          healthFundOther: payload.healthFundOther ?? '',
           isActive: client.isActive,
         })
         onUpdated?.()
@@ -242,6 +249,32 @@ export default function CreateClientModal({ onClose, onCreated, client = null, o
         </div>}
 
           <input name="email" value={form.email} onChange={handleChange} type="email" placeholder={t('admin.clients.form.emailPlaceholder')} className="input w-full" />
+          <div>
+            <label htmlFor="client-health-fund" className="mb-1 block text-sm font-medium text-slate-700">
+              {t('admin.clients.form.healthFund')}
+            </label>
+            <select
+              id="client-health-fund"
+              name="healthFund"
+              value={form.healthFund}
+              onChange={handleChange}
+              className="input w-full"
+            >
+              <option value="">{t('admin.clients.healthFunds.noHealthFund')}</option>
+              {HEALTH_FUND_CODES.map((code) => (
+                <option key={code} value={code}>{t(`admin.clients.healthFunds.${code}`)}</option>
+              ))}
+            </select>
+            {form.healthFund === 'Other' && (
+              <input
+                name="healthFundOther"
+                value={form.healthFundOther}
+                onChange={handleChange}
+                placeholder={t('admin.clients.form.healthFundOtherPlaceholder')}
+                className="input mt-2 w-full"
+              />
+            )}
+          </div>
           <div> 
             <input
                 type="text"

@@ -1,13 +1,19 @@
 import { get, post, put, del, getBlob } from './apiClient'
 
+export const HEALTH_FUND_CODES = ['Clalit', 'Maccabi', 'Meuhedet', 'Leumit', 'Other'] as const
+export type HealthFundCode = typeof HEALTH_FUND_CODES[number]
+
 export interface Client {
   id: string
   idNumber?: string
   fullName: string
+  birthDate?: string | null
   email?: string
   phone?: string
   address?: string
   internalNote?: string
+  healthFund?: HealthFundCode | null
+  healthFundOther?: string | null
   isActive: boolean
   createdAt: string
   status?: string
@@ -118,6 +124,8 @@ export const createClient = async (client: {
   phone?: string
   address?: string
   internalNote?: string
+  healthFund?: HealthFundCode | null
+  healthFundOther?: string | null
 }): Promise<Client> => {
   return post<Client>('/api/clients', client)
 }
@@ -132,6 +140,8 @@ export const updateClient = async (
     phone?: string
     address?: string
     internalNote?: string
+    healthFund?: HealthFundCode | null
+    healthFundOther?: string | null
     isActive: boolean
   }>
 ): Promise<void> => {

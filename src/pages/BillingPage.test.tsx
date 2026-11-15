@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   changePlan: vi.fn(),
   createCheckoutSession: vi.fn(),
   createBillingPortal: vi.fn(),
+  redirectToBillingPortal: vi.fn(),
 }))
 
 vi.mock('@/hooks/useTenant', () => ({ useTenant: mocks.useTenant }))
@@ -19,6 +20,9 @@ vi.mock('@/services/billingService', () => ({
   changePlan: mocks.changePlan,
   createCheckoutSession: mocks.createCheckoutSession,
   createBillingPortal: mocks.createBillingPortal,
+}))
+vi.mock('@/utils/billingPortalNavigation', () => ({
+  redirectToBillingPortal: mocks.redirectToBillingPortal,
 }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -66,6 +70,9 @@ vi.mock('react-i18next', () => ({
         'billing.activeTitle': 'Pro Plan Active',
         'billing.loading': 'Loading',
         'billing.loadError': 'Could not load billing',
+        'billing.manageBilling': 'Manage billing',
+        'billing.portalUnavailable': 'Billing management is unavailable.',
+        'billing.redirect': 'Redirecting...',
       }
       return messages[key] ?? key
     },
@@ -122,6 +129,57 @@ describe('active Clinic Billing plan management', () => {
     expect(screen.getAllByText('Coming Soon').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: 'Switch to Basic' })).toBeEnabled()
     expect(screen.queryByText('Stripe may charge a prorated amount.')).not.toBeInTheDocument()
+  })
+
+  it('shows Manage billing only when the active tenant has a Stripe customer', async () => {
+    mocks.useTenant.mockReturnValue({
+      tenant: {
+        id: 'tenant-clinic',
+        productType: 'clinic',
+        plan: 'Basic',
+        subscriptionStatus: 'Active',
+        hasStripeCustomer: true,
+        scheduledPlan: null,
+        scheduledPlanChangeAt: null,
+        isSuspended: false,
+      },
+      daysLeft: 0,
+      loading: false,
+      error: null,
+    })
+    mocks.createBillingPortal.mockResolvedValue({ url: 'https://billing.stripe.test/session' })
+    render(<BillingPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manage billing' }))
+
+    await waitFor(() => {
+      expect(mocks.createBillingPortal).toHaveBeenCalledOnce()
+      expect(mocks.redirectToBillingPortal).toHaveBeenCalledWith(
+        'https://billing.stripe.test/session',
+      )
+    })
+  })
+
+  it('shows a safe unavailable state without a Stripe customer', () => {
+    mocks.useTenant.mockReturnValue({
+      tenant: {
+        id: 'tenant-clinic',
+        productType: 'clinic',
+        plan: 'Basic',
+        subscriptionStatus: 'Active',
+        hasStripeCustomer: false,
+        scheduledPlan: null,
+        scheduledPlanChangeAt: null,
+        isSuspended: false,
+      },
+      daysLeft: 0,
+      loading: false,
+      error: null,
+    })
+    render(<BillingPage />)
+
+    expect(screen.queryByRole('button', { name: 'Manage billing' })).not.toBeInTheDocument()
+    expect(screen.getByText('Billing management is unavailable.')).toBeInTheDocument()
   })
 
   it('keeps plan names English uppercase while localizing the banner label', () => {

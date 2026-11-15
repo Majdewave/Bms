@@ -49,6 +49,7 @@ interface TenantContactSettings {
   businessRegistrationNumber?: string | null
   phone?: string | null
   email?: string | null
+  businessEmail?: string | null
   address?: string | null
   whatsApp?: string | null
   logoUrl?: string | null
@@ -128,6 +129,7 @@ export default function BusinessSettings() {
     legalBusinessName: string
     businessRegistrationNumber: string
     phone: string
+    businessEmail: string
     address: string
     whatsApp: string
     defaultVatRate: string
@@ -145,6 +147,7 @@ export default function BusinessSettings() {
     legalBusinessName: '',
     businessRegistrationNumber: '',
     phone: '',
+    businessEmail: '',
     address: '',
     whatsApp: '',
     defaultVatRate: '18',
@@ -302,6 +305,7 @@ export default function BusinessSettings() {
         legalBusinessName: tenant?.legalBusinessName ?? settings.legalBusinessName ?? '',
         businessRegistrationNumber: tenant?.businessRegistrationNumber ?? settings.businessRegistrationNumber ?? '',
         phone: tenant?.phone ?? '',
+        businessEmail: tenant?.businessEmail ?? tenant?.email ?? '',
         address: tenant?.address ?? '',
         whatsApp: tenant?.whatsApp ?? '',
         defaultVatRate: String(tenant?.defaultVatRate ?? settings.defaultVatRate ?? 18),
@@ -331,6 +335,7 @@ export default function BusinessSettings() {
           legalBusinessName: tenant?.legalBusinessName ?? settings.legalBusinessName ?? '',
           businessRegistrationNumber: tenant?.businessRegistrationNumber ?? settings.businessRegistrationNumber ?? '',
           phone: tenant?.phone ?? '',
+          businessEmail: tenant?.businessEmail ?? tenant?.email ?? '',
           address: tenant?.address ?? '',
           whatsApp: tenant?.whatsApp ?? '',
           logoUrl: settings.logoUrl,
@@ -360,6 +365,7 @@ export default function BusinessSettings() {
           legalBusinessName: tenant?.legalBusinessName ?? settings.legalBusinessName ?? '',
           businessRegistrationNumber: tenant?.businessRegistrationNumber ?? settings.businessRegistrationNumber ?? '',
           phone: tenant?.phone ?? '',
+          businessEmail: tenant?.businessEmail ?? tenant?.email ?? '',
           address: tenant?.address ?? '',
           whatsApp: tenant?.whatsApp ?? '',
           logoUrl: null,
@@ -788,6 +794,7 @@ export default function BusinessSettings() {
         name: formData.name,
         legalBusinessName: formData.legalBusinessName,
         businessRegistrationNumber: formData.businessRegistrationNumber,
+        businessEmail: formData.businessEmail.trim(),
         logoUrl: logoUrl,
         businessStampUrl: businessStampUrl,
         phone: formData.phone,
@@ -818,6 +825,7 @@ export default function BusinessSettings() {
         name: formData.name,
         legalBusinessName: formData.legalBusinessName,
         businessRegistrationNumber: formData.businessRegistrationNumber,
+        businessEmail: formData.businessEmail.trim() || tenantContext?.email || null,
         phone: formData.phone,
         address: formData.address,
         whatsApp: formData.whatsApp,
@@ -835,6 +843,10 @@ export default function BusinessSettings() {
         businessStampUrl,
         autoDeleteNotDocumentedAfterDays: autoDeleteDays,
         enableAutoDeleteNotDocumented: enabled,
+      }))
+      setFormData((current) => ({
+        ...current,
+        businessEmail: current.businessEmail.trim() || tenantContext?.email || '',
       }))
 
       showToastNotification(t('admin.settings.saveSuccess'))
@@ -982,7 +994,14 @@ export default function BusinessSettings() {
 
                 <div>
                   <label className="block text-sm mb-1">{t('common.email')}</label>
-                  <input value={tenantContext?.email ?? ''} readOnly className="w-full cursor-not-allowed rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-600" dir="ltr" />
+                  <input
+                    name="businessEmail"
+                    type="email"
+                    value={formData.businessEmail}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5"
+                    dir="ltr"
+                  />
                 </div>
 
                 <div className="md:col-span-2">

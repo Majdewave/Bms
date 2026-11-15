@@ -7,6 +7,7 @@ import { changePlan, createCheckoutSession, PlanType } from '@/services/billingS
 import ClinicSubscriptionPlans from '@/components/ClinicSubscriptionPlans'
 import ClinicPlanManagement from '@/components/ClinicPlanManagement'
 import { usePlatformConfig } from '@/hooks/usePlatformConfig'
+import { redirectToBillingPortal } from '@/utils/billingPortalNavigation'
 
 export default function BillingPage() {
   const { tenant, daysLeft, loading, error } = useTenant()
@@ -17,7 +18,7 @@ export default function BillingPage() {
   new Date(tenant.subscriptionEndsAt) > new Date();
 
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
-  const [portalError] = useState<string | null>(null)
+  const [portalError, setPortalError] = useState<string | null>(null)
   const [clinicPlanOverride, setClinicPlanOverride] = useState<string>()
   const [clinicScheduledPlanOverride, setClinicScheduledPlanOverride] = useState<string | null>()
   const [clinicScheduledDateOverride, setClinicScheduledDateOverride] = useState<string | null>()
@@ -33,12 +34,14 @@ export default function BillingPage() {
 const handleManageSubscription = async () => {
   try {
     setIsLoadingCheckout(true)
+    setPortalError(null)
 
     const res = await createBillingPortal()
 
-    window.location.href = res.url
+    redirectToBillingPortal(res.url)
   } catch (err) {
     console.error(err)
+    setPortalError(t('billing.portalUnavailable'))
   } finally {
     setIsLoadingCheckout(false)
   }
@@ -141,19 +144,19 @@ const handleClinicPlanChange = async (planType: PlanType.Basic | PlanType.Enterp
             </p>
             
 
-            <button
-              onClick={handleManageSubscription}
-              disabled={isLoadingCheckout}
-              className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-medium transition ${
-                isLoadingCheckout
-                  ? 'opacity-60 cursor-not-allowed'
-                  : ''
-              }`}
-            >
-              {isLoadingCheckout
-                ? t('billing.redirect')
-                : 'ניהול מנוי'}
-            </button>
+            {tenant.hasStripeCustomer ? (
+              <button
+                onClick={handleManageSubscription}
+                disabled={isLoadingCheckout}
+                className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg text-lg font-medium transition ${
+                  isLoadingCheckout ? 'opacity-60 cursor-not-allowed' : ''
+                }`}
+              >
+                {isLoadingCheckout ? t('billing.redirect') : t('billing.manageBilling')}
+              </button>
+            ) : (
+              <Alert type="error" message={t('billing.portalUnavailable')} />
+            )}
 
             {portalError && (
               <div className="mt-4">
@@ -209,7 +212,10 @@ const handleClinicPlanChange = async (planType: PlanType.Basic | PlanType.Enterp
             isLoading={isLoadingCheckout}
             error={clinicPlanError}
             notice={clinicPlanNotice}
+            hasStripeCustomer={tenant.hasStripeCustomer === true}
+            portalError={portalError}
             onChangePlan={(planType) => void handleClinicPlanChange(planType)}
+            onManageBilling={() => void handleManageSubscription()}
           />
         ) : (
           <ClinicSubscriptionPlans

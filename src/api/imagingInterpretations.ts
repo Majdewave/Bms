@@ -44,7 +44,8 @@ export function createInterpretationRequest(
 
 export function getInterpretationRequest(imagingOrderId: string) {
   return apiClient.get<InterpretationRequest>(
-    `/api/imaging/orders/${imagingOrderId}/interpretation-request`
+    `/api/imaging/orders/${imagingOrderId}/interpretation-request`,
+    { suppressErrorLoggingForStatuses: [404] }
   )
 }
 

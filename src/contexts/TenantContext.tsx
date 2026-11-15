@@ -18,6 +18,7 @@ export interface Tenant {
   businessRegistrationNumber?: string | null
   phone?: string | null
   email?: string | null
+  businessEmail?: string | null
   address?: string | null
   whatsApp?: string | null
   logoUrl?: string | null

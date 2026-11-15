@@ -15,6 +15,7 @@ const BASE_URL = getApiBaseUrl()
 type RequestOptions = RequestInit & {
   isFormData?: boolean
   expectNoContent?: boolean
+  suppressErrorLoggingForStatuses?: readonly number[]
 }
 
 const isAuthRelatedEndpoint = (url: string): boolean => {
@@ -36,6 +37,8 @@ async function request<T>(
   url: string,
   options: RequestOptions = {}
 ): Promise<T> {
+  const { suppressErrorLoggingForStatuses, ...fetchRequestOptions } = options
+
   // Idle timeout check
   if (isSessionExpired()) {
     await doLogout()
@@ -60,7 +63,7 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${authToken}`;
   }
   const fetchOptions: RequestInit = {
-    ...options,
+    ...fetchRequestOptions,
     headers,
     credentials: 'include'
   };
@@ -164,8 +167,10 @@ async function request<T>(
     let errorData: any
     try {
       const text = await response.text()
-      console.error(`[API Error] Status: ${response.status}`)
-      console.error(`[API Error] Response:`, text)
+      if (!suppressErrorLoggingForStatuses?.includes(response.status)) {
+        console.error(`[API Error] Status: ${response.status}`)
+        console.error(`[API Error] Response:`, text)
+      }
       try {
         errorData = JSON.parse(text)
         errorMessage = errorData.message || errorData.error || errorMessage
@@ -229,9 +234,13 @@ if (response.status === 401) {
   return await response.blob()
 }
 
-export async function get<T>(url: string): Promise<T> {
+export async function get<T>(
+  url: string,
+  options: Pick<RequestOptions, 'suppressErrorLoggingForStatuses'> = {}
+): Promise<T> {
   return request<T>(url, {
     method: 'GET',
+    ...options,
   })
 }
 

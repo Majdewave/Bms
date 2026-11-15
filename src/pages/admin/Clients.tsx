@@ -6,9 +6,11 @@ import CreateClientModal from '@/components/CreateClientModal'
 import Autocomplete from '@/components/Autocomplete'
 import { clientsService } from '@/api'
 import type { Client } from '@/api'
+import { HEALTH_FUND_CODES } from '@/api/clients'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/contexts/AuthContext'
 import { Search, Plus, Mail, Phone, Users, Edit, ShieldOff, ShieldCheck, Trash2, User } from 'lucide-react'
+import { filterClients, type HealthFundFilter } from './clientListFilters'
 
 export default function Clients() {
   const navigate = useNavigate()
@@ -25,6 +27,7 @@ export default function Clients() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
   const [showNotDocumentedOnly, setShowNotDocumentedOnly] = useState(false)
+  const [healthFundFilter, setHealthFundFilter] = useState<HealthFundFilter>('all')
 
   const canView =
     hasPermission?.('view_clients') ||
@@ -57,23 +60,11 @@ export default function Clients() {
 
   const notDocumentedCount = isBusiness ? 0 : safeClients.filter(c => c.isNotDocumented).length
 
-  const normalizeDigits = (value?: string) => (value ?? '').replace(/\D/g, '')
-
-  const filteredClients = safeClients.filter((client) => {
-    if (!isBusiness && showNotDocumentedOnly && !client.isNotDocumented) return false
-
-    if (!searchQuery) return true
-
-    const q = searchQuery.toLowerCase().trim()
-    const idQuery = normalizeDigits(searchQuery)
-    const clientIdNumber = normalizeDigits(client.idNumber ?? (client as any).nationalId)
-
-    return (
-      client.fullName?.toLowerCase().includes(q) ||
-      client.email?.toLowerCase().includes(q) ||
-      client.phone?.toLowerCase().includes(q) ||
-      (!isBusiness && idQuery.length > 0 && clientIdNumber.includes(idQuery))
-    )
+  const filteredClients = filterClients(safeClients, {
+    searchQuery,
+    healthFund: healthFundFilter,
+    showNotDocumentedOnly,
+    isBusiness,
   })
 
   const reloadClients = async () => {
@@ -209,20 +200,38 @@ export default function Clients() {
               />
             </div>
 
-              {!isBusiness && <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-                <label className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3">
-                  <input
-                    type="checkbox"
-                    checked={showNotDocumentedOnly}
-                    onChange={(e) => setShowNotDocumentedOnly(e.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  <span className="whitespace-nowrap text-sm font-medium text-slate-700">{t('showOnlyNotDocumented')}</span>
+              <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                <label className="inline-flex h-9 items-center rounded-md border border-slate-200 bg-white px-3">
+                  <span className="sr-only">{t('admin.clients.healthFundFilterLabel')}</span>
+                  <select
+                    value={healthFundFilter}
+                    onChange={(event) => setHealthFundFilter(event.target.value as HealthFundFilter)}
+                    className="h-full min-w-40 bg-transparent text-sm text-slate-700 outline-none"
+                  >
+                    <option value="all">{t('admin.clients.healthFunds.all')}</option>
+                    {HEALTH_FUND_CODES.map((code) => (
+                      <option key={code} value={code}>{t(`admin.clients.healthFunds.${code}`)}</option>
+                    ))}
+                    <option value="none">{t('admin.clients.healthFunds.none')}</option>
+                  </select>
                 </label>
-                <div className="basis-full text-sm font-medium text-red-500 lg:basis-auto lg:whitespace-nowrap">
-                  {t('notDocumentedClients', { count: notDocumentedCount })}
-                </div>
-              </div>}
+                {!isBusiness && (
+                  <>
+                    <label className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3">
+                      <input
+                        type="checkbox"
+                        checked={showNotDocumentedOnly}
+                        onChange={(e) => setShowNotDocumentedOnly(e.target.checked)}
+                        className="h-4 w-4"
+                      />
+                      <span className="whitespace-nowrap text-sm font-medium text-slate-700">{t('showOnlyNotDocumented')}</span>
+                    </label>
+                    <div className="basis-full text-sm font-medium text-red-500 lg:basis-auto lg:whitespace-nowrap">
+                      {t('notDocumentedClients', { count: notDocumentedCount })}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 

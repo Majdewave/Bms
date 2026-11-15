@@ -6,9 +6,10 @@ import { visitSummariesService, type VisitSummary } from '@/api/visitSummaries'
 import { clientsService, imagingService, invoicesService } from '@/api'
 import type { Invoice } from '@/api/invoices'
 import { formatInvoiceCalendarDate } from '@/utils/invoiceCalendarDate'
-import {deleteImagingOrder,deleteInterpretationRequest, getClientImagingCases, getImagingOrderReferralDocument, type ClientImagingCase, type ImagingStudyHierarchy, type ImagingStudySummary,} from '@/api/imaging'
+import {deleteImagingOrder,deleteInterpretationRequest, exportStudyMedia, getClientImagingCases, getImagingOrderReferralDocument, type ClientImagingCase, type ImagingStudyHierarchy, type ImagingStudySummary,} from '@/api/imaging'
 import { useAuth } from "@/contexts/AuthContext"
 import { useTenant } from '@/contexts/TenantContext'
+import { HEALTH_FUND_CODES } from '@/api/clients'
 import { useDepartmentFeatures } from "@/contexts/DepartmentFeatureContext"
 import { getDepartmentFeatureEnabled } from "@/api/departmentFeatureCheck"
 import { servicesService, type BusinessService } from "@/api/servicesService"
@@ -37,6 +38,8 @@ interface Client {
   phone: string
   idNumber?: string
   birthDate?: string
+  healthFund?: string | null
+  healthFundOther?: string | null
   address?: string
   internalNote?: string
   lastVisit?: string | null
@@ -251,6 +254,9 @@ export default function ClientProfile() {
   const [imagingLoading, setImagingLoading] = useState(false)
   const [isDownloadingStudy, setIsDownloadingStudy] = useState(false)
   const [studyDownloadError, setStudyDownloadError] = useState<string | null>(null)
+  const [isExportingMedia, setIsExportingMedia] = useState(false)
+  const [studyMediaExportError, setStudyMediaExportError] = useState<string | null>(null)
+  const mediaExportInProgress = useRef(false)
   const [viewingReferral, setViewingReferral] = useState(false)
   const [interpreters, setInterpreters] = useState<ImagingInterpreterOption[]>([])
   const [selectedInterpreterId, setSelectedInterpreterId] = useState('')
@@ -278,6 +284,7 @@ export default function ClientProfile() {
         : [...prev, sectionId]
     )
   }
+  const isImagingOpen = openSections.includes('imaging')
 
   const getImagingCategory = (modality: string) =>
     modality.toUpperCase() === 'US' ? 'ultrasound' : 'xray'
@@ -533,7 +540,7 @@ useEffect(() => {
     const loadImagingStudies = async () => {
     if (
       !client?.id ||
-      !openSections.includes('imaging')
+      !isImagingOpen
     ) {
       return
     }
@@ -593,7 +600,7 @@ useEffect(() => {
     }
 
     void loadImagingStudies()
-  }, [client?.id, openSections])
+  }, [client?.id, isImagingOpen])
 
   // Load services once to resolve the department for the currently selected imaging case (no departmentId exists on ClientImagingCase itself).
   useEffect(() => {
@@ -887,6 +894,8 @@ const saveClient = async () => {
       email: client.email?.trim() || null,
       address: client.address?.trim() || null,
       internalNote: client.internalNote?.trim() || null,
+      healthFund: client.healthFund ?? '',
+      healthFundOther: client.healthFund === 'Other' ? client.healthFundOther?.trim() || '' : '',
     }
 
     await apiClient.put(`/api/clients/${client.id}`, payload)
@@ -1211,6 +1220,36 @@ const saveClient = async () => {
       )
     } finally {
       setIsDownloadingStudy(false)
+    }
+  }
+
+  const handleExportStudyMedia = async () => {
+    if (!selectedStudy || mediaExportInProgress.current) return
+
+    mediaExportInProgress.current = true
+    setIsExportingMedia(true)
+    setStudyMediaExportError(null)
+    try {
+      const blob = await exportStudyMedia(selectedStudy.id)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const accession = selectedStudy.accessionNumber.replace(/[^a-zA-Z0-9_-]/g, '')
+      link.href = url
+      link.download = `CLIENTA-${accession || selectedStudy.id}-CD-USB.zip`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+    } catch (error) {
+      console.error('Failed to export imaging study media:', error)
+      setStudyMediaExportError(
+        error instanceof ApiError && error.status === 409
+          ? t('imaging.mediaExportUnavailable')
+          : t('imaging.mediaExportFailed')
+      )
+    } finally {
+      mediaExportInProgress.current = false
+      setIsExportingMedia(false)
     }
   }
 
@@ -1710,6 +1749,43 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
             }`}
           />
      </div>
+
+        <div>
+          <label className={`block text-sm text-slate-500 mb-2 ${isRTL ? "text-right" : "text-left"}`}>
+            {t('admin.clients.form.healthFund')}
+          </label>
+          <select
+            value={client.healthFund ?? ''}
+            onChange={(event) =>
+              setClient({
+                ...client,
+                healthFund: event.target.value || null,
+                healthFundOther: event.target.value === 'Other' ? client.healthFundOther ?? '' : null,
+              })
+            }
+            disabled={!editingClient}
+            className={`w-full border rounded-lg p-3 ${
+              !editingClient ? 'bg-slate-50 text-slate-500' : ''
+            }`}
+          >
+            <option value="">{t('admin.clients.healthFunds.noHealthFund')}</option>
+            {HEALTH_FUND_CODES.map((code) => (
+              <option key={code} value={code}>{t(`admin.clients.healthFunds.${code}`)}</option>
+            ))}
+          </select>
+          {client.healthFund === 'Other' && (
+            <input
+              type="text"
+              value={client.healthFundOther ?? ''}
+              onChange={(event) => setClient({ ...client, healthFundOther: event.target.value })}
+              disabled={!editingClient}
+              placeholder={t('admin.clients.form.healthFundOtherPlaceholder')}
+              className={`mt-2 w-full border rounded-lg p-3 ${
+                !editingClient ? 'bg-slate-50 text-slate-500' : ''
+              }`}
+            />
+          )}
+        </div>
 
 
     <div>
@@ -2233,6 +2309,15 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
                                 {isDownloadingStudy && <Loader2 className="h-4 w-4 animate-spin" />}
                                 {isDownloadingStudy ? t('imaging.studyDownloadPreparing') : t('imaging.downloadStudy')}
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleExportStudyMedia()}
+                                disabled={isExportingMedia || !selectedStudy}
+                                className="inline-flex items-center gap-2 rounded-lg border border-violet-300 bg-white px-4 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {isExportingMedia && <Loader2 className="h-4 w-4 animate-spin" />}
+                                {isExportingMedia ? t('imaging.mediaExportPreparing') : t('imaging.mediaExport')}
+                              </button>
                             </div>
 
                             {isViewerOpen && (
@@ -2249,6 +2334,14 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
                           {studyDownloadError && (
                             <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                               {studyDownloadError}
+                            </div>
+                          )}
+
+                          <p className="text-xs text-slate-500">{t('imaging.mediaExportNotice')}</p>
+
+                          {studyMediaExportError && (
+                            <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                              {studyMediaExportError}
                             </div>
                           )}
 

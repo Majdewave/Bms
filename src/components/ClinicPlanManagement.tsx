@@ -43,7 +43,10 @@ type ClinicPlanManagementProps = {
   isLoading: boolean
   error: string | null
   notice: string | null
+  hasStripeCustomer: boolean
+  portalError: string | null
   onChangePlan: (planType: PlanType.Basic | PlanType.Enterprise) => void
+  onManageBilling: () => void
 }
 
 function formatPlan(plan: string) {
@@ -58,7 +61,10 @@ export default function ClinicPlanManagement({
   isLoading,
   error,
   notice,
+  hasStripeCustomer,
+  portalError,
   onChangePlan,
+  onManageBilling,
 }: ClinicPlanManagementProps) {
   const { t, i18n } = useTranslation()
   const isRtl = i18n.language.startsWith('he') || i18n.language.startsWith('ar')
@@ -75,6 +81,21 @@ export default function ClinicPlanManagement({
           <p className="text-sm font-bold tracking-wide">{formatPlan(currentPlan)} {t('billing.clinicPlans.planActive')}</p>
           <p className="mt-0.5 text-xs font-medium text-emerald-700">{t('billing.clinicPlans.currentPlan')}</p>
         </div>
+      </div>
+      <div className="mb-6 flex flex-col items-end gap-3">
+        {hasStripeCustomer ? (
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={onManageBilling}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoading ? t('billing.redirect') : t('billing.manageBilling')}
+          </button>
+        ) : (
+          <p role="status" className="text-sm text-slate-600">{t('billing.portalUnavailable')}</p>
+        )}
+        {portalError && <p role="alert" className="text-sm text-red-700">{portalError}</p>}
       </div>
       <div className="mb-6">
         {scheduledPlan && (
