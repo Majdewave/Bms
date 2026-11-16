@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Camera, RefreshCw, RotateCcw, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import {
+  createReferralScanPdf,
+  createReferralScanPdfFile,
+  normalizeReferralScan,
+  ReferralScanNormalizationError,
+} from '@/utils/referralScanNormalization'
 
 interface DocumentScannerModalProps {
   open: boolean
@@ -7,9 +14,7 @@ interface DocumentScannerModalProps {
   onCapture: (file: File) => void
 }
 
-type ScannerState = 'starting' | 'ready' | 'captured' | 'error'
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024
+type ScannerState = 'starting' | 'ready' | 'processing' | 'captured' | 'error'
 
 const stopMediaStream = (stream: MediaStream | null) => {
   stream?.getTracks().forEach((track) => track.stop())
@@ -42,6 +47,7 @@ export default function DocumentScannerModal({
   onClose,
   onCapture,
 }: DocumentScannerModalProps) {
+  const { t } = useTranslation()
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
@@ -216,7 +222,7 @@ export default function DocumentScannerModal({
     await startCamera(deviceId)
   }
 
-  const captureDocument = () => {
+  const captureDocument = async () => {
     const video = videoRef.current
 
     if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
@@ -244,53 +250,31 @@ export default function DocumentScannerModal({
     }
 
     context.drawImage(video, 0, 0, width, height)
+    setState('processing')
+    setErrorMessage(null)
 
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          setErrorMessage('יצירת תמונת הסריקה נכשלה.')
-          return
-        }
+    try {
+      const scan = await normalizeReferralScan(canvas)
+      const pdf = await createReferralScanPdf(scan)
+      const file = createReferralScanPdfFile(pdf)
+      const objectUrl = URL.createObjectURL(scan.jpeg)
 
-        if (blob.size > MAX_FILE_SIZE) {
-          setErrorMessage(
-            'התמונה שצולמה גדולה מ־5MB. נסה לצלם שוב או להשתמש בהעלאת קובץ.',
-          )
-          return
-        }
-
-        const timestamp = new Date()
-          .toISOString()
-          .replace(/[:.]/g, '-')
-
-        const file = new File(
-          [blob],
-          `referral-scan-${timestamp}.jpg`,
-          {
-            type: 'image/jpeg',
-            lastModified: Date.now(),
-          },
-        )
-
-        const objectUrl = URL.createObjectURL(blob)
-
-        setPreviewUrl((currentUrl) => {
-          if (currentUrl) {
-            URL.revokeObjectURL(currentUrl)
-          }
-
-          return objectUrl
-        })
-
-        setCapturedFile(file)
-        setErrorMessage(null)
-        setState('captured')
-
-        cleanupStream()
-      },
-      'image/jpeg',
-      0.92,
-    )
+      setPreviewUrl((currentUrl) => {
+        if (currentUrl) URL.revokeObjectURL(currentUrl)
+        return objectUrl
+      })
+      setCapturedFile(file)
+      setState('captured')
+      cleanupStream()
+    } catch (error) {
+      if (error instanceof ReferralScanNormalizationError && error.reason === 'too-large') {
+        setErrorMessage(t('imaging.referralScanTooLarge'))
+      } else {
+        console.error('Failed to normalize referral scan:', error)
+        setErrorMessage(t('imaging.referralScanFailed'))
+      }
+      setState('ready')
+    }
   }
 
   const retake = async () => {
@@ -405,11 +389,11 @@ export default function DocumentScannerModal({
               />
             )}
 
-            {state === 'starting' && (
+            {(state === 'starting' || state === 'processing') && (
               <div className="absolute inset-0 flex items-center justify-center bg-slate-950/70 text-white">
                 <div className="flex items-center gap-2">
                   <RefreshCw className="h-5 w-5 animate-spin" />
-                  מפעיל מצלמה...
+                  {state === 'processing' ? t('imaging.referralScanOptimizing') : 'מפעיל מצלמה...'}
                 </div>
               </div>
             )}
@@ -457,7 +441,7 @@ export default function DocumentScannerModal({
             {state === 'ready' && (
               <button
                 type="button"
-                onClick={captureDocument}
+                onClick={() => void captureDocument()}
                 className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
               >
                 <Camera className="h-4 w-4" />
