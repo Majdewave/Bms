@@ -7,8 +7,10 @@ import { staffService } from '@/api/staff'
 import { departmentService, type Department } from '@/api/departmentService'
 import type { StaffMember, StaffPermission, VisibleMenuItem } from '@/api'
 import { useTranslation } from 'react-i18next'
+import AttendanceControl from '@/components/work-summary/AttendanceControl'
 import {
   Plus,
+  ClipboardList,
   Search,
   Pencil,
   Ban,
@@ -43,6 +45,8 @@ export default function AdminStaff() {
   const [sendingLink, setSendingLink] = useState<string | null>(null)
   const [role, setRole] = useState('Staff')
   const isInterpreter = role === 'Interpreter'
+  const isTechnician = role === 'Technician'
+  const isSpecializedRole = isInterpreter || isTechnician
   const [departments, setDepartments] = useState<Department[]>([])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
   const [departmentError, setDepartmentError] = useState('')
@@ -92,7 +96,7 @@ export default function AdminStaff() {
       setFormData((prev) => ({ ...prev, Permissions: [] }))
     }
 
-    if (role === 'Interpreter') {
+    if (isSpecializedRole) {
       setDepartmentError('')
       setFormData((prev) => ({
         ...prev,
@@ -105,7 +109,7 @@ export default function AdminStaff() {
       setStampFile(null)
       setStampPreview('')
     }
-  }, [role])
+  }, [isSpecializedRole])
 
   useEffect(() => {
     const loadDepartments = async () => {
@@ -166,9 +170,11 @@ export default function AdminStaff() {
     try {
       const normalizedRole = role
       const isInterpreterRole = normalizedRole === 'Interpreter'
-      const permissions = isInterpreterRole || normalizedRole === 'Admin' ? [] : formData.Permissions
-      const departmentIds = isInterpreterRole ? [] : selectedDepartmentIds
-      const visibleMenuItems = isInterpreterRole ? [] : formData.VisibleMenuItems
+      const isTechnicianRole = normalizedRole === 'Technician'
+      const isSpecialized = isInterpreterRole || isTechnicianRole
+      const permissions = isSpecialized || normalizedRole === 'Admin' ? [] : formData.Permissions
+      const departmentIds = isSpecialized ? [] : selectedDepartmentIds
+      const visibleMenuItems = isSpecialized ? [] : formData.VisibleMenuItems
 
       if (editingStaff) {
         // UPDATE FLOW
@@ -178,11 +184,11 @@ export default function AdminStaff() {
           Permissions: permissions,
           DepartmentIds: departmentIds,
           VisibleMenuItems: visibleMenuItems,
-          UseStamp: isInterpreterRole ? false : formData.UseStamp,
-          StampUrl: isInterpreterRole ? '' : formData.StampUrl,
+          UseStamp: isSpecialized ? false : formData.UseStamp,
+          StampUrl: isSpecialized ? '' : formData.StampUrl,
         }
         // If uploading a new stamp, never send UseStamp: true with empty StampUrl
-        if (stampFile && !isInterpreterRole) {
+        if (stampFile && !isSpecialized) {
           updatePayload = {
             ...updatePayload,
             UseStamp: false,
@@ -223,7 +229,7 @@ export default function AdminStaff() {
       let staffId = created?.id
       let stampUrl = ''
 
-      if (stampFile && staffId && !isInterpreterRole) {
+      if (stampFile && staffId && !isSpecialized) {
         setUploadingStamp(true)
         try {
           const uploadResult = await staffService.uploadStamp(staffId, stampFile)
@@ -411,6 +417,7 @@ export default function AdminStaff() {
 
   return (
     <div className="space-y-6">
+      {canViewBusinessTeam && <AttendanceControl />}
       <div className="mb-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex-1">
@@ -418,8 +425,17 @@ export default function AdminStaff() {
             <p className="text-base text-slate-600 mt-2">{canViewBusinessTeam ? t('businessShell.team.readOnly') : t('admin.staff.subtitle')}</p>
           </div>
 
-          {canManageStaff && <div className="w-full md:w-auto">
+          {canManageStaff && <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
             <button
+              type="button"
+              onClick={() => navigate(isBusiness ? '/business/work-summary' : '/admin/work-summary')}
+              className="btn-secondary btn-md gap-2 w-full justify-center md:w-auto"
+            >
+              <ClipboardList className="w-4 h-4" />
+              {t('workSummary.open')}
+            </button>
+            <button
+              type="button"
               onClick={() => setShowModal(true)}
               className="btn-primary btn-md gap-2 w-full justify-center md:w-auto"
             >
@@ -795,6 +811,7 @@ export default function AdminStaff() {
                     <option value="Staff">{t('admin.staff.form.userTypes.staff')}</option>
                     <option value="Admin">{t('admin.staff.form.userTypes.admin')}</option>
                     {!isBusiness && <option value="Interpreter">{t('admin.staff.form.userTypes.interpreter')}</option>}
+                    <option value="Technician">{t('admin.staff.form.userTypes.technician')}</option>
                   </select>
                   {editingStaff?.isOwner && (
                     <p className="text-xs text-slate-500 mt-1">{t('admin.staff.ownerProtected')}</p>
@@ -838,7 +855,7 @@ export default function AdminStaff() {
               )}
 
               {/* Departments */}
-              {!isInterpreter && !isBusiness && (
+              {!isSpecializedRole && !isBusiness && (
               <div className="space-y-4">
                 <div className="flex flex-col gap-1">
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
@@ -905,7 +922,7 @@ export default function AdminStaff() {
               )}
 
               {/* Menu Visibility */}
-              {!isInterpreter && (
+              {!isSpecializedRole && (
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
                   {t('admin.staff.form.menuVisibility')}
@@ -934,7 +951,7 @@ export default function AdminStaff() {
               )}
 
               {/* Stamp Settings */}
-              {!isInterpreter && (
+              {!isSpecializedRole && (
               <div className="space-y-4 border-t border-slate-200 pt-6">
                 <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
                   Stamp Settings

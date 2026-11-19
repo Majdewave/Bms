@@ -1,12 +1,12 @@
 ﻿import { Suspense, lazy, useEffect, useRef, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { CheckCircle, ChevronDown, Download, Edit, Eye, FileCheck, FileText, Image as ImageIcon, Loader2, MessageSquare, Pill, Printer, Trash2, User } from "lucide-react"
+import { AlertCircle, CheckCircle, ChevronDown, ClipboardList, Download, Edit, Eye, FileCheck, FileText, Image as ImageIcon, Loader2, MessageSquare, Pill, Printer, Trash2, User } from "lucide-react"
 import { visitSummariesService, type VisitSummary } from '@/api/visitSummaries'
 import { clientsService, imagingService, invoicesService } from '@/api'
 import type { Invoice } from '@/api/invoices'
 import { formatInvoiceCalendarDate } from '@/utils/invoiceCalendarDate'
-import {deleteImagingOrder,deleteInterpretationRequest, exportStudyMedia, getClientImagingCases, getImagingOrderReferralDocument, type ClientImagingCase, type ImagingStudyHierarchy, type ImagingStudySummary,} from '@/api/imaging'
+import {deleteImagingOrder,deleteInterpretationRequest, exportStudyMedia, getClientImagingCases, getImagingOrderReferralDocument, updateImagingOrderTechnicianNotes, type ClientImagingCase, type ImagingStudyHierarchy, type ImagingStudySummary,} from '@/api/imaging'
 import { useAuth } from "@/contexts/AuthContext"
 import { useTenant } from '@/contexts/TenantContext'
 import { HEALTH_FUND_CODES } from '@/api/clients'
@@ -258,6 +258,9 @@ export default function ClientProfile() {
   const [studyMediaExportError, setStudyMediaExportError] = useState<string | null>(null)
   const mediaExportInProgress = useRef(false)
   const [viewingReferral, setViewingReferral] = useState(false)
+  const [technicianNotes, setTechnicianNotes] = useState('')
+  const [savingTechnicianNotes, setSavingTechnicianNotes] = useState(false)
+  const [technicianNotesStatus, setTechnicianNotesStatus] = useState<'success' | 'error' | null>(null)
   const [interpreters, setInterpreters] = useState<ImagingInterpreterOption[]>([])
   const [selectedInterpreterId, setSelectedInterpreterId] = useState('')
   const [interpretationRequest, setInterpretationRequest] = useState<InterpretationRequest | null>(null)
@@ -276,6 +279,11 @@ export default function ClientProfile() {
     doctorName: '',
     signature: '',
   })
+
+  useEffect(() => {
+    setTechnicianNotes(selectedImagingCase?.technicianNotes ?? '')
+    setTechnicianNotesStatus(null)
+  }, [selectedImagingCase?.id, selectedImagingCase?.technicianNotes])
 
   const toggleSection = (sectionId: string) => {
     setOpenSections((prev) =>
@@ -1276,8 +1284,34 @@ const saveClient = async () => {
 
     setSendingInterpretation(true)
     setInterpretationError(null)
+    setTechnicianNotesStatus(null)
 
     try {
+      if (technicianNotes !== (selectedImagingCase.technicianNotes ?? '')) {
+        const savedNotes = technicianNotes.trim() ? technicianNotes : null
+        setSavingTechnicianNotes(true)
+        try {
+          await updateImagingOrderTechnicianNotes(selectedImagingCase.id, savedNotes)
+        } catch (error) {
+          console.error('Failed to save technician notes before interpretation request:', error)
+          setTechnicianNotesStatus('error')
+          return
+        } finally {
+          setSavingTechnicianNotes(false)
+        }
+        setTechnicianNotesStatus('success')
+        setSelectedImagingCase(current =>
+          current?.id === selectedImagingCase.id
+            ? { ...current, technicianNotes: savedNotes }
+            : current,
+        )
+        setImagingCases(current => current.map(imagingCase =>
+          imagingCase.id === selectedImagingCase.id
+            ? { ...imagingCase, technicianNotes: savedNotes }
+            : imagingCase,
+        ))
+      }
+
       const createdRequest = await createInterpretationRequest(
         selectedImagingCase.id,
         {
@@ -1313,6 +1347,33 @@ const saveClient = async () => {
       setInterpretationError('לא ניתן היה לשלוח את הבדיקה לפענוח.')
     } finally {
       setSendingInterpretation(false)
+    }
+  }
+
+  const handleSaveTechnicianNotes = async () => {
+    if (!selectedImagingCase || selectedImagingCase.id.startsWith('legacy-')) return
+
+    setSavingTechnicianNotes(true)
+    setTechnicianNotesStatus(null)
+    try {
+      const savedNotes = technicianNotes.trim() ? technicianNotes : null
+      await updateImagingOrderTechnicianNotes(selectedImagingCase.id, savedNotes)
+      setSelectedImagingCase(current =>
+        current?.id === selectedImagingCase.id
+          ? { ...current, technicianNotes: savedNotes }
+          : current,
+      )
+      setImagingCases(current => current.map(imagingCase =>
+        imagingCase.id === selectedImagingCase.id
+          ? { ...imagingCase, technicianNotes: savedNotes }
+          : imagingCase,
+      ))
+      setTechnicianNotesStatus('success')
+    } catch (error) {
+      console.error('Failed to save imaging technician notes:', error)
+      setTechnicianNotesStatus('error')
+    } finally {
+      setSavingTechnicianNotes(false)
     }
   }
 
@@ -2037,6 +2098,67 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
                           </div>
                         )}
                       </div>
+                    )}
+
+                    {['US', 'DX', 'CR'].includes(selectedImagingCase.modality) &&
+                      !selectedImagingCase.id.startsWith('legacy-') && (
+                      <section className="space-y-4 rounded-xl border border-violet-200 bg-violet-50/50 p-4 shadow-sm" dir={i18n.dir()}>
+                        <div className="flex items-start gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
+                            <ClipboardList aria-hidden="true" className="h-5 w-5" />
+                          </span>
+                          <div className="min-w-0">
+                            <label htmlFor="imaging-technician-notes" className="block text-sm font-semibold text-slate-900">
+                              {t('imaging.technicianNotes')}
+                            </label>
+                            <p className="mt-1 text-xs leading-5 text-slate-600">{t('imaging.technicianNotesHelp')}</p>
+                          </div>
+                        </div>
+                        <textarea
+                          id="imaging-technician-notes"
+                          value={technicianNotes}
+                          onChange={event => {
+                            setTechnicianNotes(event.target.value)
+                            setTechnicianNotesStatus(null)
+                          }}
+                          rows={4}
+                          maxLength={4000}
+                          disabled={savingTechnicianNotes || sendingInterpretation}
+                          placeholder={t('imaging.technicianNotesPlaceholder')}
+                          className="w-full rounded-lg border border-violet-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200 disabled:bg-slate-50"
+                        />
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-violet-100 pt-3">
+                          <div aria-live="polite">
+                            {technicianNotesStatus === 'success' && (
+                              <p role="status" className="flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+                                <CheckCircle aria-hidden="true" className="h-4 w-4" />
+                                {t('imaging.technicianNotesSaved')}
+                              </p>
+                            )}
+                            {technicianNotesStatus === 'error' && (
+                              <p role="alert" className="flex items-center gap-1.5 text-sm font-medium text-red-700">
+                                <AlertCircle aria-hidden="true" className="h-4 w-4" />
+                                {t('imaging.technicianNotesSaveError')}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void handleSaveTechnicianNotes()}
+                            disabled={
+                              savingTechnicianNotes ||
+                              sendingInterpretation ||
+                              technicianNotes === (selectedImagingCase.technicianNotes ?? '')
+                            }
+                            className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-white px-3.5 py-2 text-sm font-semibold text-violet-800 shadow-sm transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {savingTechnicianNotes && <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />}
+                            {savingTechnicianNotes
+                              ? t('imaging.savingTechnicianNotes')
+                              : t('imaging.saveTechnicianNotes')}
+                          </button>
+                        </div>
+                      </section>
                     )}
 
                     {['US', 'DX', 'CR'].includes(selectedImagingCase.modality) &&

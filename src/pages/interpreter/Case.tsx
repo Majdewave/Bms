@@ -32,6 +32,7 @@ import {
 import type { ImagingInstanceDetail, ImagingSeriesDetail, ImagingStudyHierarchy } from '@/api/imaging'
 import PdfViewerModal from '@/components/PdfViewerModal'
 import InterpretationTemplateControls from '@/components/interpreter/InterpretationTemplateControls'
+import TechnicianNotesCard from '@/components/interpreter/TechnicianNotesCard'
 import { getImagingModalityLabel } from '@/utils/imaging'
 
 const DicomViewer = lazy(() => import('@/components/imaging/DicomViewer'))
@@ -466,6 +467,14 @@ export default function InterpreterCase() {
               <div className="mt-1 font-semibold text-slate-900">{caseData.clientDisplayName}</div>
             </div>
           </section>
+
+          {caseData.technicianNotes ? (
+            <TechnicianNotesCard
+              title={t('interpreter.technicianNotes')}
+              notes={caseData.technicianNotes}
+              direction={i18n.dir()}
+            />
+          ) : null}
 
           <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">

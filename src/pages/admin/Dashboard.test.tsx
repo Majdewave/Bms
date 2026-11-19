@@ -24,6 +24,16 @@ vi.mock('react-router-dom', async (importOriginal) => ({
   useNavigate: mocks.useNavigate,
 }))
 vi.mock('@/components/BillingBanner', () => ({ default: () => null }))
+vi.mock('@/api/workSummary', () => ({
+  getCurrentAttendance: vi.fn().mockResolvedValue({
+    isClockedIn: false,
+    openSessionId: null,
+    clockInAt: null,
+    elapsedMinutes: null,
+  }),
+  clockIn: vi.fn(),
+  clockOut: vi.fn(),
+}))
 
 import i18n from '@/i18n'
 import AdminDashboard from './Dashboard'

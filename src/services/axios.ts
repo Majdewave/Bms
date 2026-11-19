@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const baseURL = import.meta.env.DEV
+  ? `${(import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000').replace(/\/$/, '')}/api`
+  : 'https://clienta.digitalpenpro.com/api';
+
 const api = axios.create({
-  baseURL: 'https://clienta.digitalpenpro.com/api',
+  baseURL,
 });
 
 api.interceptors.request.use((config) => {

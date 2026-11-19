@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import BillingBanner from '@/components/BillingBanner'
 import DashboardUpcomingAppointments from '@/components/DashboardUpcomingAppointments'
+import AttendanceControl from '@/components/work-summary/AttendanceControl'
 
 export default function AdminDashboard() {
   const { loading: tenantLoading } = useTenant();
@@ -137,6 +138,8 @@ export default function AdminDashboard() {
           titleClassName="text-[21px] md:text-3xl font-bold text-slate-900"
         />
       </div>
+
+      <AttendanceControl />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -8,7 +8,9 @@ import {
   FileSearch,
   Loader2,
   RefreshCw,
+  Search,
   UserRound,
+  X,
 } from 'lucide-react'
 
 import { useAuth } from '@/contexts/AuthContext'
@@ -17,6 +19,19 @@ import {
   type InterpreterRequestListItem,
   type InterpretationRequestStatus,
 } from '@/api/interpreterPortal'
+import {
+  filterInterpreterRequests,
+  hasOtherInterpreterModalities,
+  type InterpreterDateFilter,
+  type InterpreterModalityFilter,
+} from '@/utils/interpreterRequestFilters'
+
+function localDateValue(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 function statusLabel(status: InterpretationRequestStatus, t: (key: string) => string) {
   switch (status) {
@@ -65,6 +80,11 @@ export default function InterpreterRequests() {
   const [requests, setRequests] = useState<InterpreterRequestListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [modalityFilter, setModalityFilter] = useState<InterpreterModalityFilter>('all')
+  const [dateFilter, setDateFilter] = useState<InterpreterDateFilter>('all')
+  const [fromDate, setFromDate] = useState(() => localDateValue(new Date()))
+  const [toDate, setToDate] = useState(() => localDateValue(new Date()))
 
   const loadRequests = useCallback(async () => {
     try {
@@ -79,14 +99,36 @@ export default function InterpreterRequests() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     void loadRequests()
   }, [loadRequests])
 
+  const filteredRequests = useMemo(
+    () => filterInterpreterRequests(
+      requests,
+      { modality: modalityFilter, date: dateFilter, search, from: fromDate, to: toDate },
+      new Date(),
+      i18n.language,
+    ),
+    [requests, modalityFilter, dateFilter, search, fromDate, toDate, i18n.language],
+  )
+  const hasOtherModalities = hasOtherInterpreterModalities(requests)
+  const hasActiveFilters = modalityFilter !== 'all' || dateFilter !== 'all' || search.trim().length > 0
+  const invalidDateRange = dateFilter === 'custom' && fromDate > toDate
+
+  const clearFilters = () => {
+    setSearch('')
+    setModalityFilter('all')
+    setDateFilter('all')
+    const today = localDateValue(new Date())
+    setFromDate(today)
+    setToDate(today)
+  }
+
   return (
-    <div dir={i18n.dir()}>
+    <main dir={i18n.dir()} className="min-w-0">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">
           {t('interpreter.requestsTitle')}
@@ -132,7 +174,110 @@ export default function InterpreterRequests() {
         </div>
       )}
 
-      {!loading && !error && requests.length === 0 && (
+      {!loading && !error && (
+        <section
+          aria-label={t('interpreter.queueFilters')}
+          className="mb-4 space-y-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4"
+        >
+          <div className="relative w-full">
+            <Search aria-hidden="true" className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              aria-label={t('interpreter.searchLabel')}
+              placeholder={t('interpreter.searchPlaceholder')}
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white py-2.5 ps-10 pe-10 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            />
+            {search.length > 0 && (
+              <button
+                type="button"
+                aria-label={t('interpreter.clearSearch')}
+                onClick={() => setSearch('')}
+                className="absolute end-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap">
+            <label className="min-w-0 text-xs font-medium text-slate-600 lg:min-w-40">
+              {t('interpreter.examinationType')}
+              <select
+                value={modalityFilter}
+                onChange={event => setModalityFilter(event.target.value as InterpreterModalityFilter)}
+                className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="all">{t('imaging.filters.all')}</option>
+                <option value="xray">{t('imaging.filters.xray')}</option>
+                <option value="ultrasound">{t('imaging.filters.ultrasound')}</option>
+                {hasOtherModalities && <option value="other">{t('interpreter.otherExaminationTypes')}</option>}
+              </select>
+            </label>
+
+            <label className="min-w-0 text-xs font-medium text-slate-600 lg:min-w-40">
+              {t('interpreter.datePeriod')}
+              <select
+                value={dateFilter}
+                onChange={event => setDateFilter(event.target.value as InterpreterDateFilter)}
+                className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="all">{t('interpreter.allDates')}</option>
+                <option value="today">{t('workSummary.periodOptions.today')}</option>
+                <option value="thisMonth">{t('workSummary.periodOptions.thisMonth')}</option>
+                <option value="custom">{t('workSummary.periodOptions.custom')}</option>
+              </select>
+            </label>
+
+            {dateFilter === 'custom' && (
+              <>
+                <label className="min-w-0 text-xs font-medium text-slate-600">
+                  {t('workSummary.from')}
+                  <input
+                    type="date"
+                    value={fromDate}
+                    max={toDate}
+                    onChange={event => setFromDate(event.target.value)}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </label>
+                <label className="min-w-0 text-xs font-medium text-slate-600">
+                  {t('workSummary.to')}
+                  <input
+                    type="date"
+                    value={toDate}
+                    min={fromDate}
+                    onChange={event => setToDate(event.target.value)}
+                    className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </label>
+              </>
+            )}
+
+            <div className="flex min-h-10 items-center justify-between gap-3 sm:col-span-2 lg:ms-auto lg:justify-end">
+              <p aria-live="polite" className="text-sm font-semibold text-slate-700">
+                {t('interpreter.examinationsFound', { count: filteredRequests.length })}
+              </p>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="shrink-0 rounded-lg px-2.5 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+                >
+                  {t('interpreter.clearFilters')}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {invalidDateRange && (
+            <p role="alert" className="text-sm text-red-700">{t('interpreter.invalidDateRange')}</p>
+          )}
+        </section>
+      )}
+
+      {!loading && !error && requests.length === 0 && !hasActiveFilters && (
         <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
             <FileSearch className="h-6 w-6 text-slate-500" />
@@ -148,15 +293,31 @@ export default function InterpreterRequests() {
         </div>
       )}
 
-      {!loading && !error && requests.length > 0 && (
+      {!loading && !error && filteredRequests.length === 0 && (requests.length > 0 || hasActiveFilters) && (
+        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+            <FileSearch className="h-6 w-6 text-slate-500" />
+          </div>
+          <h2 className="text-base font-semibold text-slate-900">{t('interpreter.noMatchingExaminations')}</h2>
+        </div>
+      )}
+
+      {!loading && !error && filteredRequests.length > 0 && (
         <div className="space-y-3">
-          {requests.map((request) => (
+          {filteredRequests.map((request, index) => (
             <button
               key={request.id}
               type="button"
               onClick={() => navigate(`/interpreter/requests/${request.id}`)}
-              className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 text-start shadow-sm transition hover:border-blue-200 hover:shadow-md"
+              data-testid="interpreter-request-card"
+              className="flex w-full min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-start shadow-sm transition hover:border-blue-200 hover:shadow-md sm:gap-4 sm:p-5"
             >
+              <span
+                aria-label={t('interpreter.resultNumber', { number: index + 1 })}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-700 ring-1 ring-inset ring-blue-100"
+              >
+                {index + 1}
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <h2 className="text-base font-semibold text-slate-900">
@@ -192,7 +353,7 @@ export default function InterpreterRequests() {
           ))}
         </div>
       )}
-    </div>
+    </main>
   )
 }
 

@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
-import { X } from 'lucide-react'
+import { UserRound, X } from 'lucide-react'
 import { appointmentsService, type Appointment, type AppointmentClient } from '@/api'
 import { consentsApi, type SignedConsent } from '@/api/consents'
 import { servicesService, type BusinessService } from '@/api/servicesService'
-import { appointmentStaffService, type AppointmentStaffOption } from '@/api/appointmentStaff'
+import {
+  appointmentStaffService,
+  type AppointmentStaffOption,
+  type AppointmentTechnicianOption,
+} from '@/api/appointmentStaff'
 import {
   deleteImagingOrderReferralDocument,
   getImagingOrderReferral,
@@ -25,6 +29,8 @@ type EditableAppointment = {
   serviceId?: string | null
   staffId?: string | null
   imagingOrderId?: string | null
+  performingTechnicianId?: string | null
+  performingTechnicianName?: string | null
   roomNumber?: string | null
   departmentName?: string | null
   departmentColor?: string | null
@@ -52,10 +58,13 @@ export default function CreateAppointmentModal({
   const { t } = useTranslation()
   const { user } = useAuth()
   const [medicalImagingEnabledForDept, setMedicalImagingEnabledForDept] = useState(false)
+  const [checkingImagingFeature, setCheckingImagingFeature] = useState(false)
 
   const [clients, setClients] = useState<AppointmentClient[]>([])
   const [services, setServices] = useState<BusinessService[]>([])
   const [staffMembers, setStaffMembers] = useState<AppointmentStaffOption[]>([])
+  const [technicians, setTechnicians] = useState<AppointmentTechnicianOption[]>([])
+  const [staffOptionsLoaded, setStaffOptionsLoaded] = useState(false)
   const [signedConsents, setSignedConsents] = useState<SignedConsent[]>([])
   const [saving, setSaving] = useState(false)
   const [referringDoctorName, setReferringDoctorName] = useState('')
@@ -74,11 +83,13 @@ export default function CreateAppointmentModal({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [clientQuery, setClientQuery] = useState('')
   const [serviceQuery, setServiceQuery] = useState('')
+  const [performingTechnicianQuery, setPerformingTechnicianQuery] = useState('')
 
   const [formData, setFormData] = useState({
     clientId: defaultClientId || '',
     serviceId: '',
     staffId: '',
+    performingTechnicianId: '',
     date: '',
     time: '',
     duration: '',
@@ -94,7 +105,9 @@ export default function CreateAppointmentModal({
         !service.departmentId || selectedStaffDepartmentIds.includes(service.departmentId))
     : services
 
-  const isStaffContextReadyForEdit = !formData.staffId || staffMembers.some((staff) => staff.id === formData.staffId)
+  const isStaffContextReadyForEdit = !formData.staffId ||
+    staffMembers.some((staff) => staff.id === formData.staffId) ||
+    staffOptionsLoaded
   const selectedService = services.find(s => s.id === formData.serviceId)
   const isImagingAppointment = medicalImagingEnabledForDept &&
     (selectedService?.imagingModality === 'US' ||
@@ -105,6 +118,7 @@ export default function CreateAppointmentModal({
   useEffect(() => {
     loadServices()
     loadStaffMembers()
+    loadTechnicians()
   }, [])
 
   // Resolve medicalImagingEnabled for the department the appointment will actually be created/edited under.
@@ -114,11 +128,29 @@ export default function CreateAppointmentModal({
 
     if (!selectedService) {
       setMedicalImagingEnabledForDept(false)
+      setCheckingImagingFeature(false)
       return
     }
 
+    const hasImagingModality =
+      selectedService.imagingModality === 'US' ||
+      selectedService.imagingModality === 'DX' ||
+      selectedService.imagingModality === 'CR'
+    if (!hasImagingModality) {
+      setMedicalImagingEnabledForDept(false)
+      setCheckingImagingFeature(false)
+      return
+    }
+
+    setCheckingImagingFeature(true)
     void getDepartmentFeatureEnabled('medicalImagingEnabled', departmentId).then((enabled) => {
       if (!cancelled) setMedicalImagingEnabledForDept(enabled)
+    }).catch((error) => {
+      if (cancelled) return
+      console.error('Failed to check Medical Imaging feature access:', error)
+      setMedicalImagingEnabledForDept(false)
+    }).finally(() => {
+      if (!cancelled) setCheckingImagingFeature(false)
     })
 
     return () => {
@@ -142,7 +174,8 @@ export default function CreateAppointmentModal({
       setFormData({
         clientId: appointment.clientId ?? '',
         serviceId: '',
-        staffId: (appointment as any).staffId ?? '',
+        staffId: appointment.staffId ?? '',
+        performingTechnicianId: appointment.performingTechnicianId ?? '',
         date: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`,
         time: start.toTimeString().slice(0,5),
         duration: '',
@@ -150,6 +183,7 @@ export default function CreateAppointmentModal({
         roomNumber: appointment.roomNumber ?? '',
         status: appointment.status ?? 'Scheduled'
       })
+      setPerformingTechnicianQuery(appointment.performingTechnicianName ?? '')
 
       setPendingEditServiceId(initialServiceId || null)
       setServiceQuery('')
@@ -168,7 +202,7 @@ export default function CreateAppointmentModal({
       return
     }
 
-    const matchingService = filteredServices.find((service) => service.id === pendingEditServiceId)
+    const matchingService = services.find((service) => service.id === pendingEditServiceId)
     if (!matchingService) {
       setPendingEditServiceId(null)
       return
@@ -193,6 +227,20 @@ export default function CreateAppointmentModal({
       setClientQuery(selectedClient.fullName || selectedClient.email || '')
     }
   }, [clients, formData.clientId])
+
+  useEffect(() => {
+    if (!formData.performingTechnicianId) {
+      if (!appointment?.performingTechnicianName) setPerformingTechnicianQuery('')
+      return
+    }
+
+    const selectedTechnician = technicians.find(
+      (technician) => technician.id === formData.performingTechnicianId,
+    )
+    if (selectedTechnician) {
+      setPerformingTechnicianQuery(selectedTechnician.fullName)
+    }
+  }, [appointment?.performingTechnicianName, formData.performingTechnicianId, technicians])
 
   useEffect(() => {
     if (!services.length) {
@@ -332,6 +380,18 @@ export default function CreateAppointmentModal({
       setStaffMembers(Array.isArray(staff) ? staff : [])
     } catch {
       setStaffMembers([])
+    } finally {
+      setStaffOptionsLoaded(true)
+    }
+  }
+
+  const loadTechnicians = async () => {
+    try {
+      const options = await appointmentStaffService.getTechnicianOptions()
+      setTechnicians(Array.isArray(options) ? options : [])
+    } catch (error) {
+      console.error('Failed to load performing technicians:', error)
+      setTechnicians([])
     }
   }
 
@@ -346,7 +406,20 @@ export default function CreateAppointmentModal({
     newErrors.serviceId = t('validation.required')
   }
 
-  if (!formData.staffId) {
+  if (isImagingAppointment) {
+    const assignedTechnicianIsSelectable = technicians.some(
+      (technician) => technician.id === formData.performingTechnicianId,
+    )
+    const isPreservedExistingTechnician =
+      mode === 'edit' &&
+      appointment?.performingTechnicianId === formData.performingTechnicianId
+
+    if (!formData.performingTechnicianId ||
+      (!assignedTechnicianIsSelectable && !isPreservedExistingTechnician)) {
+      newErrors.performingTechnicianId = t('validation.required')
+    }
+  } else if (!formData.staffId ||
+    !staffMembers.some((staff) => staff.id === formData.staffId)) {
     newErrors.staffId = t('validation.required')
   }
 
@@ -492,7 +565,7 @@ if (!formData.date || !formData.time) {
       const payload = {
         clientId: formData.clientId,
         serviceId: formData.serviceId || undefined,
-        staffId: formData.staffId || undefined,
+        staffId: isImagingAppointment ? undefined : formData.staffId || undefined,
         startTime: `${formData.date}T${formData.time}:00`,
         endTime: endLocal.toLocaleString('sv-SE').replace(' ', 'T'),
         status: formData.status,
@@ -500,6 +573,14 @@ if (!formData.date || !formData.time) {
         roomNumber: formData.roomNumber.trim(),
         ...(mode === 'create' && isImagingAppointment && referringDoctorName.trim()
           ? { referringDoctorName: referringDoctorName.trim() }
+          : {}),
+        ...(isImagingAppointment
+          ? {
+              ...(technicians.some((technician) => technician.id === formData.performingTechnicianId) ||
+                formData.performingTechnicianId !== appointment?.performingTechnicianId
+                ? { performingTechnicianId: formData.performingTechnicianId }
+                : {}),
+            }
           : {})
       }
 
@@ -631,8 +712,20 @@ if (!formData.date || !formData.time) {
               }}
               onSelect={(service) => {
                 setServiceQuery(service.name || '')
-                setFormData((previous) => ({ ...previous, serviceId: service.id }))
-                setErrors((previous) => ({ ...previous, serviceId: '' }))
+                setFormData((previous) => ({
+                  ...previous,
+                  serviceId: service.id,
+                  staffId: staffOptionsLoaded &&
+                    !staffMembers.some((staff) => staff.id === previous.staffId)
+                    ? ''
+                    : previous.staffId,
+                }))
+                setErrors((previous) => ({
+                  ...previous,
+                  serviceId: '',
+                  staffId: '',
+                  performingTechnicianId: '',
+                }))
               }}
               getItemId={(service) => service.id}
               getItemLabel={(service) => service.name || ''}
@@ -696,6 +789,41 @@ if (!formData.date || !formData.time) {
 
             {isImagingAppointment && (
               <div className="space-y-3 border-t border-slate-200 pt-4" dir="rtl">
+                <div>
+                  <label className="mb-1 flex items-center gap-2 text-sm font-semibold">
+                    <UserRound aria-hidden="true" className="h-4 w-4 text-slate-600" />
+                    {t('appointments.form.performingTechnician')}
+                  </label>
+                  <Autocomplete
+                    items={technicians}
+                    query={performingTechnicianQuery}
+                    onQueryChange={(value) => {
+                      setPerformingTechnicianQuery(value)
+                      setFormData((previous) => ({ ...previous, performingTechnicianId: '' }))
+                      setErrors((previous) => ({ ...previous, performingTechnicianId: '' }))
+                    }}
+                    onSelect={(technician) => {
+                      setPerformingTechnicianQuery(technician.fullName)
+                      setFormData((previous) => ({
+                        ...previous,
+                        performingTechnicianId: technician.id,
+                      }))
+                      setErrors((previous) => ({ ...previous, performingTechnicianId: '' }))
+                    }}
+                    getItemId={(technician) => technician.id}
+                    getItemLabel={(technician) => technician.fullName}
+                    getItemSearchText={(technician) => `${technician.fullName} ${technician.email}`}
+                    placeholder={t('appointments.form.selectPerformingTechnician')}
+                    inputClassName="w-full rounded-lg border border-slate-300 px-3 py-2 text-right"
+                    noResultsText={t('appointments.form.noPerformingTechnicians')}
+                    minQueryLength={0}
+                    emptyQueryShowsAll={true}
+                    maxResults={30}
+                  />
+                  {errors.performingTechnicianId && (
+                    <p className="mt-1 text-sm text-red-500">{errors.performingTechnicianId}</p>
+                  )}
+                </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1">רופא מפנה</label>
                   <input
@@ -818,29 +946,31 @@ if (!formData.date || !formData.time) {
                 </p>
               )}
 
-            <label className="block text-sm font-semibold">
-              {t('appointments.form.staff')}
-            </label>
-            <select
-              value={formData.staffId}
-              onChange={e => setFormData({ ...formData, staffId: e.target.value })}
-              className={`w-full rounded-lg px-3 py-2 border ${
-                  errors.staffId
-                    ? 'border-red-500 focus:ring-1 focus:ring-red-500'
-                    : 'border-slate-300'
-                }`}
+            {!isImagingAppointment && (
+              <>
+                <label className="block text-sm font-semibold">
+                  {t('appointments.form.staff')}
+                </label>
+                <select
+                  value={staffMembers.some((staff) => staff.id === formData.staffId) ? formData.staffId : ''}
+                  onChange={e => setFormData({ ...formData, staffId: e.target.value })}
+                  className={`w-full rounded-lg px-3 py-2 border ${
+                    errors.staffId
+                      ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                      : 'border-slate-300'
+                  }`}
                 >
-              <option value="">{t('appointments.form.staffPlaceholder')}</option>
-              {staffMembers.map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.fullName}
-                </option>
-              ))}
-            </select>
-            {errors.staffId && (
-              <p className="text-sm text-red-500 mt-1">
-                {errors.staffId}
-              </p>
+                  <option value="">{t('appointments.form.staffPlaceholder')}</option>
+                  {staffMembers.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.fullName}
+                    </option>
+                  ))}
+                </select>
+                {errors.staffId && (
+                  <p className="mt-1 text-sm text-red-500">{errors.staffId}</p>
+                )}
+              </>
             )}
             <label className="block text-sm font-semibold" htmlFor="appointment-room-number">
               {t('appointments.form.roomNumber')}
@@ -936,7 +1066,7 @@ if (!formData.date || !formData.time) {
               <button
                 type="submit"
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                disabled={saving || Boolean(createdAppointment)}
+                disabled={saving || Boolean(createdAppointment) || checkingImagingFeature}
               >
                 {saving ? t('common.saving') : t('common.save')}
               </button>

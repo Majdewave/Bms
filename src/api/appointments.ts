@@ -22,6 +22,8 @@ export interface Appointment {
   createdByUserId: string
   isDocumented: boolean
   imagingOrderId?: string | null
+  performingTechnicianId?: string | null
+  performingTechnicianName?: string | null
 }
 
 // Keep mock data for backwards compatibility (will be removed from components)
@@ -126,6 +128,7 @@ export const createAppointment = async (appointment: {
   endTime: string
   notes?: string
   referringDoctorName?: string | null
+  performingTechnicianId?: string | null
 }): Promise<Appointment> => {
   return post<Appointment>('/api/appointments', appointment)
 }
@@ -140,6 +143,8 @@ export const updateAppointment = async (
     queueNumber?: number | null
     notes?: string
     isDocumented?: boolean 
+    performingTechnicianId?: string | null
+    clearPerformingTechnician?: boolean
   }>
 ): Promise<Appointment> => {
   return put<Appointment>(`/api/appointments/${id}`, appointment)

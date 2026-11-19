@@ -285,6 +285,14 @@ export async function patch<T>(url: string, body?: any): Promise<T> {
   })
 }
 
+export async function patchNoContent(url: string, body?: any): Promise<void> {
+  await request<void>(url, {
+    method: 'PATCH',
+    body: JSON.stringify(body ?? {}),
+    expectNoContent: true,
+  })
+}
+
 export async function del<T>(url: string): Promise<T> {
   return request<T>(url, {
     method: 'DELETE',

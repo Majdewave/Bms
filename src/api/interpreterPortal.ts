@@ -70,6 +70,7 @@ export interface InterpreterCase {
   modality: string
   scheduledStartTime: string
   referringDoctorName: string | null
+  technicianNotes: string | null
 
   imagingStudyId: string
   studyInstanceUID: string

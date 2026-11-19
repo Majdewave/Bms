@@ -48,6 +48,7 @@ import AdminReports from '@/pages/admin/Reports'
 import AdminBusinessSettings from '@/pages/admin/BusinessSettings'
 import AdminWhatsApp from '@/pages/admin/WhatsApp'
 import AdminStaff from '@/pages/admin/Staff'
+import WorkSummaryPage from '@/pages/admin/WorkSummary'
 import AdminFeatures from '@/pages/admin/Features'
 
 /* ================= STAFF PAGES ================= */
@@ -411,6 +412,14 @@ export const router = createBrowserRouter([
           </PermissionBasedRoute>
         ),
       },
+      {
+        path: 'work-summary',
+        element: (
+          <PermissionBasedRoute requiredPermission="manage_staff">
+            <WorkSummaryPage />
+          </PermissionBasedRoute>
+        ),
+      },
 
       {
         path: 'features',
@@ -522,6 +531,16 @@ export const router = createBrowserRouter([
       {
         path: 'team',
         element: <AdminStaff />,
+      },
+      {
+        path: 'work-summary',
+        element: (
+          <RoleBasedRoute allowedRoles={['admin']}>
+            <PermissionBasedRoute requiredPermission="manage_staff">
+              <WorkSummaryPage />
+            </PermissionBasedRoute>
+          </RoleBasedRoute>
+        ),
       },
       {
         path: 'settings',

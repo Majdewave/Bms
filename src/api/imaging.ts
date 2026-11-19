@@ -36,6 +36,7 @@ export interface ClientImagingCase {
   modality: string
   status: string
   referringDoctorName?: string | null
+  technicianNotes?: string | null
   scheduledStartTime: string
   createdAt: string
   referral?: ImagingOrderReferralDocument | null
@@ -157,6 +158,16 @@ export const updateImagingOrderReferral = async (
   return apiClient.put<ImagingOrderReferral>(`/api/imaging/orders/${imagingOrderId}/referral`, {
     referringDoctorName,
   })
+}
+
+export const updateImagingOrderTechnicianNotes = async (
+  imagingOrderId: string,
+  technicianNotes: string | null,
+): Promise<void> => {
+  await apiClient.patchNoContent(
+    `/api/imaging/orders/${imagingOrderId}/referral/technician-notes`,
+    { technicianNotes },
+  )
 }
 
 export const getImagingOrderReferralDocument = async (imagingOrderId: string): Promise<Blob> => {
