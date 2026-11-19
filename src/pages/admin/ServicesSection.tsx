@@ -4,6 +4,7 @@ import { Pencil, Trash2, FileText, ChevronDown, ChevronUp, Briefcase, Building2 
 import { useTranslation } from 'react-i18next'
 import { ConsentTemplateModal } from '@/components'
 import type { Department } from '@/api/departmentService'
+import { isMedicalImagingEntitled } from '@/api/medicalImagingEntitlement'
 
 interface Props {
   isAdmin: boolean
@@ -28,6 +29,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [medicalImagingEntitled, setMedicalImagingEntitled] = useState(false)
 
   const activeDepartments = useMemo(() => departments.filter((department) => department.isActive), [departments])
 
@@ -55,6 +57,15 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
   useEffect(() => {
     loadServices()
     // eslint-disable-next-line
+  }, [])
+
+  useEffect(() => {
+    void isMedicalImagingEntitled()
+      .then(setMedicalImagingEntitled)
+      .catch((error) => {
+        console.error('Failed to load Medical Imaging entitlement:', error)
+        setMedicalImagingEntitled(false)
+      })
   }, [])
 
   useEffect(() => {
@@ -89,6 +100,11 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
   }
 
   const handleAdd = async () => {
+    if (newService.imagingModality && !medicalImagingEntitled) {
+      setFormError(t('features.medicalImagingPlanUnavailable'))
+      return
+    }
+
     const errorMessage = validateServiceForm(newService)
     if (errorMessage) {
       setFormError(errorMessage)
@@ -147,6 +163,16 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
   }
 
   const handleEditSave = async (id: string) => {
+    const originalService = services.find((service) => service.id === id)
+    if (
+      editData.imagingModality &&
+      editData.imagingModality !== originalService?.imagingModality &&
+      !medicalImagingEntitled
+    ) {
+      setFormError(t('features.medicalImagingPlanUnavailable'))
+      return
+    }
+
     const errorMessage = validateServiceForm(editData)
     if (errorMessage) {
       setFormError(errorMessage)
@@ -302,6 +328,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
 
                 <select
                   value={newService.imagingModality ?? ''}
+                  disabled={!medicalImagingEntitled}
                   onChange={(event) =>
                     setNewService((current) => ({
                       ...current,
@@ -325,6 +352,11 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                   {saving ? t('common.saving') : t('services.add')}
                 </button>
               </div>
+              {!medicalImagingEntitled && (
+                <p className="text-sm text-amber-700" role="status">
+                  {t('features.medicalImagingPlanUnavailable')}
+                </p>
+              )}
 
               <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
@@ -410,6 +442,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                             />
                             <select
                               value={editData.imagingModality ?? ''}
+                              disabled={!medicalImagingEntitled}
                               onChange={(event) =>
                                 setEditData((current) => ({
                                   ...current,
@@ -551,6 +584,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                               {editingId === service.id ? (
                                 <select
                                   value={editData.imagingModality ?? ''}
+                                  disabled={!medicalImagingEntitled}
                                   onChange={(event) =>
                                     setEditData((current) => ({
                                       ...current,
@@ -687,6 +721,7 @@ export default function ServicesSection({ isAdmin, departments, isOpen = true, o
                               {editingId === service.id ? (
                                 <select
                                   value={editData.imagingModality ?? ''}
+                                  disabled={!medicalImagingEntitled}
                                   onChange={(event) =>
                                     setEditData((current) => ({
                                       ...current,

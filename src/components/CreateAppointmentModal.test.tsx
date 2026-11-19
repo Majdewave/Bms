@@ -101,15 +101,21 @@ const selectService = (container: HTMLElement, name: string) =>
   chooseAutocompleteOption(i18n.t('appointments.form.selectService'), name)
 
 const fillDateTime = (container: HTMLElement) => {
+  const futureDate = new Date()
+  futureDate.setUTCDate(futureDate.getUTCDate() + 2)
   fireEvent.change(container.querySelector('input[type="date"]')!, {
-    target: { value: '2026-11-19' },
+    target: { value: futureDate.toISOString().slice(0, 10) },
   })
   fireEvent.change(container.querySelector('input[type="time"]')!, {
     target: { value: '12:00' },
   })
 }
 
-const submit = () => fireEvent.click(screen.getByRole('button', { name: i18n.t('common.save') }))
+const submit = async () => {
+  const button = screen.getByRole('button', { name: i18n.t('common.save') })
+  await waitFor(() => expect(button).toBeEnabled())
+  fireEvent.click(button)
+}
 
 describe('Imaging appointment staff assignment', () => {
   beforeEach(async () => {
@@ -133,7 +139,7 @@ describe('Imaging appointment staff assignment', () => {
     await selectService(container, regularService.name)
     expect(await screen.findByText(i18n.t('appointments.form.staff'))).toBeInTheDocument()
     fillDateTime(container)
-    submit()
+    await submit()
 
     expect(await screen.findByText(i18n.t('validation.required'))).toBeInTheDocument()
     expect(mocks.createAppointment).not.toHaveBeenCalled()
@@ -155,9 +161,22 @@ describe('Imaging appointment staff assignment', () => {
     expect(screen.queryByRole('option', { name: 'Interpreter One' })).not.toBeInTheDocument()
 
     fillDateTime(container)
-    submit()
+    await submit()
     expect(await screen.findByText(i18n.t('validation.required'))).toBeInTheDocument()
     expect(mocks.createAppointment).not.toHaveBeenCalled()
+  })
+
+  it('blocks imaging-service appointments when the effective feature is unavailable', async () => {
+    mocks.getDepartmentFeatureEnabled.mockResolvedValue(false)
+    const { container } = renderModal()
+    await selectService(container, imagingService.name)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      i18n.t('features.medicalImagingPlanUnavailable'),
+    )
+    expect(screen.queryByText(i18n.t('appointments.form.staff'))).not.toBeInTheDocument()
+    expect(screen.queryByText(i18n.t('appointments.form.performingTechnician'))).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: i18n.t('common.save') })).toBeDisabled()
   })
 
   it('sends one Technician selection for both imaging assignment fields without exposing Interpreter assignment', async () => {
@@ -168,7 +187,7 @@ describe('Imaging appointment staff assignment', () => {
       technician.fullName,
     )
     fillDateTime(container)
-    submit()
+    await submit()
 
     await waitFor(() => expect(mocks.createAppointment).toHaveBeenCalledOnce())
     const payload = mocks.createAppointment.mock.calls[0][0]
@@ -198,7 +217,7 @@ describe('Imaging appointment staff assignment', () => {
     )
     await waitFor(() => expect(technicianInput).toHaveValue(technician.fullName))
     expect(screen.queryByText(i18n.t('appointments.form.staff'))).not.toBeInTheDocument()
-    submit()
+    await submit()
 
     await waitFor(() => expect(mocks.updateAppointment).toHaveBeenCalledOnce())
     const payload = mocks.updateAppointment.mock.calls[0][1]
@@ -224,7 +243,7 @@ describe('Imaging appointment staff assignment', () => {
     )
     expect(technicianInput).toHaveValue('')
     expect(screen.queryByText(i18n.t('appointments.form.staff'))).not.toBeInTheDocument()
-    submit()
+    await submit()
 
     expect(await screen.findByText(i18n.t('validation.required'))).toBeInTheDocument()
     expect(mocks.updateAppointment).not.toHaveBeenCalled()
@@ -253,7 +272,7 @@ describe('Imaging appointment staff assignment', () => {
       i18n.t('appointments.form.selectPerformingTechnician'),
       technician.fullName,
     )
-    submit()
+    await submit()
 
     await waitFor(() => expect(mocks.updateAppointment).toHaveBeenCalledOnce())
     const payload = mocks.updateAppointment.mock.calls[0][1]
@@ -285,7 +304,7 @@ describe('Imaging appointment staff assignment', () => {
     expect(screen.queryByText(i18n.t('appointments.form.performingTechnician'))).not.toBeInTheDocument()
     const staffOption = await screen.findByRole('option', { name: staff.fullName })
     fireEvent.change(staffOption.closest('select')!, { target: { value: staff.id } })
-    submit()
+    await submit()
 
     await waitFor(() => expect(mocks.updateAppointment).toHaveBeenCalledOnce())
     const payload = mocks.updateAppointment.mock.calls[0][1]

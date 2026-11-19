@@ -5,6 +5,7 @@ import * as apiClient from '@/api/apiClient'
 import type { Features } from '@/contexts/FeatureContext'
 import { useFeatures } from '@/contexts/FeatureContext'
 import { useDepartmentFeatures } from '@/contexts/DepartmentFeatureContext'
+import { isMedicalImagingEntitled } from '@/api/medicalImagingEntitlement'
 
 interface ToggleRowProps {
   label: string
@@ -51,6 +52,7 @@ export default function AdminFeatures() {
   const { reload: reloadDepartmentFeatures } = useDepartmentFeatures()
 
   const [settings, setSettings] = useState<Features | null>(null) 
+  const [medicalImagingEntitled, setMedicalImagingEntitled] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastError, setToastError] = useState(false)
@@ -64,16 +66,25 @@ export default function AdminFeatures() {
   }
 
   useEffect(() => {
-    apiClient
-      .get<Features>('/api/features')
-      .then((data) =>
-        setSettings(data)
-      )
-      .catch(() => {})
+    Promise.all([
+      apiClient.get<Features>('/api/features'),
+      isMedicalImagingEntitled(),
+    ])
+      .then(([data, entitled]) => {
+        setMedicalImagingEntitled(entitled)
+        setSettings({
+          ...data,
+          medicalImagingEnabled: entitled && data.medicalImagingEnabled,
+        })
+      })
+      .catch((error) => {
+        console.error('Failed to load feature settings:', error)
+      })
   }, [])
 
   const handleToggle = async (key: keyof Features, value: boolean) => {
     if (!settings) return;
+    if (key === 'medicalImagingEnabled' && !medicalImagingEntitled) return
 
     const updated: Features = {
       reportsEnabled: key === 'reportsEnabled' ? value : settings.reportsEnabled,
@@ -248,11 +259,13 @@ export default function AdminFeatures() {
         />
 
         <ToggleRow
-          label="דימות רפואי"
-          description="הפעלת מודול הדימות הרפואי במערכת."
+          label={t('features.medicalImaging')}
+          description={medicalImagingEntitled
+            ? t('features.medicalImagingDesc')
+            : t('features.medicalImagingPlanUnavailable')}
           checked={settings.medicalImagingEnabled}
           onChange={(val) => handleToggle('medicalImagingEnabled', val)}
-          disabled={saving}
+          disabled={saving || !medicalImagingEntitled}
           icon={<ScanLine className="w-5 h-5 text-violet-500" />}
         />
       </div>

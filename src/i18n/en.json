@@ -1800,7 +1800,10 @@
     "beforeAfterPhotos": "Before/After Photos",
     "beforeAfterPhotosDesc": "Show before and after photo uploads in the client profile",
     "visitSummaries": "Visit Summaries",
-    "visitSummariesDesc": "Show the visit summary button in client profiles"
+    "visitSummariesDesc": "Show the visit summary button in client profiles",
+    "medicalImaging": "Medical Imaging",
+    "medicalImagingDesc": "Enable the Medical Imaging module.",
+    "medicalImagingPlanUnavailable": "Medical Imaging is available on active Trial and Enterprise plans."
   },
   "services": {
     "title": "Business Services",

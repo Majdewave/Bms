@@ -1814,7 +1814,10 @@
     "beforeAfterPhotos": "תמונות לפני/אחרי",
     "beforeAfterPhotosDesc": "הצג העלאת תמונות לפני ואחרי בפרופיל הלקוח",
     "visitSummaries": "סיכומי ביקור",
-    "visitSummariesDesc": "הצג את אפשרות סיכומי ביקור בפרופיל הלקוח"
+    "visitSummariesDesc": "הצג את אפשרות סיכומי ביקור בפרופיל הלקוח",
+    "medicalImaging": "דימות רפואי",
+    "medicalImagingDesc": "הפעלת מודול הדימות הרפואי במערכת.",
+    "medicalImagingPlanUnavailable": "דימות רפואי זמין במסלולי ניסיון ו-Enterprise פעילים בלבד."
   },
   "services": {
     "title": "שירותים עסקיים",

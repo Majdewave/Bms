@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useTenant } from '@/contexts/TenantContext'
 import { HEALTH_FUND_CODES } from '@/api/clients'
 import { useDepartmentFeatures } from "@/contexts/DepartmentFeatureContext"
+import { useFeatures } from "@/contexts/FeatureContext"
 import { getDepartmentFeatureEnabled } from "@/api/departmentFeatureCheck"
 import { servicesService, type BusinessService } from "@/api/servicesService"
 import * as apiClient from "@/api/apiClient"
@@ -205,6 +206,8 @@ export default function ClientProfile() {
   const isAdmin = user?.role === "admin"
   const isRTL = i18n.language === "he" || i18n.language === "ar"
   const { departmentFeatures } = useDepartmentFeatures()
+  const { features } = useFeatures()
+  const canUseMedicalImaging = features?.medicalImagingEnabled === true
   const [currentStaff, setCurrentStaff] = useState<CurrentStaff | null>(null)
   const stampSrc = currentStaff?.stampUrl
     ? (currentStaff.stampUrl.startsWith('http')
@@ -548,8 +551,16 @@ useEffect(() => {
     const loadImagingStudies = async () => {
     if (
       !client?.id ||
-      !isImagingOpen
+      !isImagingOpen ||
+      !canUseMedicalImaging
     ) {
+      if (!canUseMedicalImaging) {
+        setImagingStudies([])
+        setImagingCases([])
+        setSelectedImagingCase(null)
+        setSelectedStudy(null)
+        setImagingLoading(false)
+      }
       return
     }
 
@@ -608,7 +619,7 @@ useEffect(() => {
     }
 
     void loadImagingStudies()
-  }, [client?.id, isImagingOpen])
+  }, [client?.id, isImagingOpen, canUseMedicalImaging])
 
   // Load services once to resolve the department for the currently selected imaging case (no departmentId exists on ClientImagingCase itself).
   useEffect(() => {
@@ -1958,6 +1969,7 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
 
       {/* NOTES */}
 
+      {canUseMedicalImaging && (
       <div className="bg-white rounded-2xl shadow-md overflow-hidden">
         <button
           type="button"
@@ -2500,6 +2512,7 @@ const blob = await getClinicInterpretationPdf(interpretationRequest.id)
           </div>
         )}
       </div>
+      )}
 
       {departmentFeatures.visitSummariesEnabled === true && (
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">

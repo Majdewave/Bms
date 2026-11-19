@@ -1817,7 +1817,10 @@
     "prescriptions": "الوصفات",
     "prescriptionsDesc": "إظهار زر الوصفة في ملف العميل",
     "drugs": "قاعدة بيانات الأدوية",
-    "drugsDesc": "تفعيل قاعدة بيانات الأدوية والميزات المرتبطة بها"
+    "drugsDesc": "تفعيل قاعدة بيانات الأدوية والميزات المرتبطة بها",
+    "medicalImaging": "التصوير الطبي",
+    "medicalImagingDesc": "تفعيل وحدة التصوير الطبي.",
+    "medicalImagingPlanUnavailable": "التصوير الطبي متاح فقط في الخطط التجريبية وخطة Enterprise النشطة."
   },
   "services": {
     "title": "الخدمات التجارية",

@@ -109,10 +109,11 @@ export default function CreateAppointmentModal({
     staffMembers.some((staff) => staff.id === formData.staffId) ||
     staffOptionsLoaded
   const selectedService = services.find(s => s.id === formData.serviceId)
-  const isImagingAppointment = medicalImagingEnabledForDept &&
-    (selectedService?.imagingModality === 'US' ||
-      selectedService?.imagingModality === 'DX' ||
-      selectedService?.imagingModality === 'CR')
+  const hasImagingService = selectedService?.imagingModality === 'US' ||
+    selectedService?.imagingModality === 'DX' ||
+    selectedService?.imagingModality === 'CR'
+  const isImagingAppointment = hasImagingService && medicalImagingEnabledForDept
+  const imagingServiceUnavailable = hasImagingService && !medicalImagingEnabledForDept
   const editImagingOrderId = mode === 'edit' ? appointment?.imagingOrderId : null
 
   useEffect(() => {
@@ -551,6 +552,7 @@ if (!formData.date || !formData.time) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (createdAppointment) return
+    if (imagingServiceUnavailable) return
     if (!validateForm()) {
        return
 }
@@ -745,6 +747,11 @@ if (!formData.date || !formData.time) {
               emptyQueryShowsAll={true}
               maxResults={30}
             />
+            {imagingServiceUnavailable && !checkingImagingFeature && (
+              <p className="mt-2 text-sm text-amber-700" role="alert">
+                {t('features.medicalImagingPlanUnavailable')}
+              </p>
+            )}
 
             {mode === 'edit' && (
               <>
@@ -946,7 +953,7 @@ if (!formData.date || !formData.time) {
                 </p>
               )}
 
-            {!isImagingAppointment && (
+            {!isImagingAppointment && !hasImagingService && (
               <>
                 <label className="block text-sm font-semibold">
                   {t('appointments.form.staff')}
@@ -1066,7 +1073,12 @@ if (!formData.date || !formData.time) {
               <button
                 type="submit"
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                disabled={saving || Boolean(createdAppointment) || checkingImagingFeature}
+                disabled={
+                  saving ||
+                  Boolean(createdAppointment) ||
+                  checkingImagingFeature ||
+                  imagingServiceUnavailable
+                }
               >
                 {saving ? t('common.saving') : t('common.save')}
               </button>
